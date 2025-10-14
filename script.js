@@ -318,7 +318,7 @@ async function loadDataFromGoogleSheets() {
             showDataStatus(`Loaded ${deviceData.length} devices`, 'online');
             
             // Update source status
-            updateSourceStatus('Google Sheets', new Date());
+            updateSourceStatus('Vault', new Date());
             
             // Hide status after 3 seconds
             setTimeout(() => {
@@ -336,7 +336,7 @@ async function loadDataFromGoogleSheets() {
         showDataStatus('Using offline data', 'offline');
         
         // Update source status
-        updateSourceStatus('Local (Offline)', null);
+        updateSourceStatus('Vault (Offline)', null);
         
         // Hide status after 5 seconds
         setTimeout(() => {
@@ -696,12 +696,12 @@ function initializeSourceStatus() {
     if (cached) {
         try {
             const { timestamp } = JSON.parse(cached);
-            updateSourceStatus('Cached', new Date(timestamp));
+            updateSourceStatus('Vault (Cached)', new Date(timestamp));
         } catch (error) {
-            updateSourceStatus('Local', null);
+            updateSourceStatus('Vault', null);
         }
     } else {
-        updateSourceStatus('Local', null);
+        updateSourceStatus('Vault', null);
     }
 }
 
