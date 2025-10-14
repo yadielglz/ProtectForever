@@ -950,6 +950,41 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     }
 }
 
+/* Reload Button */
+.reload-button {
+    position: fixed;
+    bottom: 20px;
+    right: 90px;
+    background: linear-gradient(135deg, #666, #444);
+    color: white;
+    border: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reload-button:hover {
+    transform: translateY(-2px) rotate(360deg);
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.4),
+        0 4px 12px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #777, #555);
+}
+
+.reload-button:active {
+    transform: translateY(0) rotate(360deg);
+}
+
 /* Refresh Button */
 .refresh-button {
     position: fixed;

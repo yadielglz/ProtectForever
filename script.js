@@ -270,6 +270,7 @@ const mdnValue = document.getElementById('mdnValue');
 const dataStatus = document.getElementById('dataStatus');
 const statusText = document.getElementById('statusText');
 const refreshButton = document.getElementById('refreshButton');
+const reloadButton = document.getElementById('reloadButton');
 const currentTime = document.getElementById('currentTime');
 const currentDate = document.getElementById('currentDate');
 const lastUpdated = document.getElementById('lastUpdated');
@@ -773,6 +774,9 @@ function setupEventListeners() {
     deviceSearch.addEventListener('focus', handleSearchFocus);
     showMdnBtn.addEventListener('click', toggleMdnDisplay);
     refreshButton.addEventListener('click', handleRefresh);
+    reloadButton.addEventListener('click', function() {
+        window.location.reload();
+    });
     closeModal.addEventListener('click', closeModalWindow);
     
     // Hide search results when clicking outside
