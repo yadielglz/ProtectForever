@@ -40,6 +40,16 @@ const DEVICE_BRAND_ICONS = {
         color: '#ffffff',
         background: '#4285f4'
     },
+    'motorola': {
+        icon: 'fas fa-mobile-alt',
+        color: '#ffffff',
+        background: '#5c92fa'
+    },
+    'revvl': {
+        icon: 'fas fa-mobile-alt',
+        color: '#ffffff',
+        background: '#e20074'
+    },
     'oneplus': {
         icon: 'fas fa-mobile-alt',
         color: '#ffffff',
@@ -64,11 +74,6 @@ const DEVICE_BRAND_ICONS = {
         icon: 'fas fa-mobile-alt',
         color: '#ffffff',
         background: '#5c2d91'
-    },
-    'motorola': {
-        icon: 'fas fa-mobile-alt',
-        color: '#ffffff',
-        background: '#5c92fa'
     },
     'lg': {
         icon: 'fas fa-mobile-alt',
@@ -957,8 +962,17 @@ function getDeviceIcon(brand) {
     if (brandLower.includes('samsung')) {
         return createBrandIcon('samsung');
     }
-    if (brandLower.includes('google') || brandLower.includes('pixel')) {
+    if (brandLower.includes('pixel')) {
+        return createBrandIcon('pixel');
+    }
+    if (brandLower.includes('google')) {
         return createBrandIcon('google');
+    }
+    if (brandLower.includes('motorola')) {
+        return createBrandIcon('motorola');
+    }
+    if (brandLower.includes('revvl')) {
+        return createBrandIcon('revvl');
     }
     if (brandLower.includes('oneplus')) {
         return createBrandIcon('oneplus');
@@ -974,9 +988,6 @@ function getDeviceIcon(brand) {
     }
     if (brandLower.includes('vivo')) {
         return createBrandIcon('vivo');
-    }
-    if (brandLower.includes('motorola')) {
-        return createBrandIcon('motorola');
     }
     if (brandLower.includes('lg')) {
         return createBrandIcon('lg');
