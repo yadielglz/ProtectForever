@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#e20074">
+    <title>Protect Forever - Device UPC Lookup</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/brands.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <i class="fas fa-shield-alt header-icon"></i>
+                    <div class="header-text">
+                        <h1>Protect Forever</h1>
+                        <p class="subtitle">Device Protection UPC Lookup</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="status-container">
+                        <div class="clock-container">
+                            <i class="fas fa-clock clock-icon"></i>
+                            <div class="clock">
+                                <div id="currentTime" class="time">12:00 PM</div>
+                                <div id="currentDate" class="date">Monday, Jan 1</div>
+                            </div>
+                        </div>
+                        <div class="source-status">
+                            <i class="fas fa-database source-icon"></i>
+                            <div class="source-info">
+                                <div id="lastUpdated" class="last-updated">Last updated: Never</div>
+                                <div id="dataSource" class="data-source">Source: Local</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="search-section">
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="deviceSearch" class="device-search" placeholder="Search for a device (e.g., iPhone 16 Pro Max, iPhone 15 Plus...)">
+                    <div id="searchResults" class="search-results" style="display: none;">
+                        <!-- Search results will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Window for Results -->
+            <div id="resultsModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Device Protection Options</h2>
+                        <button id="closeModal" class="close-button">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="device-info-card">
+                            <div class="device-header">
+                                <div class="device-icon"></div>
+                                <div class="device-details">
+                                    <h2 id="deviceName">Device Name</h2>
+                                    <p id="deviceModel">Model</p>
+                                </div>
+                            </div>
+
+                            <div class="protection-options">
+                                <h3>Available Protection Options</h3>
+                                <div class="options-grid" id="optionsGrid">
+                                    <!-- Protection options will be populated here -->
+                                </div>
+                            </div>
+
+                            <div class="mdn-section">
+                                <button id="showMdnBtn" class="mdn-button">
+                                    <i class="fas fa-eye"></i>
+                                    Show MDN
+                                </button>
+                                <div id="mdnDisplay" class="mdn-display" style="display: none;">
+                                    <span class="mdn-label">MDN:</span>
+                                    <span id="mdnValue" class="mdn-value"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="empty-state" id="emptyState">
+                <i class="fas fa-search empty-icon"></i>
+                <h3>Search for a Device</h3>
+                <p>Type a device name in the search box above to find available protection options and UPC codes.</p>
+                <div class="search-suggestions">
+                    <p><strong>Try searching for:</strong></p>
+                    <div class="suggestion-tags">
+                        <span class="suggestion-tag">iPhone 16 Pro Max</span>
+                        <span class="suggestion-tag">iPhone 15 Plus</span>
+                        <span class="suggestion-tag">iPhone 14 Pro Max</span>
+                        <span class="suggestion-tag">iPhone 13 Pro Max</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2025 Protect Forever. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Data Status Indicator -->
+    <div id="dataStatus" class="data-status" style="display: none;">
+        <i class="fas fa-circle"></i>
+        <span id="statusText">Loading...</span>
+    </div>
+
+    <!-- Refresh Button -->
+    <button id="refreshButton" class="refresh-button" title="Refresh Data">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
