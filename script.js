@@ -115,6 +115,19 @@ const BRAND_LOGOS = {
 let currentSearchResults = [];
 let selectedDeviceIndex = -1;
 
+// Debounce utility function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 // Fallback data in case Google Sheets is unavailable
 const fallbackData = [
     {
@@ -255,8 +268,13 @@ const fallbackData = [
 ];
 
 // DOM elements
-const deviceSearch = document.getElementById('deviceSearch');
-const searchResults = document.getElementById('searchResults');
+const brandStep = document.getElementById('brandStep');
+const modelStep = document.getElementById('modelStep');
+const brandGrid = document.getElementById('brandGrid');
+const modelGrid = document.getElementById('modelGrid');
+const backToBrands = document.getElementById('backToBrands');
+const settingsButton = document.getElementById('settingsButton');
+const settingsMenu = document.getElementById('settingsMenu');
 const resultsModal = document.getElementById('resultsModal');
 const closeModal = document.getElementById('closeModal');
 const emptyState = document.getElementById('emptyState');
@@ -286,54 +304,18 @@ async function loadDataFromGoogleSheets() {
             deviceData = cachedData;
             return;
         }
-
-        // Show loading state
-        showLoadingState();
-        showDataStatus('Getting info from vault...', 'offline');
-
-        let response;
         
-        // Try Google Sheets API v4 first if configured
-        if (CONFIG.USE_GOOGLE_API && CONFIG.GOOGLE_API_KEY !== 'YOUR_GOOGLE_API_KEY_HERE') {
-            try {
-                response = await fetchFromGoogleSheetsAPI();
-            } catch (error) {
-                console.warn('Google Sheets API failed, trying CORS proxies:', error.message);
-                // Fall back to CORS proxies
-                const csvUrl = convertToCsvUrl(CONFIG.GOOGLE_SHEETS_URL);
-                response = await fetchWithCorsProxies(csvUrl);
-            }
+        // Use requestIdleCallback for non-critical data loading
+        if ('requestIdleCallback' in window) {
+            return new Promise((resolve) => {
+                requestIdleCallback(async () => {
+                    await performDataLoad();
+                    resolve();
+                });
+            });
         } else {
-            // Use CORS proxies
-            const csvUrl = convertToCsvUrl(CONFIG.GOOGLE_SHEETS_URL);
-            response = await fetchWithCorsProxies(csvUrl);
+            await performDataLoad();
         }
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const csvText = await response.text();
-        const parsedData = parseCsvData(csvText);
-        
-        if (parsedData.length > 0) {
-            deviceData = parsedData;
-            // Cache the data
-            cacheData(deviceData);
-            console.log(`Loaded ${deviceData.length} devices from Google Sheets`);
-            showDataStatus(`Loaded ${deviceData.length} devices`, 'online');
-            
-            // Update source status
-            updateSourceStatus('Vault', new Date());
-            
-            // Hide status after 3 seconds
-            setTimeout(() => {
-                hideDataStatus();
-            }, 3000);
-        } else {
-            throw new Error('No data found in Google Sheets');
-        }
-        
     } catch (error) {
         console.error('Error loading data from Google Sheets:', error);
         console.log('Falling back to local data');
@@ -350,6 +332,55 @@ async function loadDataFromGoogleSheets() {
         }, 5000);
     } finally {
         hideLoadingState();
+    }
+}
+
+async function performDataLoad() {
+    // Show loading state
+    showLoadingState();
+    showDataStatus('Getting info from vault...', 'offline');
+
+    let response;
+    
+    // Try Google Sheets API v4 first if configured
+    if (CONFIG.USE_GOOGLE_API && CONFIG.GOOGLE_API_KEY !== 'YOUR_GOOGLE_API_KEY_HERE') {
+        try {
+            response = await fetchFromGoogleSheetsAPI();
+        } catch (error) {
+            console.warn('Google Sheets API failed, trying CORS proxies:', error.message);
+            // Fall back to CORS proxies
+            const csvUrl = convertToCsvUrl(CONFIG.GOOGLE_SHEETS_URL);
+            response = await fetchWithCorsProxies(csvUrl);
+        }
+    } else {
+        // Use CORS proxies
+        const csvUrl = convertToCsvUrl(CONFIG.GOOGLE_SHEETS_URL);
+        response = await fetchWithCorsProxies(csvUrl);
+    }
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const csvText = await response.text();
+    const parsedData = parseCsvData(csvText);
+    
+    if (parsedData.length > 0) {
+        deviceData = parsedData;
+        // Cache the data
+        cacheData(deviceData);
+        console.log(`Loaded ${deviceData.length} devices from Google Sheets`);
+        showDataStatus(`Loaded ${deviceData.length} devices`, 'online');
+        
+        // Update source status
+        updateSourceStatus('Vault', new Date());
+        
+        // Hide status after 3 seconds
+        setTimeout(() => {
+            hideDataStatus();
+        }, 3000);
+    } else {
+        throw new Error('No data found in Google Sheets');
     }
 }
 
@@ -721,11 +752,29 @@ function isTouchDevice() {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
+// Application state management
+let clockInterval = null;
+let cleanupFunctions = [];
+
+// Cleanup function to prevent memory leaks
+function addCleanupFunction(fn) {
+    cleanupFunctions.push(fn);
+}
+
+function cleanup() {
+    cleanupFunctions.forEach(fn => fn());
+    cleanupFunctions = [];
+    if (clockInterval) {
+        clearInterval(clockInterval);
+        clockInterval = null;
+    }
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async function() {
     // Initialize clock
     updateClock();
-    setInterval(updateClock, 1000); // Update every second
+    clockInterval = setInterval(updateClock, 1000); // Update every second
     
     // Initialize source status
     initializeSourceStatus();
@@ -743,10 +792,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadDataFromGoogleSheets();
     
     // Initialize UI after data is loaded
-    initializeSearch();
+    initializeDeviceFlow();
     setupEventListeners();
     setupMobileFeatures();
 });
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', cleanup);
 
 // Initialize search functionality
 function initializeSearch() {
@@ -767,24 +819,156 @@ function initializeSearch() {
     console.log('Search initialized with', deviceData.length, 'devices');
 }
 
+// Initialize device flow
+function initializeDeviceFlow() {
+    // Get unique brands
+    const uniqueBrands = [...new Set(deviceData.map(device => device.deviceBrand))];
+    
+    // Clear existing content
+    brandGrid.innerHTML = '';
+    
+    // Create brand cards
+    uniqueBrands.forEach((brand, index) => {
+        const brandCard = createBrandCard(brand, index);
+        brandGrid.appendChild(brandCard);
+    });
+    
+    console.log('Device flow initialized with', uniqueBrands.length, 'brands');
+}
+
+// Create brand card element
+function createBrandCard(brand, index) {
+    const card = document.createElement('div');
+    card.className = 'brand-card';
+    card.dataset.brand = brand;
+    
+    // Count devices for this brand
+    const deviceCount = deviceData.filter(d => d.deviceBrand === brand).length;
+    
+    // Get brand icon
+    const brandIcon = getDeviceIcon(brand);
+    
+    card.innerHTML = `
+        <div class="brand-card-icon">
+            ${brandIcon}
+        </div>
+        <div class="brand-card-info">
+            <h3>${brand}</h3>
+            <p>${deviceCount} Device${deviceCount !== 1 ? 's' : ''}</p>
+        </div>
+    `;
+    
+    // Add click handler
+    card.addEventListener('click', () => selectBrand(brand));
+    
+    // Add entrance animation
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+        card.style.transition = 'all 0.3s ease-out';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, index * 100);
+    
+    return card;
+}
+
+// Create model card element
+function createModelCard(device, index) {
+    const card = document.createElement('div');
+    card.className = 'model-card';
+    card.dataset.deviceModel = device.deviceModel;
+    
+    // Count protection options for this device
+    const protectionCount = deviceData.filter(d => d.deviceModel === device.deviceModel).length;
+    
+    // Get device icon
+    const deviceIcon = getDeviceIcon(device.deviceBrand);
+    
+    card.innerHTML = `
+        <div class="model-card-header">
+            <div class="model-card-icon">
+                ${deviceIcon}
+            </div>
+            <div class="model-card-info">
+                <h3>${device.deviceModel}</h3>
+                <p>${device.deviceBrand} Device</p>
+            </div>
+        </div>
+        <div class="model-card-footer">
+            <span class="protection-count">${protectionCount} Protection${protectionCount !== 1 ? 's' : ''}</span>
+            <span class="device-brand">${device.deviceBrand}</span>
+        </div>
+    `;
+    
+    // Add click handler
+    card.addEventListener('click', () => selectDevice(device));
+    
+    // Add entrance animation
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+        card.style.transition = 'all 0.3s ease-out';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, index * 100);
+    
+    return card;
+}
+
+// Select brand and show models
+function selectBrand(brand) {
+    // Get models for this brand
+    const brandDevices = deviceData.filter(device => device.deviceBrand === brand);
+    const uniqueModels = [...new Map(brandDevices.map(device => [device.deviceModel, device])).values()];
+    
+    // Clear model grid
+    modelGrid.innerHTML = '';
+    
+    // Create model cards
+    uniqueModels.forEach((device, index) => {
+        const modelCard = createModelCard(device, index);
+        modelGrid.appendChild(modelCard);
+    });
+    
+    // Switch to model step
+    brandStep.classList.remove('active');
+    modelStep.classList.add('active');
+    
+    console.log('Selected brand:', brand, 'with', uniqueModels.length, 'models');
+}
+
+// Go back to brand selection
+function goBackToBrands() {
+    modelStep.classList.remove('active');
+    brandStep.classList.add('active');
+}
+
+// Toggle settings menu
+function toggleSettingsMenu() {
+    settingsMenu.classList.toggle('active');
+}
+
+// Close settings menu when clicking outside
+function closeSettingsMenu(event) {
+    if (!settingsButton.contains(event.target) && !settingsMenu.contains(event.target)) {
+        settingsMenu.classList.remove('active');
+    }
+}
+
 // Setup event listeners
 function setupEventListeners() {
-    deviceSearch.addEventListener('input', handleSearchInput);
-    deviceSearch.addEventListener('keydown', handleSearchKeydown);
-    deviceSearch.addEventListener('focus', handleSearchFocus);
     showMdnBtn.addEventListener('click', toggleMdnDisplay);
     refreshButton.addEventListener('click', handleRefresh);
     reloadButton.addEventListener('click', function() {
         window.location.reload();
     });
+    backToBrands.addEventListener('click', goBackToBrands);
+    settingsButton.addEventListener('click', toggleSettingsMenu);
+    document.addEventListener('click', closeSettingsMenu);
     closeModal.addEventListener('click', closeModalWindow);
-    
-    // Hide search results when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!deviceSearch.contains(e.target) && !searchResults.contains(e.target)) {
-            hideSearchResults();
-        }
-    });
     
     // Close modal when clicking outside
     resultsModal.addEventListener('click', function(e) {
@@ -875,6 +1059,7 @@ function displaySearchResults(devices) {
         const resultItem = document.createElement('div');
         resultItem.className = 'search-result-item';
         resultItem.dataset.index = index;
+        resultItem.dataset.deviceModel = device.deviceModel;
         
         const deviceIcon = getDeviceIcon(device.deviceBrand);
         const protectionCount = deviceData.filter(d => d.deviceModel === device.deviceModel).length;
@@ -894,13 +1079,16 @@ function displaySearchResults(devices) {
             </div>
         `;
         
-        resultItem.addEventListener('click', () => selectDevice(device));
-        resultItem.addEventListener('mouseenter', () => {
-            selectedDeviceIndex = index;
-            updateSelectedItem();
-        });
-        
+        // Add staggered entrance animation
+        resultItem.style.opacity = '0';
+        resultItem.style.transform = 'translateX(-20px)';
         searchResults.appendChild(resultItem);
+        
+        setTimeout(() => {
+            resultItem.style.transition = 'all 0.3s ease-out';
+            resultItem.style.opacity = '1';
+            resultItem.style.transform = 'translateX(0)';
+        }, index * 50);
     });
     
     searchResults.style.display = 'block';
@@ -935,19 +1123,43 @@ function updateSelectedItem() {
     });
 }
 
-// Select a device from search results
+// Select a device from device selector
 function selectDevice(device) {
-    deviceSearch.value = `${device.deviceBrand} ${device.deviceModel}`;
-    hideSearchResults();
+    // Add visual feedback for selection
+    const selectedCard = document.querySelector(`[data-device-model="${device.deviceModel}"]`);
+    if (selectedCard) {
+        selectedCard.style.transform = 'scale(0.95)';
+        selectedCard.style.opacity = '0.8';
+        
+        // Add selection animation
+        setTimeout(() => {
+            selectedCard.style.transform = '';
+            selectedCard.style.opacity = '';
+        }, 150);
+    }
     
     // Filter data for selected device
     const deviceOptions = deviceData.filter(d => d.deviceModel === device.deviceModel);
     
     if (deviceOptions.length > 0) {
-        displayDeviceInfo(deviceOptions);
+        // Add delay for smooth transition
+        setTimeout(() => {
+            displayDeviceInfo(deviceOptions);
+        }, 200);
     } else {
         showEmptyState();
     }
+}
+
+// Animate search input when device is selected
+function animateSearchInput() {
+    deviceSearch.style.transform = 'scale(1.05)';
+    deviceSearch.style.boxShadow = '0 0 0 4px rgba(226, 0, 116, 0.3)';
+    
+    setTimeout(() => {
+        deviceSearch.style.transform = '';
+        deviceSearch.style.boxShadow = '';
+    }, 300);
 }
 
 // Get device icon based on brand
@@ -1030,9 +1242,31 @@ function getBrandLogo(brand) {
 function displayDeviceInfo(deviceOptions) {
     const firstOption = deviceOptions[0];
     
+    // Add entrance animation to modal
+    resultsModal.style.opacity = '0';
+    resultsModal.style.transform = 'scale(0.9) translateY(20px)';
+    resultsModal.style.display = 'flex';
+    
+    // Animate modal entrance
+    requestAnimationFrame(() => {
+        resultsModal.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        resultsModal.style.opacity = '1';
+        resultsModal.style.transform = 'scale(1) translateY(0)';
+    });
+    
     // Update device header with icon
     const deviceIconElement = getDeviceIcon(firstOption.deviceBrand);
     deviceIcon.innerHTML = deviceIconElement;
+    
+    // Add animation to device icon
+    const iconElement = deviceIcon.querySelector('i');
+    if (iconElement) {
+        iconElement.style.transform = 'scale(0) rotate(180deg)';
+        setTimeout(() => {
+            iconElement.style.transition = 'transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+            iconElement.style.transform = 'scale(1) rotate(0deg)';
+        }, 100);
+    }
     
     deviceName.textContent = `${firstOption.deviceBrand} ${firstOption.deviceModel}`;
     
@@ -1046,10 +1280,20 @@ function displayDeviceInfo(deviceOptions) {
     // Clear previous options
     optionsGrid.innerHTML = '';
     
-    // Display protection options
-    deviceOptions.forEach(option => {
+    // Display protection options with staggered animation
+    deviceOptions.forEach((option, index) => {
         const optionElement = createProtectionOptionElement(option);
+        
+        // Add staggered entrance animation
+        optionElement.style.opacity = '0';
+        optionElement.style.transform = 'translateY(20px)';
         optionsGrid.appendChild(optionElement);
+        
+        setTimeout(() => {
+            optionElement.style.transition = 'all 0.3s ease-out';
+            optionElement.style.opacity = '1';
+            optionElement.style.transform = 'translateY(0)';
+        }, 100 + (index * 100));
     });
     
     // Store MDN for display
@@ -1094,12 +1338,43 @@ function toggleMdnDisplay() {
     const mdn = showMdnBtn.dataset.mdn;
     
     if (mdnDisplay.style.display === 'none' || mdnDisplay.style.display === '') {
+        // Show MDN with animation
         mdnValue.textContent = mdn;
         mdnDisplay.style.display = 'block';
+        mdnDisplay.style.opacity = '0';
+        mdnDisplay.style.transform = 'scale(0.8) translateY(-10px)';
+        
+        // Animate MDN display entrance
+        requestAnimationFrame(() => {
+            mdnDisplay.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+            mdnDisplay.style.opacity = '1';
+            mdnDisplay.style.transform = 'scale(1) translateY(0)';
+        });
+        
         showMdnBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide MDN';
+        
+        // Add button animation
+        showMdnBtn.style.transform = 'scale(1.1)';
+        setTimeout(() => {
+            showMdnBtn.style.transform = '';
+        }, 200);
     } else {
-        mdnDisplay.style.display = 'none';
+        // Hide MDN with animation
+        mdnDisplay.style.transition = 'all 0.2s ease-in';
+        mdnDisplay.style.opacity = '0';
+        mdnDisplay.style.transform = 'scale(0.8) translateY(-10px)';
+        
+        setTimeout(() => {
+            mdnDisplay.style.display = 'none';
+        }, 200);
+        
         showMdnBtn.innerHTML = '<i class="fas fa-eye"></i> Show MDN';
+        
+        // Add button animation
+        showMdnBtn.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            showMdnBtn.style.transform = '';
+        }, 150);
     }
 }
 
@@ -1246,10 +1521,8 @@ async function handleRefresh() {
         // Reload data from Google Sheets
         await loadDataFromGoogleSheets();
         
-        // Reinitialize search with new data
-        deviceSearch.value = '';
-        hideSearchResults();
-        initializeSearch();
+        // Reinitialize device selector with new data
+        initializeDeviceFlow();
         
         // Show success status
         showDataStatus('Data refreshed successfully', 'online');
