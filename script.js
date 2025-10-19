@@ -1752,14 +1752,16 @@ function createProtectionOptionElement(option) {
     const div = document.createElement('div');
     div.className = 'protection-option';
     
+    // Get device brand icon instead of protection brand logo
+    const deviceBrandIcon = createBrandIcon(option.brand.toLowerCase());
+    
     // Get last 4 digits of UPC
     const lastFourUPC = option.upc.slice(-4);
-    const brandLogo = getBrandLogo(option.brand);
     
     div.innerHTML = `
         <div class="option-header">
             <span class="brand-name">
-                <span class="brand-logo">${brandLogo}</span>
+                <span class="brand-logo">${deviceBrandIcon}</span>
                 ${option.brand}
             </span>
             <span class="protection-type">${option.type}</span>
