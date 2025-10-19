@@ -302,6 +302,7 @@ async function loadDataFromGoogleSheets() {
         if (cachedData) {
             console.log('Using cached data');
             deviceData = cachedData;
+            hideLoadingState(); // Hide loading state when using cached data
             return;
         }
         
@@ -771,7 +772,43 @@ function cleanup() {
 }
 
 // Initialize the application
+// Clear all loading states
+function clearAllLoadingStates() {
+    console.log('Clearing all loading states...');
+    
+    hideLoadingState();
+    hideDataStatus();
+    
+    // Also clear any generic loading elements
+    const genericLoading = document.querySelector('.loading');
+    if (genericLoading) {
+        console.log('Removing generic loading element');
+        genericLoading.remove();
+    }
+    
+    // Clear any loading spinners
+    const spinners = document.querySelectorAll('.fa-spinner');
+    spinners.forEach(spinner => {
+        if (spinner.classList.contains('fa-spin')) {
+            console.log('Removing spinning icon');
+            spinner.parentElement.remove();
+        }
+    });
+    
+    // Clear any loading-state elements
+    const loadingStates = document.querySelectorAll('.loading-state');
+    loadingStates.forEach(state => {
+        console.log('Removing loading state element');
+        state.remove();
+    });
+    
+    console.log('All loading states cleared');
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
+    // Clear any existing loading states first
+    clearAllLoadingStates();
+    
     // Initialize clock
     updateClock();
     clockInterval = setInterval(updateClock, 1000); // Update every second
@@ -795,28 +832,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     initializeDeviceFlow();
     setupEventListeners();
     setupMobileFeatures();
+    
+    // Ensure loading states are hidden
+    clearAllLoadingStates();
 });
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', cleanup);
 
-// Initialize search functionality
+// Initialize search functionality (replaced with device flow)
 function initializeSearch() {
-    // Clear search input
-    deviceSearch.value = '';
-    hideSearchResults();
-    
-    // Add some popular search suggestions
-    const popularDevices = [
-        'iPhone 16 Pro Max',
-        'iPhone 15 Plus',
-        'iPhone 14 Pro Max',
-        'iPhone 13 Pro Max',
-        'iPhone 12/12Pro'
-    ];
-    
-    // You could add autocomplete suggestions here if needed
-    console.log('Search initialized with', deviceData.length, 'devices');
+    console.log('Search functionality replaced with device flow');
 }
 
 // Initialize device flow
@@ -1014,12 +1040,9 @@ function handleSearchInput(e) {
     }
 }
 
-// Handle search focus
+// Handle search focus (replaced with device flow)
 function handleSearchFocus() {
-    const query = deviceSearch.value.trim().toLowerCase();
-    if (query.length >= 2) {
-        handleSearchInput({ target: deviceSearch });
-    }
+    console.log('Search focus handling replaced with device flow');
 }
 
 // Handle search keyboard navigation
@@ -1151,15 +1174,9 @@ function selectDevice(device) {
     }
 }
 
-// Animate search input when device is selected
+// Animate search input when device is selected (replaced with device flow)
 function animateSearchInput() {
-    deviceSearch.style.transform = 'scale(1.05)';
-    deviceSearch.style.boxShadow = '0 0 0 4px rgba(226, 0, 116, 0.3)';
-    
-    setTimeout(() => {
-        deviceSearch.style.transform = '';
-        deviceSearch.style.boxShadow = '';
-    }, 300);
+    console.log('Search input animation replaced with device flow');
 }
 
 // Get device icon based on brand
@@ -1391,9 +1408,7 @@ function showResults() {
 // Close modal window
 function closeModalWindow() {
     resultsModal.style.display = 'none';
-    // Clear search input
-    deviceSearch.value = '';
-    hideSearchResults();
+    // Search functionality replaced with device flow
 }
 
 // Show empty state
@@ -1462,16 +1477,6 @@ function enhanceDeviceSelect() {
 document.addEventListener('DOMContentLoaded', function() {
     // Add smooth scrolling
     document.documentElement.style.scrollBehavior = 'smooth';
-    
-    // Add focus management for search input
-    deviceSearch.addEventListener('focus', function() {
-        this.style.outline = '2px solid #e20074';
-        this.style.outlineOffset = '2px';
-    });
-    
-    deviceSearch.addEventListener('blur', function() {
-        this.style.outline = 'none';
-    });
 });
 
 // Add error handling
@@ -1572,13 +1577,7 @@ function setupMobileFeatures() {
             viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
         }
         
-        // Add touch-friendly search input
-        deviceSearch.addEventListener('focus', function() {
-            // Scroll to top on mobile when searching
-            if (window.innerWidth <= 768) {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        });
+        // Mobile optimizations complete
         
         // Add swipe gestures for modal (optional)
         let startY = 0;
