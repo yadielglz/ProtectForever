@@ -379,8 +379,12 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 }
 
 .header-icon {
-    font-size: 2.5rem;
-    color: var(--primary-color);
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    object-fit: cover;
+    margin-right: var(--spacing-md);
 }
 
 /* Settings Button and Menu */
@@ -503,7 +507,7 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 /* Left section - Date */
 .bottom-left {
     display: flex;
-    justify-content: flex-start;
+    justify-content: center; /* Changed from flex-start to center */
     align-items: center;
 }
 
@@ -545,7 +549,7 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 /* Right section - Status */
 .bottom-right {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center; /* Changed from flex-end to center */
     align-items: center;
 }
 
@@ -2177,7 +2181,7 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     }
     
     .bottom-left {
-        justify-content: flex-start;
+        justify-content: center; /* Center instead of flex-start */
     }
     
     .bottom-center {
@@ -2185,7 +2189,7 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     }
     
     .bottom-right {
-        justify-content: flex-end;
+        justify-content: center; /* Center instead of flex-end */
     }
     
     /* Compact clock for mobile */
