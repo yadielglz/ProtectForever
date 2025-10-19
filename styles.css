@@ -297,6 +297,31 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     overflow: hidden;
 }
 
+/* Add bottom padding for mobile to prevent bottom bar hiding */
+@media (max-width: 768px) {
+    .container {
+        padding-bottom: 60px; /* Space for bottom bar */
+        height: calc(100vh - 60px);
+        min-height: calc(100vh - 60px);
+    }
+    
+    body {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        /* Prevent iOS Safari from hiding content */
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Ensure bottom bar is always visible on mobile */
+    .bottom-bar {
+        z-index: 9999;
+        bottom: env(safe-area-inset-bottom, 0px);
+        /* Additional iOS Safari fixes */
+        position: fixed;
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+    }
+}
+
 /* Header Styles */
 .header {
     margin-bottom: 40px;
@@ -437,8 +462,10 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 100;
+    z-index: 1000;
     width: 100%;
+    /* Ensure it's above mobile browser UI */
+    bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .bottom-bar-content {
@@ -1946,8 +1973,26 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 /* Mobile-First Responsive Design */
 
 /* Large Mobile / Small Tablet */
+/* Inactivity Warning Animation */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
 /* Extra Small Mobile Screens */
 @media (max-width: 360px) {
+    .container {
+        padding-bottom: 50px; /* Smaller space for extra small screens */
+        height: calc(100vh - 50px);
+        min-height: calc(100vh - 50px);
+    }
+    
     .bottom-bar-content {
         padding: 3px var(--spacing-xs);
         gap: 4px;

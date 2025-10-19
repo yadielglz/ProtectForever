@@ -3,6 +3,13 @@ const PASSCODE = '6974';
 let currentPasscode = '';
 let isAuthenticated = false;
 
+// Inactivity timeout variables
+let inactivityTimeout;
+let warningTimeout;
+const INACTIVITY_TIMEOUT = 35000; // 35 seconds of inactivity
+const WARNING_TIME = 5000; // Show warning 5 seconds before timeout
+let lastActivityTime = Date.now();
+
 // Passcode Screen Elements
 const passcodeScreen = document.getElementById('passcodeScreen');
 const mainApp = document.getElementById('mainApp');
@@ -845,6 +852,16 @@ function cleanup() {
         clearInterval(clockInterval);
         clockInterval = null;
     }
+    
+    // Clear inactivity timeouts
+    if (inactivityTimeout) {
+        clearTimeout(inactivityTimeout);
+        inactivityTimeout = null;
+    }
+    if (warningTimeout) {
+        clearTimeout(warningTimeout);
+        warningTimeout = null;
+    }
 }
 
 // Initialize the application
@@ -903,6 +920,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     console.log('PIN screen initialized. Waiting for authentication...');
+    
+    // Setup inactivity timeout tracking
+    setupInactivityTracking();
     
     // Debug: Add manual show main app function to window for testing
     window.showMainApp = function() {
@@ -981,6 +1001,9 @@ function verifyPasscode() {
             
             // Initialize the main app
             initializeMainApp();
+            
+            // Start inactivity timeout
+            resetInactivityTimeout();
         }, 100);
     } else {
         console.log('PIN incorrect - showing error');
@@ -998,6 +1021,143 @@ function showPasscodeError() {
 
 function hidePasscodeError() {
     passcodeError.classList.remove('show');
+}
+
+// Inactivity Timeout Functions
+function resetInactivityTimeout() {
+    lastActivityTime = Date.now();
+    
+    // Clear existing timeouts
+    if (inactivityTimeout) {
+        clearTimeout(inactivityTimeout);
+    }
+    if (warningTimeout) {
+        clearTimeout(warningTimeout);
+    }
+    
+    // Only set timeout if user is authenticated
+    if (isAuthenticated) {
+        // Set warning timeout (5 seconds before main timeout)
+        warningTimeout = setTimeout(() => {
+            showInactivityWarning();
+        }, INACTIVITY_TIMEOUT - WARNING_TIME);
+        
+        // Set main timeout
+        inactivityTimeout = setTimeout(() => {
+            lockApp();
+        }, INACTIVITY_TIMEOUT);
+    }
+}
+
+function showInactivityWarning() {
+    console.log('Showing inactivity warning');
+    
+    // Create or show warning notification
+    let warningDiv = document.getElementById('inactivityWarning');
+    if (!warningDiv) {
+        warningDiv = document.createElement('div');
+        warningDiv.id = 'inactivityWarning';
+        warningDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff6b35;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10000;
+            font-family: 'Google Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideDown 0.3s ease-out;
+        `;
+        document.body.appendChild(warningDiv);
+    }
+    
+    warningDiv.textContent = 'App will lock in 5 seconds due to inactivity';
+    warningDiv.style.display = 'block';
+    
+    // Auto-hide warning after 5 seconds
+    setTimeout(() => {
+        if (warningDiv) {
+            warningDiv.style.display = 'none';
+        }
+    }, WARNING_TIME);
+}
+
+function lockApp() {
+    console.log('App locked due to inactivity');
+    
+    // Reset authentication
+    isAuthenticated = false;
+    
+    // Clear timeouts
+    if (inactivityTimeout) {
+        clearTimeout(inactivityTimeout);
+        inactivityTimeout = null;
+    }
+    if (warningTimeout) {
+        clearTimeout(warningTimeout);
+        warningTimeout = null;
+    }
+    
+    // Hide warning if visible
+    const warningDiv = document.getElementById('inactivityWarning');
+    if (warningDiv) {
+        warningDiv.style.display = 'none';
+    }
+    
+    // Show PIN screen
+    passcodeScreen.style.display = 'flex';
+    passcodeScreen.style.visibility = 'visible';
+    
+    // Hide main app
+    mainApp.style.display = 'none';
+    mainApp.style.visibility = 'hidden';
+    
+    // Remove authenticated class from body
+    document.body.classList.remove('authenticated');
+    
+    // Clear current passcode
+    currentPasscode = '';
+    updatePasscodeDots();
+    hidePasscodeError();
+    
+    // Reset activity time
+    lastActivityTime = Date.now();
+}
+
+function trackUserActivity() {
+    lastActivityTime = Date.now();
+    resetInactivityTimeout();
+}
+
+function setupInactivityTracking() {
+    // Events that indicate user activity
+    const activityEvents = [
+        'mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'
+    ];
+    
+    // Add event listeners to track user activity
+    activityEvents.forEach(event => {
+        document.addEventListener(event, trackUserActivity, true);
+    });
+    
+    // Also track visibility changes (when user switches tabs/apps)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            // User switched away - don't reset timeout
+            console.log('App hidden - timeout continues');
+        } else {
+            // User returned - reset timeout
+            console.log('App visible - resetting timeout');
+            trackUserActivity();
+        }
+    });
+    
+    console.log('Inactivity tracking setup complete');
 }
 
 function initializeMainApp() {
