@@ -348,20 +348,29 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 
 .header-content {
     color: var(--text-primary);
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
+    gap: var(--spacing-md);
 }
 
 .header-left {
     display: flex;
     align-items: center;
-    gap: var(--spacing-lg);
+    justify-content: flex-start;
+}
+
+.header-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .header-right {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
 }
 
 .header-text h1 {
@@ -384,7 +393,6 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     object-fit: cover;
-    margin-right: var(--spacing-md);
 }
 
 /* Settings Button and Menu */
@@ -2141,6 +2149,15 @@ button, .protection-option, .search-result-item, .suggestion-tag {
         border-radius: var(--radius-md);
     }
     
+    .header-content {
+        gap: var(--spacing-sm);
+    }
+    
+    .header-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
     .header-text h1 {
         font-size: 1.6rem;
         margin-bottom: var(--spacing-xs);
@@ -2148,10 +2165,6 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     
     .subtitle {
         font-size: 0.85rem;
-    }
-    
-    .header-icon {
-        font-size: 1.8rem;
     }
     
     .settings-button {
