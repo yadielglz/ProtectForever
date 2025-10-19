@@ -338,6 +338,20 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     overflow-y: auto;
 }
 
+/* Sort Icons */
+.sort-icon {
+    margin-right: var(--spacing-sm);
+    color: var(--primary-color);
+    font-size: 0.9em;
+    opacity: 0.8;
+    transition: all var(--animation-duration) var(--animation-easing);
+}
+
+.step-title:hover .sort-icon {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
 /* Device Flow Section */
 .device-flow-section {
     width: 100%;
@@ -515,7 +529,7 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.protection-count {
+.unit-count {
     background: var(--primary-color);
     color: white;
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -595,6 +609,65 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     font-size: 0.9rem;
     color: var(--text-secondary);
     margin: 0;
+}
+
+/* Model Card Availability Styles */
+.availability-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    width: 100%;
+}
+
+.availability-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    transition: all var(--animation-duration) var(--animation-easing);
+}
+
+.availability-status.available {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.1));
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.availability-status.unavailable {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.availability-details {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Model Card Footer Updates */
+.model-card-footer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(248, 250, 252, 0.8));
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.model-card-footer .device-brand {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-align: center;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* Model Card Styles */
@@ -1951,9 +2024,21 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     .model-card-footer {
         margin-top: var(--spacing-xs);
         padding-top: var(--spacing-xs);
+        gap: var(--spacing-xs);
     }
     
-    .protection-count {
+    /* Mobile Availability Styles */
+    .availability-status {
+        font-size: 0.75rem;
+        padding: var(--spacing-xs);
+    }
+    
+    .availability-details {
+        font-size: 0.7rem;
+        justify-content: center;
+    }
+    
+    .unit-count {
         font-size: 0.7rem;
         padding: var(--spacing-xs) var(--spacing-sm);
     }

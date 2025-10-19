@@ -15,8 +15,66 @@ const CONFIG = typeof PROTECT_SERVE_CONFIG !== 'undefined' ? PROTECT_SERVE_CONFI
     DEBUG_MODE: true
 };
 
-// Device data - will be loaded from Google Sheets
-let deviceData = [];
+// Brand priority for sorting (most popular first)
+const BRAND_PRIORITY = {
+    'Apple': 1,
+    'Samsung': 2,
+    'Google': 3,
+    'Pixel': 3, // Same as Google
+    'Motorola': 4,
+    'OnePlus': 5,
+    'Huawei': 6,
+    'Xiaomi': 7,
+    'Oppo': 8,
+    'Vivo': 9,
+    'LG': 10,
+    'Sony': 11,
+    'Nokia': 12,
+    'BlackBerry': 13,
+    'Revvl': 14
+};
+
+// Sort brands by priority and popularity
+function sortBrands(brands) {
+    return brands.sort((a, b) => {
+        const priorityA = BRAND_PRIORITY[a] || 999;
+        const priorityB = BRAND_PRIORITY[b] || 999;
+        
+        // First sort by priority
+        if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+        }
+        
+        // Then sort alphabetically for brands with same priority
+        return a.localeCompare(b);
+    });
+}
+
+// Sort models alphabetically within a brand
+function sortModels(models) {
+    return models.sort((a, b) => {
+        // Extract model numbers for better sorting
+        const modelA = a.deviceModel.toLowerCase();
+        const modelB = b.deviceModel.toLowerCase();
+        
+        // Try to extract numbers for numeric sorting
+        const numA = modelA.match(/\d+/);
+        const numB = modelB.match(/\d+/);
+        
+        if (numA && numB) {
+            const numAVal = parseInt(numA[0]);
+            const numBVal = parseInt(numB[0]);
+            
+            // If numbers are different, sort by number (descending for newer models first)
+            if (numAVal !== numBVal) {
+                return numBVal - numAVal;
+            }
+        }
+        
+        // Otherwise sort alphabetically
+        return modelA.localeCompare(modelB);
+    });
+}
 
 // Device brand icon mapping
 const DEVICE_BRAND_ICONS = {
@@ -809,6 +867,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Clear any existing loading states first
     clearAllLoadingStates();
     
+    // Register Service Worker for PWA functionality
+    if ('serviceWorker' in navigator) {
+        try {
+            await navigator.serviceWorker.register('/sw.js');
+            console.log('Service Worker registered successfully');
+        } catch (error) {
+            console.log('Service Worker registration failed:', error);
+        }
+    }
+    
     // Initialize clock
     updateClock();
     clockInterval = setInterval(updateClock, 1000); // Update every second
@@ -847,19 +915,20 @@ function initializeSearch() {
 
 // Initialize device flow
 function initializeDeviceFlow() {
-    // Get unique brands
+    // Get unique brands and sort them
     const uniqueBrands = [...new Set(deviceData.map(device => device.deviceBrand))];
+    const sortedBrands = sortBrands(uniqueBrands);
     
     // Clear existing content
     brandGrid.innerHTML = '';
     
-    // Create brand cards
-    uniqueBrands.forEach((brand, index) => {
+    // Create brand cards in sorted order
+    sortedBrands.forEach((brand, index) => {
         const brandCard = createBrandCard(brand, index);
         brandGrid.appendChild(brandCard);
     });
     
-    console.log('Device flow initialized with', uniqueBrands.length, 'brands');
+    console.log('Device flow initialized with', sortedBrands.length, 'brands (sorted by popularity)');
 }
 
 // Create brand card element
@@ -906,8 +975,16 @@ function createModelCard(device, index) {
     card.className = 'model-card';
     card.dataset.deviceModel = device.deviceModel;
     
-    // Count protection options for this device
-    const protectionCount = deviceData.filter(d => d.deviceModel === device.deviceModel).length;
+    // Count units for this device
+    const unitCount = deviceData.filter(d => d.deviceModel === device.deviceModel).length;
+    
+    // Check if any protection options are available
+    const hasAvailableOptions = deviceData.some(d => d.deviceModel === device.deviceModel && d.available);
+    
+    // Simple availability status
+    const availabilityStatus = hasAvailableOptions ? 'Available' : 'Unavailable';
+    const availabilityClass = hasAvailableOptions ? 'available' : 'unavailable';
+    const availabilityIcon = hasAvailableOptions ? 'fas fa-check-circle' : 'fas fa-times-circle';
     
     // Get device icon
     const deviceIcon = getDeviceIcon(device.deviceBrand);
@@ -923,7 +1000,15 @@ function createModelCard(device, index) {
             </div>
         </div>
         <div class="model-card-footer">
-            <span class="protection-count">${protectionCount} Protection${protectionCount !== 1 ? 's' : ''}</span>
+            <div class="availability-info">
+                <div class="availability-status ${availabilityClass}">
+                    <i class="${availabilityIcon}"></i>
+                    <span>${availabilityStatus}</span>
+                </div>
+                <div class="availability-details">
+                    <span class="unit-count">${unitCount} Unit${unitCount !== 1 ? 's' : ''}</span>
+                </div>
+            </div>
             <span class="device-brand">${device.deviceBrand}</span>
         </div>
     `;
@@ -950,11 +1035,14 @@ function selectBrand(brand) {
     const brandDevices = deviceData.filter(device => device.deviceBrand === brand);
     const uniqueModels = [...new Map(brandDevices.map(device => [device.deviceModel, device])).values()];
     
+    // Sort models by name and number
+    const sortedModels = sortModels(uniqueModels);
+    
     // Clear model grid
     modelGrid.innerHTML = '';
     
-    // Create model cards
-    uniqueModels.forEach((device, index) => {
+    // Create model cards in sorted order
+    sortedModels.forEach((device, index) => {
         const modelCard = createModelCard(device, index);
         modelGrid.appendChild(modelCard);
     });
@@ -963,7 +1051,7 @@ function selectBrand(brand) {
     brandStep.classList.remove('active');
     modelStep.classList.add('active');
     
-    console.log('Selected brand:', brand, 'with', uniqueModels.length, 'models');
+    console.log('Selected brand:', brand, 'with', sortedModels.length, 'models (sorted)');
 }
 
 // Go back to brand selection
@@ -1085,12 +1173,12 @@ function displaySearchResults(devices) {
         resultItem.dataset.deviceModel = device.deviceModel;
         
         const deviceIcon = getDeviceIcon(device.deviceBrand);
-        const protectionCount = deviceData.filter(d => d.deviceModel === device.deviceModel).length;
+        const unitCount = deviceData.filter(d => d.deviceModel === device.deviceModel).length;
         
-        // Accurate protection count for search results
-        const protectionText = protectionCount === 1 ? 
-            '1 protection option available' : 
-            `${protectionCount} protection options available`;
+        // Accurate unit count for search results
+        const unitText = unitCount === 1 ? 
+            '1 unit available' : 
+            `${unitCount} units available`;
         
         resultItem.innerHTML = `
             <div class="device-icon-small">
@@ -1098,7 +1186,7 @@ function displaySearchResults(devices) {
             </div>
             <div class="device-info-small">
                 <div class="device-name-small">${device.deviceBrand} ${device.deviceModel}</div>
-                <div class="device-details-small">${protectionText}</div>
+                <div class="device-details-small">${unitText}</div>
             </div>
         `;
         
@@ -1287,11 +1375,11 @@ function displayDeviceInfo(deviceOptions) {
     
     deviceName.textContent = `${firstOption.deviceBrand} ${firstOption.deviceModel}`;
     
-    // Accurate protection options count
+    // Accurate unit count
     if (deviceOptions.length === 1) {
-        deviceModel.textContent = `1 protection option available`;
+        deviceModel.textContent = `1 unit available`;
     } else {
-        deviceModel.textContent = `${deviceOptions.length} protection options available`;
+        deviceModel.textContent = `${deviceOptions.length} units available`;
     }
     
     // Clear previous options
