@@ -1,3 +1,17 @@
+// Passcode Configuration
+const PASSCODE = '6974';
+let currentPasscode = '';
+let isAuthenticated = false;
+
+// Passcode Screen Elements
+const passcodeScreen = document.getElementById('passcodeScreen');
+const mainApp = document.getElementById('mainApp');
+const passcodeTime = document.getElementById('passcodeTime');
+const passcodeDate = document.getElementById('passcodeDate');
+const passcodeDots = document.querySelectorAll('.passcode-dot');
+const passcodeKeys = document.querySelectorAll('.passcode-key');
+const passcodeError = document.getElementById('passcodeError');
+
 // Configuration - loaded from config.js
 const CONFIG = typeof PROTECT_SERVE_CONFIG !== 'undefined' ? PROTECT_SERVE_CONFIG : {
     // Fallback configuration if config.js is not loaded
@@ -743,8 +757,12 @@ function updateClock() {
     };
     const timeString = now.toLocaleTimeString('en-US', timeOptions);
     
-    // Format date
-    const dateOptions = {
+    // Format date - compact for mobile
+    const isMobile = window.innerWidth <= 768;
+    const dateOptions = isMobile ? {
+        month: 'short',
+        day: 'numeric'
+    } : {
         weekday: 'long',
         month: 'short',
         day: 'numeric'
@@ -867,6 +885,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Clear any existing loading states first
     clearAllLoadingStates();
     
+    // Ensure passcode screen is visible
+    passcodeScreen.style.display = 'flex';
+    mainApp.style.display = 'none';
+    
+    // Initialize passcode screen
+    setupPasscodeEventListeners();
+    
     // Register Service Worker for PWA functionality
     if ('serviceWorker' in navigator) {
         try {
@@ -877,9 +902,108 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
     
-    // Initialize clock
+    console.log('PIN screen initialized. Waiting for authentication...');
+    
+    // Debug: Add manual show main app function to window for testing
+    window.showMainApp = function() {
+        console.log('Manually showing main app...');
+        passcodeScreen.style.display = 'none';
+        mainApp.style.display = 'block';
+        mainApp.style.visibility = 'visible';
+        mainApp.style.opacity = '1';
+        console.log('Main app should now be visible');
+    };
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', cleanup);
+
+// PIN Functions
+
+function updatePasscodeDots() {
+    passcodeDots.forEach((dot, index) => {
+        if (index < currentPasscode.length) {
+            dot.classList.add('filled');
+        } else {
+            dot.classList.remove('filled');
+        }
+    });
+}
+
+function addPasscodeDigit(digit) {
+    if (currentPasscode.length < 4) {
+        currentPasscode += digit;
+        updatePasscodeDots();
+        hidePasscodeError();
+        
+        // Auto-submit when 4 digits are entered
+        if (currentPasscode.length === 4) {
+            setTimeout(() => {
+                verifyPasscode();
+            }, 300);
+        }
+    }
+}
+
+function clearPasscode() {
+    currentPasscode = '';
+    updatePasscodeDots();
+    hidePasscodeError();
+}
+
+function verifyPasscode() {
+    console.log('Verifying passcode:', currentPasscode, 'Expected:', PASSCODE);
+    
+    if (currentPasscode === PASSCODE) {
+        console.log('PIN correct - transitioning to main app');
+        // Correct passcode - show main app
+        isAuthenticated = true;
+        
+        // Force hide passcode screen
+        passcodeScreen.style.display = 'none';
+        passcodeScreen.style.visibility = 'hidden';
+        
+        // Use setTimeout to ensure DOM updates
+        setTimeout(() => {
+            // Add authenticated class to body for CSS targeting
+            document.body.classList.add('authenticated');
+            
+            // Force show main app with multiple methods
+            mainApp.style.display = 'block';
+            mainApp.style.visibility = 'visible';
+            mainApp.style.opacity = '1';
+            mainApp.classList.remove('hidden');
+            
+            console.log('Main app display:', mainApp.style.display);
+            console.log('Main app visibility:', mainApp.style.visibility);
+            console.log('Main app offsetParent:', mainApp.offsetParent);
+            console.log('Body has authenticated class:', document.body.classList.contains('authenticated'));
+            
+            // Initialize the main app
+            initializeMainApp();
+        }, 100);
+    } else {
+        console.log('PIN incorrect - showing error');
+        // Wrong passcode - show error and clear
+        showPasscodeError();
+        setTimeout(() => {
+            clearPasscode();
+        }, 1000);
+    }
+}
+
+function showPasscodeError() {
+    passcodeError.classList.add('show');
+}
+
+function hidePasscodeError() {
+    passcodeError.classList.remove('show');
+}
+
+function initializeMainApp() {
+    // Initialize clock for main app
     updateClock();
-    clockInterval = setInterval(updateClock, 1000); // Update every second
+    clockInterval = setInterval(updateClock, 1000);
     
     // Initialize source status
     initializeSourceStatus();
@@ -893,20 +1017,62 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.body.classList.add('touch-device');
     }
     
-    // Load data from Google Sheets first
-    await loadDataFromGoogleSheets();
-    
-    // Initialize UI after data is loaded
-    initializeDeviceFlow();
-    setupEventListeners();
-    setupMobileFeatures();
-    
-    // Ensure loading states are hidden
-    clearAllLoadingStates();
-});
+    // Load data from Google Sheets
+    loadDataFromGoogleSheets().then(() => {
+        // Validate data before initializing UI
+        if (!validateDeviceData()) {
+            console.error('Invalid device data after loading');
+            return;
+        }
+        
+        // Initialize UI after data is loaded and validated
+        initializeDeviceFlow();
+        setupEventListeners();
+        setupMobileFeatures();
+        
+        // Ensure loading states are hidden
+        clearAllLoadingStates();
+        
+        console.log('Main app initialized successfully');
+    }).catch(error => {
+        console.error('Failed to load device data:', error);
+        handleError(error);
+    });
+}
 
-// Cleanup on page unload
-window.addEventListener('beforeunload', cleanup);
+function setupPasscodeEventListeners() {
+    // Keypad event listeners
+    passcodeKeys.forEach(key => {
+        key.addEventListener('click', () => {
+            const keyValue = key.dataset.key;
+            
+            if (keyValue === 'clear') {
+                clearPasscode();
+            } else if (keyValue === 'enter') {
+                verifyPasscode();
+            } else if (keyValue >= '0' && keyValue <= '9') {
+                addPasscodeDigit(keyValue);
+            }
+        });
+    });
+    
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+        // Only handle keys when passcode screen is visible
+        if (passcodeScreen.style.display !== 'none') {
+            if (e.key >= '0' && e.key <= '9') {
+                e.preventDefault();
+                addPasscodeDigit(e.key);
+            } else if (e.key === 'Backspace') {
+                e.preventDefault();
+                clearPasscode();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                verifyPasscode();
+            }
+        }
+    });
+}
 
 // Initialize search functionality (replaced with device flow)
 function initializeSearch() {
@@ -1591,6 +1757,11 @@ function handleError(error) {
 
 // Add data validation
 function validateDeviceData() {
+    if (!deviceData || deviceData.length === 0) {
+        console.log('Device data not yet loaded');
+        return false;
+    }
+    
     return deviceData.every(device => {
         return device.mdn && 
                device.deviceBrand && 
@@ -1712,12 +1883,3 @@ function setupMobileFeatures() {
     }
 }
 
-// Initialize with validation
-document.addEventListener('DOMContentLoaded', function() {
-    if (!validateDeviceData()) {
-        handleError(new Error('Invalid device data'));
-        return;
-    }
-    
-    console.log('Protect Forever application initialized successfully');
-});

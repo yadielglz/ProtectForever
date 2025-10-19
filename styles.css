@@ -1,3 +1,207 @@
+/* Main App Visibility Override */
+#mainApp {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+#mainApp.hidden {
+    display: none !important;
+}
+
+/* Ensure main app is visible when PIN is correct */
+body.authenticated #mainApp {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+body.authenticated #passcodeScreen {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Streamlined PIN Screen Styles */
+#passcodeScreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 9999 !important;
+    font-family: 'Google Sans', sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#passcodeScreen .passcode-container {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 16px !important;
+    padding: 30px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    max-width: 320px !important;
+    width: 90% !important;
+    text-align: center !important;
+}
+
+#passcodeScreen .passcode-header {
+    margin-bottom: 25px !important;
+}
+
+#passcodeScreen .passcode-app-icon {
+    font-size: 2rem !important;
+    color: #e20074 !important;
+    margin-bottom: 10px !important;
+}
+
+#passcodeScreen .passcode-title {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    margin: 0 0 5px 0 !important;
+}
+
+#passcodeScreen .passcode-subtitle {
+    font-size: 0.9rem !important;
+    color: #666 !important;
+    margin: 0 !important;
+}
+
+#passcodeScreen .passcode-prompt {
+    margin-bottom: 20px !important;
+}
+
+#passcodeScreen .passcode-prompt h2 {
+    font-size: 1.1rem !important;
+    font-weight: 500 !important;
+    color: #333 !important;
+    margin: 0 0 5px 0 !important;
+}
+
+#passcodeScreen .passcode-prompt p {
+    font-size: 0.8rem !important;
+    color: #666 !important;
+    margin: 0 !important;
+}
+
+#passcodeScreen .passcode-display {
+    margin-bottom: 20px !important;
+}
+
+#passcodeScreen .passcode-dots {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 12px !important;
+}
+
+#passcodeScreen .passcode-dot {
+    width: 16px !important;
+    height: 16px !important;
+    border-radius: 50% !important;
+    background: #e0e0e0 !important;
+    border: 2px solid #ccc !important;
+    transition: all 0.3s ease !important;
+}
+
+#passcodeScreen .passcode-dot.filled {
+    background: #667eea !important;
+    border-color: #667eea !important;
+    transform: scale(1.1) !important;
+}
+
+#passcodeScreen .passcode-keypad {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px !important;
+    margin-bottom: 15px !important;
+    max-width: 240px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+#passcodeScreen .passcode-key {
+    width: 60px !important;
+    height: 60px !important;
+    border: none !important;
+    border-radius: 50% !important;
+    background: #f8f9fa !important;
+    color: #333 !important;
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#passcodeScreen .passcode-key:hover {
+    background: #667eea !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+}
+
+#passcodeScreen .passcode-key:active {
+    transform: translateY(0) !important;
+}
+
+#passcodeScreen .passcode-key-clear,
+#passcodeScreen .passcode-key-enter {
+    background: #e20074 !important;
+    color: white !important;
+}
+
+#passcodeScreen .passcode-key-clear:hover,
+#passcodeScreen .passcode-key-enter:hover {
+    background: #c7006b !important;
+}
+
+#passcodeScreen .passcode-error {
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 10px !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+    border-radius: 8px !important;
+    color: #ef4444 !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+}
+
+#passcodeScreen .passcode-error.show {
+    display: flex !important;
+}
+
+/* Mobile PIN Styles */
+@media (max-width: 480px) {
+    #passcodeScreen .passcode-container {
+        padding: 25px 20px !important;
+        max-width: 300px !important;
+    }
+    
+    #passcodeScreen .passcode-key {
+        width: 55px !important;
+        height: 55px !important;
+        font-size: 1.1rem !important;
+    }
+    
+    #passcodeScreen .passcode-keypad {
+        gap: 10px !important;
+        max-width: 200px !important;
+    }
+}
+
 :root {
     /* Color Variables */
     --primary-color: #E20074;
@@ -238,58 +442,63 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 }
 
 .bottom-bar-content {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    padding: var(--spacing-md) var(--spacing-xl);
+    padding: var(--spacing-sm) var(--spacing-xl);
     max-width: 1200px;
     margin: 0 auto;
+    gap: var(--spacing-md);
+    min-height: 50px;
 }
 
-.clock-section {
+/* Left section - Date */
+.bottom-left {
     display: flex;
+    justify-content: flex-start;
     align-items: center;
 }
 
-/* Action buttons moved to settings menu */
+.bottom-left .date {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
 
-.status-section {
+/* Center section - Clock */
+.bottom-center {
     display: flex;
+    justify-content: center;
     align-items: center;
 }
 
-/* Clock Styles */
-.clock-container {
+.bottom-center .clock-container {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
     background: rgba(226, 0, 116, 0.05);
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-md);
     border-radius: var(--radius-sm);
     border: 1px solid rgba(226, 0, 116, 0.1);
 }
 
-.clock-icon {
+.bottom-center .clock-icon {
     font-size: 1rem;
     color: var(--primary-color);
 }
 
-.clock {
-    text-align: left;
-}
-
-.time {
+.bottom-center .time {
     font-size: 1.1rem;
     font-weight: 600;
     line-height: 1;
     color: var(--text-primary);
 }
 
-.date {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    font-weight: 400;
-    margin-top: 2px;
+/* Right section - Status */
+.bottom-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }
 
 /* Source Status Styles */
@@ -298,7 +507,7 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     align-items: center;
     gap: var(--spacing-sm);
     background: rgba(16, 185, 129, 0.05);
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-md);
     border-radius: var(--radius-sm);
     border: 1px solid rgba(16, 185, 129, 0.1);
 }
@@ -1737,6 +1946,46 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 /* Mobile-First Responsive Design */
 
 /* Large Mobile / Small Tablet */
+/* Extra Small Mobile Screens */
+@media (max-width: 360px) {
+    .bottom-bar-content {
+        padding: 3px var(--spacing-xs);
+        gap: 4px;
+        min-height: 32px;
+    }
+    
+    .bottom-center .clock-container {
+        padding: 1px 4px;
+        gap: 2px;
+    }
+    
+    .bottom-right .source-status {
+        padding: 1px 4px;
+        gap: 2px;
+    }
+    
+    .bottom-center .time {
+        font-size: 0.7rem;
+    }
+    
+    .bottom-center .clock-icon {
+        font-size: 0.65rem;
+    }
+    
+    .bottom-left .date {
+        font-size: 0.6rem;
+        max-width: 60px;
+    }
+    
+    .source-icon {
+        font-size: 0.6rem;
+    }
+    
+    .bottom-right .source-status::after {
+        font-size: 0.6rem;
+    }
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 15px;
@@ -1809,41 +2058,71 @@ button, .protection-option, .search-result-item, .suggestion-tag {
         font-size: 0.8rem;
     }
     
-    /* Mobile Bottom Bar */
+    /* Mobile Bottom Bar - Horizontal Layout */
     .bottom-bar-content {
-        flex-direction: column;
+        grid-template-columns: 1fr auto 1fr;
         gap: var(--spacing-xs);
-        padding: var(--spacing-sm);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        min-height: 40px;
     }
     
-    .clock-section,
-    .status-section {
-        width: 100%;
+    .bottom-left {
+        justify-content: flex-start;
+    }
+    
+    .bottom-center {
         justify-content: center;
     }
     
-    .clock-container,
-    .source-status {
-        justify-content: center;
-        width: 100%;
+    .bottom-right {
+        justify-content: flex-end;
     }
     
-    .clock-icon,
+    /* Compact clock for mobile */
+    .bottom-center .clock-container {
+        padding: 2px var(--spacing-xs);
+        gap: 4px;
+    }
+    
+    .bottom-center .clock-icon {
+        font-size: 0.8rem;
+    }
+    
+    .bottom-center .time {
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    /* Compact date for mobile */
+    .bottom-left .date {
+        font-size: 0.7rem;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80px;
+    }
+    
+    /* Compact status for mobile */
+    .bottom-right .source-status {
+        padding: 2px var(--spacing-xs);
+        gap: 4px;
+    }
+    
     .source-icon {
-        font-size: 0.9rem;
-    }
-    
-    .time {
-        font-size: 0.9rem;
-    }
-    
-    .date {
         font-size: 0.7rem;
     }
     
-    .last-updated,
-    .data-source {
+    .source-info {
+        display: none; /* Hide detailed status on mobile to save space */
+    }
+    
+    /* Show only essential status info */
+    .bottom-right .source-status::after {
+        content: "Online";
         font-size: 0.7rem;
+        color: var(--success-color);
+        font-weight: 500;
     }
     
     /* Mobile Modal */
@@ -2118,35 +2397,43 @@ button, .protection-option, .search-result-item, .suggestion-tag {
         font-size: 2rem;
     }
     
-    /* Bottom Bar Mobile Small */
+    /* Bottom Bar Mobile Small - Ultra Compact */
     .bottom-bar-content {
-        padding: var(--spacing-xs) var(--spacing-sm);
-        gap: var(--spacing-xs);
+        padding: 4px var(--spacing-xs);
+        gap: 6px;
+        min-height: 35px;
     }
     
-    .clock-container,
-    .source-status {
-        padding: var(--spacing-xs) var(--spacing-sm);
+    .bottom-center .clock-container {
+        padding: 2px 6px;
+        gap: 3px;
     }
     
-    .time {
-        font-size: 1rem;
+    .bottom-right .source-status {
+        padding: 2px 6px;
+        gap: 3px;
     }
     
-    .date {
+    .bottom-center .time {
         font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .bottom-center .clock-icon {
+        font-size: 0.7rem;
+    }
+    
+    .bottom-left .date {
+        font-size: 0.65rem;
+        font-weight: 500;
     }
     
     .source-icon {
-        font-size: 0.9rem;
+        font-size: 0.65rem;
     }
     
-    .last-updated {
-        font-size: 0.75rem;
-    }
-    
-    .data-source {
-        font-size: 0.7rem;
+    .bottom-right .source-status::after {
+        font-size: 0.65rem;
     }
     
     .search-container {

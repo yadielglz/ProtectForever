@@ -32,7 +32,58 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/brands.min.css">
 </head>
 <body>
-    <div class="container">
+    <!-- PIN Screen -->
+    <div id="passcodeScreen" class="passcode-screen">
+        <div class="passcode-container">
+            <div class="passcode-header">
+                <i class="fas fa-shield-alt passcode-app-icon"></i>
+                <h1 class="passcode-title">Protect Forever</h1>
+                <p class="passcode-subtitle">Enter your PIN to continue</p>
+            </div>
+            
+            <div class="passcode-input-section">
+                <div class="passcode-prompt">
+                    <h2>Enter PIN</h2>
+                    <p>4-digit code</p>
+                </div>
+                
+                <div class="passcode-display">
+                    <div class="passcode-dots">
+                        <span class="passcode-dot" data-index="0"></span>
+                        <span class="passcode-dot" data-index="1"></span>
+                        <span class="passcode-dot" data-index="2"></span>
+                        <span class="passcode-dot" data-index="3"></span>
+                    </div>
+                </div>
+                
+                <div class="passcode-keypad">
+                    <button class="passcode-key" data-key="1">1</button>
+                    <button class="passcode-key" data-key="2">2</button>
+                    <button class="passcode-key" data-key="3">3</button>
+                    <button class="passcode-key" data-key="4">4</button>
+                    <button class="passcode-key" data-key="5">5</button>
+                    <button class="passcode-key" data-key="6">6</button>
+                    <button class="passcode-key" data-key="7">7</button>
+                    <button class="passcode-key" data-key="8">8</button>
+                    <button class="passcode-key" data-key="9">9</button>
+                    <button class="passcode-key passcode-key-clear" data-key="clear">
+                        <i class="fas fa-backspace"></i>
+                    </button>
+                    <button class="passcode-key" data-key="0">0</button>
+                    <button class="passcode-key passcode-key-enter" data-key="enter">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>
+                
+                <div class="passcode-error" id="passcodeError">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Invalid passcode. Please try again.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="mainApp" style="display: none;">
         <header class="header">
             <div class="header-content">
                 <div class="header-left">
@@ -155,19 +206,21 @@
         <!-- Bottom Bar -->
         <div class="bottom-bar">
             <div class="bottom-bar-content">
-                <div class="clock-section">
+                <!-- Date on the left -->
+                <div class="bottom-left">
+                    <div id="currentDate" class="date">Monday, Jan 1</div>
+                </div>
+                
+                <!-- Clock in the center -->
+                <div class="bottom-center">
                     <div class="clock-container">
                         <i class="fas fa-clock clock-icon"></i>
-                        <div class="clock">
-                            <div id="currentTime" class="time">12:00 PM</div>
-                            <div id="currentDate" class="date">Monday, Jan 1</div>
-                        </div>
+                        <div id="currentTime" class="time">12:00 PM</div>
                     </div>
                 </div>
                 
-                <!-- Action buttons moved to settings menu in header -->
-                
-                <div class="status-section">
+                <!-- Status on the right -->
+                <div class="bottom-right">
                     <div class="source-status">
                         <i class="fas fa-database source-icon"></i>
                         <div class="source-info">
