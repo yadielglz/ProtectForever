@@ -57,9 +57,15 @@ body.authenticated #passcodeScreen {
 }
 
 #passcodeScreen .passcode-app-icon {
-    font-size: 2rem !important;
-    color: #e20074 !important;
-    margin-bottom: 10px !important;
+    width: 64px !important;
+    height: 64px !important;
+    margin-bottom: 15px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    object-fit: cover !important;
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
 }
 
 #passcodeScreen .passcode-title {
@@ -2311,8 +2317,8 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     /* Mobile Spacing Adjustments */
     .main-content {
         padding-bottom: calc(var(--bottom-bar-height) + 10px);
-        min-height: calc(100vh - var(--bottom-bar-height) - 100px); /* Account for smaller header */
-        max-height: calc(100vh - var(--bottom-bar-height) - 100px);
+        min-height: calc(100vh - var(--bottom-bar-height));
+        max-height: calc(100vh - var(--bottom-bar-height));
     }
     
     /* Mobile Device Flow */
