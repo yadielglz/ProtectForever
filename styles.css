@@ -30,7 +30,7 @@ body.authenticated #passcodeScreen {
     left: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background: linear-gradient(135deg, #e20074 0%, #c4005a 100%) !important; /* Magenta gradient */
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
