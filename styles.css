@@ -307,47 +307,26 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     max-width: 1200px;
     margin: 0 auto;
     padding: var(--spacing-lg);
-    min-height: 100vh;
-    height: 100vh;
+    min-height: calc(100vh - var(--header-height) - var(--bottom-bar-height));
+    height: calc(100vh - var(--header-height) - var(--bottom-bar-height));
     display: flex;
     flex-direction: column;
     padding-bottom: 0;
     box-sizing: border-box;
     overflow: hidden;
     background: var(--background-primary);
+    margin-top: var(--header-height);
+    margin-bottom: var(--bottom-bar-height);
 }
 
 /* Add bottom padding for mobile to prevent bottom bar hiding */
 @media (max-width: 768px) {
     .container {
         /* Account for bottom bar + safe area */
-        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
-        height: calc(100vh - 60px - env(safe-area-inset-bottom, 0px));
-        min-height: calc(100vh - 60px - env(safe-area-inset-bottom, 0px));
-    }
-    
-    body {
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-        /* Prevent iOS Safari from hiding content */
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    /* Ensure bottom bar is always visible on mobile */
-    .bottom-bar {
-        z-index: 9999;
-        /* Additional iOS Safari fixes */
-        position: fixed;
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
-        /* Enhanced curved corner support */
-        border-radius: max(env(safe-area-inset-left, 0px), 12px) max(env(safe-area-inset-right, 0px), 12px) 0 0;
-    }
-    
-    /* Adjust bottom bar content for safe areas */
-    .bottom-bar-content {
-        padding-left: max(env(safe-area-inset-left, 0px), var(--spacing-sm));
-        padding-right: max(env(safe-area-inset-right, 0px), var(--spacing-sm));
-    }
+        padding-bottom: calc(var(--bottom-bar-height) + env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - var(--header-height) - var(--bottom-bar-height) - env(safe-area-inset-bottom, 0px));
+        margin-top: var(--header-height);
+        margin-bottom: calc(var(--bottom-bar-height) + env(safe-area-inset-bottom, 0px));
 }
 
 /* Flat Header Styles */
@@ -698,6 +677,9 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     width: 100%;
     max-width: 1000px;
     margin-bottom: var(--spacing-xl);
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
 }
 
 .device-flow-container {
@@ -707,7 +689,8 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     box-shadow: var(--shadow-flat);
     border: var(--border-flat);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    min-height: fit-content;
 }
 
 /* Flow Steps */

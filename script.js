@@ -366,6 +366,7 @@ const mdnValue = document.getElementById('mdnValue');
 const dataStatus = document.getElementById('dataStatus');
 const statusText = document.getElementById('statusText');
 const refreshButton = document.getElementById('refreshButton');
+const clearCacheButton = document.getElementById('clearCacheButton');
 const reloadButton = document.getElementById('reloadButton');
 const currentTime = document.getElementById('currentTime');
 const currentDate = document.getElementById('currentDate');
@@ -1507,6 +1508,7 @@ function setupEventListeners() {
     
     // General listeners
     if (refreshButton) refreshButton.addEventListener('click', handleRefresh);
+    if (clearCacheButton) clearCacheButton.addEventListener('click', handleClearCache);
     if (reloadButton) reloadButton.addEventListener('click', function() {
         window.location.reload();
     });
@@ -2210,6 +2212,57 @@ async function handleRefresh() {
         }, 5000);
     } finally {
         refreshButton.classList.remove('loading');
+    }
+}
+
+// Clear cache and reload data
+async function handleClearCache() {
+    // Clear all cached data
+    localStorage.removeItem(CONFIG.CACHE_KEY);
+    localStorage.removeItem('deviceDataCache');
+    localStorage.removeItem('lastDataUpdate');
+    
+    // Clear any service worker cache
+    if ('caches' in window) {
+        try {
+            const cacheNames = await caches.keys();
+            await Promise.all(
+                cacheNames.map(cacheName => caches.delete(cacheName))
+            );
+        } catch (error) {
+            console.warn('Could not clear service worker cache:', error);
+        }
+    }
+    
+    // Show loading state
+    clearCacheButton.classList.add('loading');
+    showDataStatus('Clearing cache and reloading...', 'offline');
+    
+    try {
+        // Force reload data from Google Sheets
+        await loadDataFromGoogleSheets();
+        
+        // Reinitialize device selector with fresh data
+        initializeDeviceFlow();
+        
+        // Show success status
+        showDataStatus('Cache cleared and data reloaded', 'online');
+        
+        // Hide status after 3 seconds
+        setTimeout(() => {
+            hideDataStatus();
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Error clearing cache:', error);
+        showDataStatus('Failed to clear cache', 'error');
+        
+        // Hide status after 5 seconds
+        setTimeout(() => {
+            hideDataStatus();
+        }, 5000);
+    } finally {
+        clearCacheButton.classList.remove('loading');
     }
 }
 
