@@ -764,17 +764,26 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 }
 
 .device-card-icon {
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     margin-right: var(--spacing-md);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    font-size: 1.5rem;
+    background: var(--background-light);
     border-radius: var(--radius-sm);
-    color: white;
-    box-shadow: var(--shadow-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-light);
+}
+
+/* Device card icon images */
+.device-card-icon img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 4px;
 }
 
 .device-card-info h3 {
@@ -994,17 +1003,26 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 }
 
 .model-card-icon {
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     margin-right: var(--spacing-md);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    font-size: 1.5rem;
+    background: var(--background-light);
     border-radius: var(--radius-sm);
-    color: white;
-    box-shadow: var(--shadow-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-light);
+}
+
+/* Model card icon images */
+.model-card-icon img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 4px;
 }
 
 .model-card-info h3 {
@@ -2425,10 +2443,15 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     }
     
     .model-card-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 1.5rem;
+        width: 35px;
+        height: 35px;
+        font-size: 1.2rem;
         margin-right: var(--spacing-sm);
+    }
+    
+    .model-card-icon img {
+        width: 28px;
+        height: 28px;
     }
     
     .model-card-info h3 {
