@@ -868,6 +868,14 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     box-shadow: var(--shadow-primary);
 }
 
+/* Brand Icon Image Styles */
+.brand-card-icon img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
 .brand-card-info h3 {
     font-size: 1.3rem;
     font-weight: 600;
@@ -2383,6 +2391,11 @@ button, .protection-option, .search-result-item, .suggestion-tag {
         height: 45px;
         font-size: 1.8rem;
         margin-bottom: var(--spacing-xs);
+    }
+    
+    .brand-card-icon img {
+        width: 30px;
+        height: 30px;
     }
     
     .brand-card-info h3 {

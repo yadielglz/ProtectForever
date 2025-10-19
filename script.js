@@ -1659,6 +1659,11 @@ function getDeviceIcon(brand) {
 function createBrandIcon(brandKey) {
     const brandInfo = DEVICE_BRAND_ICONS[brandKey] || DEVICE_BRAND_ICONS['samsung'];
     
+    // Use custom Apple logo image instead of Font Awesome icon
+    if (brandKey === 'apple') {
+        return `<img src="apple-logo.png" alt="Apple" class="brand-icon-image">`;
+    }
+    
     return `<i class="${brandInfo.icon}"></i>`;
 }
 
