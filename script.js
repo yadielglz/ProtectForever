@@ -1950,6 +1950,15 @@ function toggleUpcMdnDisplay() {
             upcMdnDisplay.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
             upcMdnDisplay.style.opacity = '1';
             upcMdnDisplay.style.transform = 'scale(1) translateY(0)';
+            
+            // Scroll to MDN section to ensure it's visible
+            setTimeout(() => {
+                upcMdnDisplay.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest',
+                    inline: 'nearest'
+                });
+            }, 100);
         });
         
         upcShowMdnBtn.innerHTML = '<i class="fas fa-eye-slash"></i><span>Hide MDN</span>';
