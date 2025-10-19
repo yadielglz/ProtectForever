@@ -823,6 +823,97 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     font-weight: 500;
 }
 
+/* Protection Option Styles */
+.protection-option {
+    background: var(--background-white);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-light);
+}
+
+.option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.brand-name {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.brand-logo {
+    width: 24px;
+    height: 24px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    margin-right: var(--spacing-xs);
+}
+
+.protection-type {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.upc-display {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+    padding: var(--spacing-xs);
+    background: var(--background-light);
+    border-radius: var(--radius-sm);
+}
+
+.upc-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-right: var(--spacing-sm);
+    font-weight: 500;
+}
+
+.upc-code {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+    background: var(--background-white);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light);
+}
+
+.availability {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.availability.available {
+    color: var(--success-color);
+}
+
+.availability.unavailable {
+    color: var(--error-color);
+}
+
+.availability i {
+    margin-right: var(--spacing-xs);
+    font-size: 1rem;
+}
+
 /* Brand Card Styles */
 .brand-card {
     background: var(--background-white);
