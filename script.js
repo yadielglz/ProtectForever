@@ -26,7 +26,7 @@ const DEVICE_BRAND_ICONS = {
         background: '#000000'
     },
     'samsung': {
-        icon: 'fas fa-mobile-alt',
+        icon: 'fas fa-tablet-alt',
         color: '#ffffff',
         background: '#1428a0'
     },
@@ -41,7 +41,7 @@ const DEVICE_BRAND_ICONS = {
         background: '#4285f4'
     },
     'motorola': {
-        icon: 'fas fa-mobile-alt',
+        icon: 'fas fa-broadcast-tower',
         color: '#ffffff',
         background: '#5c92fa'
     },
