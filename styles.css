@@ -847,26 +847,6 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     color: var(--text-primary);
 }
 
-.brand-logo {
-    width: 16px;
-    height: 16px;
-    margin-right: var(--spacing-xs);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.brand-logo img {
-    width: 16px;
-    height: 16px;
-    object-fit: contain;
-}
-
-.brand-logo i {
-    font-size: 0.8rem;
-    color: var(--text-primary);
-}
-
 .protection-type {
     font-size: 0.9rem;
     color: var(--text-muted);
