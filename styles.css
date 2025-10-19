@@ -823,6 +823,32 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     font-weight: 500;
 }
 
+/* Device Logo in UPC Window Header */
+.device-logo {
+    width: 24px;
+    height: 24px;
+    margin-right: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.device-logo img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.device-logo i {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+.device-name-text {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
 /* Simple Option Styles */
 .simple-option {
     background: var(--background-white);

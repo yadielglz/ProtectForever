@@ -1690,8 +1690,12 @@ function displayDeviceInfo(deviceOptions) {
     resultsModal.style.display = 'flex';
     resultsModal.style.opacity = '1';
     
-    // Update device info
-    deviceName.textContent = `${firstOption.deviceBrand} ${firstOption.deviceModel}`;
+    // Update device info with logo
+    const deviceIconElement = createBrandIcon(firstOption.deviceBrand.toLowerCase());
+    deviceName.innerHTML = `
+        <span class="device-logo">${deviceIconElement}</span>
+        <span class="device-name-text">${firstOption.deviceBrand} ${firstOption.deviceModel}</span>
+    `;
     deviceModel.textContent = `${deviceOptions.length} unit${deviceOptions.length !== 1 ? 's' : ''} available`;
     
     // Clear and populate options
