@@ -209,51 +209,64 @@ body.authenticated #passcodeScreen {
 }
 
 :root {
-    /* Color Variables */
-    --primary-color: #E20074;
-    --primary-dark: #B8005A;
-    --primary-light: #ff6b9d;
-    --secondary-color: #666;
-    --success-color: #10b981;
-    --error-color: #ef4444;
-    --warning-color: #f59e0b;
-    --text-primary: #333;
-    --text-secondary: #666;
-    --text-muted: #999;
-    --background-white: rgba(255, 255, 255, 0.95);
-    --background-white-full: rgba(255, 255, 255, 0.98);
-    --border-light: rgba(0, 0, 0, 0.1);
-    --border-primary: rgba(226, 0, 116, 0.2);
-    --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.1);
-    --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.1);
-    --shadow-heavy: 0 8px 25px rgba(0, 0, 0, 0.15);
-    --shadow-primary: 0 4px 12px rgba(226, 0, 116, 0.3);
+    /* T-Mobile Color Scheme */
+    --tmobile-magenta: #E20074;
+    --tmobile-magenta-dark: #B8005A;
+    --tmobile-magenta-light: #FF6B9D;
+    --tmobile-pink: #FFB6C1;
+    --tmobile-gray: #666666;
+    --tmobile-dark-gray: #333333;
+    --tmobile-light-gray: #F5F5F5;
+    --tmobile-white: #FFFFFF;
+    
+    /* Flat Design Colors */
+    --primary-color: var(--tmobile-magenta);
+    --primary-dark: var(--tmobile-magenta-dark);
+    --primary-light: var(--tmobile-magenta-light);
+    --secondary-color: var(--tmobile-gray);
+    --success-color: #00C851;
+    --error-color: #FF4444;
+    --warning-color: #FF8800;
+    --text-primary: var(--tmobile-dark-gray);
+    --text-secondary: var(--tmobile-gray);
+    --text-muted: #999999;
+    --background-primary: var(--tmobile-white);
+    --background-secondary: var(--tmobile-light-gray);
+    --background-accent: rgba(226, 0, 116, 0.05);
+    
+    /* Flat Design Shadows - Minimal */
+    --shadow-flat: 0 1px 3px rgba(0, 0, 0, 0.12);
+    --shadow-flat-hover: 0 2px 6px rgba(0, 0, 0, 0.15);
+    --shadow-flat-active: 0 1px 2px rgba(0, 0, 0, 0.2);
+    
+    /* Flat Design Borders */
+    --border-flat: 1px solid rgba(0, 0, 0, 0.08);
+    --border-flat-hover: 1px solid rgba(226, 0, 116, 0.2);
+    --border-flat-active: 1px solid var(--tmobile-magenta);
     
     /* Spacing Variables */
-    --spacing-xs: 5px;
-    --spacing-sm: 10px;
-    --spacing-md: 15px;
-    --spacing-lg: 20px;
-    --spacing-xl: 25px;
-    --spacing-xxl: 30px;
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+    --spacing-xxl: 24px;
     
-    /* Border Radius Variables */
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
+    /* Flat Design Border Radius - Minimal */
+    --radius-flat: 4px;
+    --radius-flat-sm: 2px;
+    --radius-flat-lg: 8px;
     
-    /* Animation Variables */
-    --animation-duration: 0.3s;
-    --animation-duration-fast: 0.2s;
-    --animation-duration-slow: 0.6s;
+    /* Flat Design Animations - Subtle */
+    --animation-duration: 0.2s;
+    --animation-duration-fast: 0.15s;
+    --animation-duration-slow: 0.3s;
     --animation-easing: ease-out;
-    --animation-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    --animation-easing-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    --animation-easing-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --animation-easing-flat: cubic-bezier(0.25, 0.46, 0.45, 0.94);
     
     /* Layout Variables */
-    --bottom-bar-height: 80px;
+    --bottom-bar-height: 60px;
+    --header-height: 60px;
 }
 
 * {
@@ -264,15 +277,15 @@ body.authenticated #passcodeScreen {
 
 body {
     font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    background: var(--background-secondary);
     min-height: 100vh;
     height: 100vh;
     overflow: hidden;
     color: var(--text-primary);
-    line-height: 1.6;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    -webkit-tap-highlight-color: var(--border-primary);
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Mobile-specific optimizations */
@@ -293,7 +306,7 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    padding: var(--spacing-lg);
     min-height: 100vh;
     height: 100vh;
     display: flex;
@@ -301,6 +314,7 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     padding-bottom: 0;
     box-sizing: border-box;
     overflow: hidden;
+    background: var(--background-primary);
 }
 
 /* Add bottom padding for mobile to prevent bottom bar hiding */
@@ -336,28 +350,35 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     }
 }
 
-/* Header Styles */
+/* Flat Header Styles */
 .header {
-    margin-bottom: 25px; /* Reduced from 40px */
-    background: var(--background-white);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-lg) 30px; /* Reduced from var(--spacing-xxl) 35px */
-    box-shadow: var(--shadow-medium), 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    margin-bottom: var(--spacing-lg);
+    background: var(--background-primary);
+    border-radius: var(--radius-flat);
+    padding: var(--spacing-lg) var(--spacing-xl);
+    box-shadow: var(--shadow-flat);
+    border: var(--border-flat);
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
 }
 
 .header-content {
     color: var(--text-primary);
-    display: grid;
-    grid-template-columns: auto 1fr auto;
+    display: flex;
     align-items: center;
+    justify-content: center;
     gap: var(--spacing-md);
+    position: relative;
+    width: 100%;
 }
 
 .header-left {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    position: absolute;
+    left: 0;
 }
 
 .header-center {
@@ -365,23 +386,27 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     align-items: center;
     justify-content: center;
     text-align: center;
+    flex: 1;
 }
 
 .header-right {
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    position: absolute;
+    right: 0;
 }
 
 .header-text h1 {
-    font-size: 2.2rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 600;
     margin: 0;
     color: var(--primary-color);
+    letter-spacing: -0.5px;
 }
 
 .subtitle {
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: var(--text-secondary);
     font-weight: 400;
     margin: 0;
@@ -400,29 +425,33 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     position: relative;
 }
 
+/* Flat Settings Button */
 .settings-button {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: none;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-flat);
+    border: var(--border-flat);
+    background: var(--background-primary);
+    color: var(--primary-color);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1rem;
-    transition: all var(--animation-duration) var(--animation-easing-spring);
-    box-shadow: var(--shadow-primary);
+    transition: all var(--animation-duration) var(--animation-easing-flat);
+    box-shadow: var(--shadow-flat);
 }
 
 .settings-button:hover {
-    transform: translateY(-2px) scale(1.1) rotate(90deg);
-    box-shadow: 0 8px 25px rgba(226, 0, 116, 0.4);
+    background: var(--background-accent);
+    border-color: var(--border-flat-hover);
+    box-shadow: var(--shadow-flat-hover);
+    transform: translateY(-1px);
 }
 
 .settings-button:active {
-    transform: translateY(0) scale(0.95) rotate(90deg);
+    transform: translateY(0);
+    box-shadow: var(--shadow-flat-active);
 }
 
 .settings-menu {
@@ -479,37 +508,79 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     margin-bottom: var(--spacing-sm);
 }
 
-/* Bottom Bar Styles */
+/* Flat Bottom Bar Styles */
 .bottom-bar {
-    background: var(--background-white);
-    border-top: 1px solid var(--border-light);
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    background: var(--background-primary);
+    border-top: var(--border-flat);
+    box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.12);
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 1000;
     width: 100%;
+    height: var(--bottom-bar-height);
     /* Safe area support for curved devices */
     padding-bottom: env(safe-area-inset-bottom, 0px);
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
-    /* Curved corner support */
-    border-radius: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px) 0 0;
 }
 
 .bottom-bar-content {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    padding: var(--spacing-sm) var(--spacing-xl);
+    padding: var(--spacing-sm) var(--spacing-lg);
     max-width: 1200px;
     margin: 0 auto;
     gap: var(--spacing-md);
-    min-height: 50px;
+    height: 100%;
     /* Add left and right padding */
-    padding-left: max(var(--spacing-xl), env(safe-area-inset-left, 0px));
-    padding-right: max(var(--spacing-xl), env(safe-area-inset-right, 0px));
+    padding-left: max(var(--spacing-lg), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--spacing-lg), env(safe-area-inset-right, 0px));
+}
+
+/* Timeout Timer Styles */
+.timeout-timer {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: var(--background-accent);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-flat);
+    border: var(--border-flat);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    min-width: 120px;
+    justify-content: center;
+}
+
+.timeout-timer.warning {
+    background: rgba(255, 136, 0, 0.1);
+    border-color: rgba(255, 136, 0, 0.2);
+    color: var(--warning-color);
+}
+
+.timeout-timer.critical {
+    background: rgba(255, 68, 68, 0.1);
+    border-color: rgba(255, 68, 68, 0.2);
+    color: var(--error-color);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.timeout-timer i {
+    font-size: 0.9rem;
+}
+
+.timeout-timer .timer-text {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
 }
 
 /* Left section - Date */
@@ -622,19 +693,19 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     transform: scale(1.1);
 }
 
-/* Device Flow Section */
+/* Flat Device Flow Section */
 .device-flow-section {
     width: 100%;
     max-width: 1000px;
-    margin-bottom: 30px;
+    margin-bottom: var(--spacing-xl);
 }
 
 .device-flow-container {
-    background: var(--background-white);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-xxl);
-    box-shadow: var(--shadow-medium);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: var(--background-primary);
+    border-radius: var(--radius-flat-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-flat);
+    border: var(--border-flat);
     position: relative;
     overflow: hidden;
 }
@@ -651,10 +722,10 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 
 .step-title {
     text-align: center;
-    font-size: 1.8rem;
+    font-size: 1.3rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: var(--spacing-xxl);
+    margin-bottom: var(--spacing-xl);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -663,7 +734,7 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 
 .step-title::before {
     content: "📱";
-    font-size: 1.5rem;
+    font-size: 1.2rem;
 }
 
 .step-header {
@@ -904,58 +975,69 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     color: var(--error-color);
 }
 
-/* Brand Card Styles */
+/* Flat Brand Card Styles */
 .brand-card {
-    background: var(--background-white);
-    border-radius: var(--radius-md);
+    background: var(--background-primary);
+    border-radius: var(--radius-flat);
     padding: var(--spacing-lg);
     cursor: pointer;
-    transition: all var(--animation-duration) var(--animation-easing-spring);
-    border: 2px solid transparent;
-    box-shadow: var(--shadow-light);
+    transition: all var(--animation-duration) var(--animation-easing-flat);
+    border: var(--border-flat);
+    box-shadow: var(--shadow-flat);
     position: relative;
     overflow: hidden;
     text-align: center;
 }
 
-.brand-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(226, 0, 116, 0.05), rgba(255, 107, 157, 0.05));
-    opacity: 0;
-    transition: opacity var(--animation-duration) var(--animation-easing);
-}
-
-.brand-card:hover::before {
-    opacity: 1;
-}
-
 .brand-card:hover {
-    transform: translateY(-4px) scale(1.02);
-    border-color: var(--primary-color);
-    box-shadow: var(--shadow-heavy);
+    transform: translateY(-2px);
+    border-color: var(--border-flat-hover);
+    box-shadow: var(--shadow-flat-hover);
+    background: var(--background-accent);
 }
 
 .brand-card:active {
-    transform: translateY(-2px) scale(0.98);
+    transform: translateY(0);
+    box-shadow: var(--shadow-flat-active);
 }
 
 .brand-card-icon {
-    width: 60px;
-    height: 60px;
+    width: 48px;
+    height: 48px;
     margin: 0 auto var(--spacing-md) auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    border-radius: 50%;
+    font-size: 1.8rem;
+    background: var(--primary-color);
+    border-radius: var(--radius-flat);
     color: white;
-    box-shadow: var(--shadow-primary);
+    box-shadow: var(--shadow-flat);
+}
+
+/* Flat Model Card Styles */
+.model-card {
+    background: var(--background-primary);
+    border-radius: var(--radius-flat);
+    padding: var(--spacing-lg);
+    cursor: pointer;
+    transition: all var(--animation-duration) var(--animation-easing-flat);
+    border: var(--border-flat);
+    box-shadow: var(--shadow-flat);
+    position: relative;
+    overflow: hidden;
+}
+
+.model-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-flat-hover);
+    box-shadow: var(--shadow-flat-hover);
+    background: var(--background-accent);
+}
+
+.model-card:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-flat-active);
 }
 
 /* Brand Icon Image Styles */
@@ -1340,7 +1422,533 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     font-style: italic;
 }
 
-/* Modal Styles */
+/* Modern UPC Modal Styles */
+.upc-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--animation-duration) var(--animation-easing-flat);
+}
+
+.upc-modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.upc-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.upc-modal-container {
+    position: relative;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    background: var(--background-primary);
+    border-radius: var(--radius-flat-lg);
+    box-shadow: var(--shadow-flat-hover);
+    border: var(--border-flat);
+    overflow: hidden;
+    transform: scale(0.9);
+    transition: transform var(--animation-duration) var(--animation-easing-flat);
+}
+
+.upc-modal.show .upc-modal-container {
+    transform: scale(1);
+}
+
+.upc-modal-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    background: var(--background-primary);
+}
+
+/* Flat UPC Modal Header */
+.upc-modal-header {
+    background: var(--primary-color);
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-bottom: var(--border-flat);
+    position: relative;
+}
+
+.upc-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    position: relative;
+    z-index: 1;
+}
+
+.upc-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    flex: 1;
+}
+
+.upc-device-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--background-primary);
+    border-radius: var(--radius-flat);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    box-shadow: var(--shadow-flat);
+}
+
+.upc-device-icon img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.upc-device-info h2 {
+    color: var(--background-primary);
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.upc-device-info p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    margin: 0;
+    font-weight: 400;
+}
+
+.upc-close-button {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-flat);
+    color: var(--background-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: all var(--animation-duration) var(--animation-easing-flat);
+}
+
+.upc-close-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.upc-close-button:active {
+    transform: translateY(0);
+}
+
+/* Flat Protection Section */
+.upc-protection-section {
+    padding: var(--spacing-xl);
+    border-bottom: var(--border-flat);
+}
+
+.upc-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.upc-section-header h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.upc-section-header h3 i {
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.upc-options-count {
+    background: var(--background-accent);
+    color: var(--primary-color);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-flat);
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: var(--border-flat);
+}
+
+.upc-options-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+/* Flat Protection Option Cards */
+.upc-protection-card {
+    background: var(--background-primary);
+    border: var(--border-flat);
+    border-radius: var(--radius-flat-lg);
+    padding: var(--spacing-lg);
+    transition: all var(--animation-duration) var(--animation-easing-flat);
+    box-shadow: var(--shadow-flat);
+}
+
+.upc-protection-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-flat-hover);
+    box-shadow: var(--shadow-flat-hover);
+    background: var(--background-accent);
+}
+
+.upc-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.upc-brand-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.upc-brand-logo {
+    width: 36px;
+    height: 36px;
+    background: var(--primary-color);
+    border-radius: var(--radius-flat);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-flat);
+}
+
+.upc-brand-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.upc-protection-type {
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 10px;
+    border-radius: var(--radius-flat);
+    font-size: 0.8rem;
+    font-weight: 500;
+    box-shadow: var(--shadow-flat);
+}
+
+.upc-upc-section {
+    margin: var(--spacing-md) 0;
+    padding: var(--spacing-md);
+    background: var(--background-accent);
+    border-radius: var(--radius-flat);
+    border: var(--border-flat);
+}
+
+.upc-upc-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: var(--spacing-sm);
+}
+
+.upc-upc-code {
+    font-family: 'Courier New', monospace;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.upc-copy-upc-btn {
+    background: var(--background-primary);
+    border: var(--border-flat);
+    color: var(--primary-color);
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-flat);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all var(--animation-duration) var(--animation-easing-flat);
+}
+
+.upc-copy-upc-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.upc-copy-upc-btn:active {
+    transform: scale(0.95);
+}
+
+.upc-availability {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.upc-availability.available {
+    color: var(--success-color);
+}
+
+.upc-availability.unavailable {
+    color: var(--error-color);
+}
+
+.upc-availability i {
+    font-size: 1rem;
+}
+
+/* MDN Section */
+.upc-mdn-section {
+    padding: 32px;
+    background: rgba(248, 250, 252, 0.5);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.upc-mdn-header {
+    margin-bottom: 20px;
+}
+
+.upc-mdn-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.upc-mdn-header h4 i {
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.upc-mdn-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.upc-mdn-button {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(226, 0, 116, 0.3);
+    position: relative;
+    overflow: hidden;
+    max-width: 200px;
+}
+
+.upc-mdn-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+}
+
+.upc-mdn-button:hover::before {
+    width: 200px;
+    height: 200px;
+}
+
+.upc-mdn-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(226, 0, 116, 0.4);
+}
+
+.upc-mdn-button:active {
+    transform: translateY(0);
+}
+
+.upc-mdn-display {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    animation: slideDown 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.upc-mdn-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.upc-mdn-field label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.upc-mdn-value-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.upc-mdn-value {
+    font-family: 'Courier New', monospace;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    letter-spacing: 1px;
+    flex: 1;
+}
+
+.upc-copy-button {
+    background: rgba(226, 0, 116, 0.1);
+    border: 1px solid rgba(226, 0, 116, 0.2);
+    color: var(--primary-color);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.upc-copy-button:hover {
+    background: rgba(226, 0, 116, 0.2);
+    transform: scale(1.1);
+}
+
+.upc-copy-button:active {
+    transform: scale(0.95);
+}
+
+/* Footer */
+.upc-modal-footer {
+    padding: 24px 32px;
+    background: rgba(248, 250, 252, 0.5);
+    display: flex;
+    gap: 16px;
+    justify-content: flex-end;
+}
+
+.upc-footer-button {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--text-primary);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.upc-footer-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.upc-footer-button.primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(226, 0, 116, 0.3);
+}
+
+.upc-footer-button.primary:hover {
+    box-shadow: 0 8px 20px rgba(226, 0, 116, 0.4);
+}
+
+.upc-footer-button:active {
+    transform: translateY(0);
+}
+
+/* Toast Notification Animations */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+/* Legacy Modal Styles (for backward compatibility) */
 .modal {
     position: fixed;
     top: 0;
@@ -2284,7 +2892,165 @@ button, .protection-option, .search-result-item, .suggestion-tag {
         font-weight: 500;
     }
     
-    /* Mobile Modal */
+    /* Mobile UPC Modal */
+    .upc-modal-container {
+        width: 98%;
+        max-height: 98vh;
+    }
+    
+    .upc-modal-content {
+        border-radius: 20px;
+        max-height: 98vh;
+    }
+    
+    .upc-header-content {
+        padding: 20px;
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .upc-header-left {
+        width: 100%;
+        gap: 16px;
+    }
+    
+    .upc-device-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 2rem;
+    }
+    
+    .upc-device-icon img {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .upc-device-info h2 {
+        font-size: 1.5rem;
+    }
+    
+    .upc-device-info p {
+        font-size: 0.9rem;
+    }
+    
+    .upc-close-button {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .upc-protection-section {
+        padding: 20px;
+    }
+    
+    .upc-section-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    
+    .upc-section-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .upc-options-container {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .upc-protection-card {
+        padding: 20px;
+    }
+    
+    .upc-card-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    
+    .upc-brand-info {
+        gap: 10px;
+    }
+    
+    .upc-brand-logo {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
+    }
+    
+    .upc-brand-name {
+        font-size: 1rem;
+    }
+    
+    .upc-protection-type {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+    
+    .upc-upc-section {
+        padding: 14px;
+        margin: 12px 0;
+    }
+    
+    .upc-upc-code {
+        font-size: 1.2rem;
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+    
+    .upc-copy-upc-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+    
+    .upc-mdn-section {
+        padding: 20px;
+    }
+    
+    .upc-mdn-header h4 {
+        font-size: 1.1rem;
+    }
+    
+    .upc-mdn-button {
+        padding: 14px 20px;
+        font-size: 0.95rem;
+        max-width: 180px;
+    }
+    
+    .upc-mdn-display {
+        padding: 16px;
+    }
+    
+    .upc-mdn-value {
+        font-size: 1.1rem;
+    }
+    
+    .upc-copy-button {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
+    
+    .upc-modal-footer {
+        padding: 20px;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .upc-footer-button {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 20px;
+        font-size: 0.9rem;
+    }
+
+/* Mobile Modal */
     .modal-content {
         margin: var(--spacing-sm);
         max-height: 90vh;

@@ -372,6 +372,24 @@ const currentDate = document.getElementById('currentDate');
 const lastUpdated = document.getElementById('lastUpdated');
 const dataSource = document.getElementById('dataSource');
 
+// Timeout Timer Elements
+const timeoutTimer = document.getElementById('timeoutTimer');
+const timerText = document.getElementById('timerText');
+
+// New UPC Modal Elements
+const upcDeviceIcon = document.getElementById('upcDeviceIcon');
+const upcDeviceName = document.getElementById('upcDeviceName');
+const upcDeviceModel = document.getElementById('upcDeviceModel');
+const upcOptionsCount = document.getElementById('upcOptionsCount');
+const upcOptionsGrid = document.getElementById('upcOptionsGrid');
+const upcShowMdnBtn = document.getElementById('upcShowMdnBtn');
+const upcMdnDisplay = document.getElementById('upcMdnDisplay');
+const upcMdnValue = document.getElementById('upcMdnValue');
+const upcCopyMdnBtn = document.getElementById('upcCopyMdnBtn');
+const upcCloseModal = document.getElementById('upcCloseModal');
+const upcRefreshBtn = document.getElementById('upcRefreshBtn');
+const upcNewSearchBtn = document.getElementById('upcNewSearchBtn');
+
 // Google Sheets integration functions
 async function loadDataFromGoogleSheets() {
     try {
@@ -755,14 +773,6 @@ function showErrorMessage(message) {
 function updateClock() {
     const now = new Date();
     
-    // Format time in AM/PM
-    const timeOptions = {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    };
-    const timeString = now.toLocaleTimeString('en-US', timeOptions);
-    
     // Format date - compact for mobile
     const isMobile = window.innerWidth <= 768;
     const dateOptions = isMobile ? {
@@ -775,8 +785,13 @@ function updateClock() {
     };
     const dateString = now.toLocaleDateString('en-US', dateOptions);
     
-    currentTime.textContent = timeString;
-    currentDate.textContent = dateString;
+    // Only update date since we removed the clock and replaced it with timeout timer
+    const dateElement = document.getElementById('currentDate');
+    if (dateElement) {
+        dateElement.textContent = dateString;
+    } else {
+        console.warn('currentDate element not found');
+    }
 }
 
 // Source status functionality
@@ -1022,6 +1037,62 @@ function hidePasscodeError() {
     passcodeError.classList.remove('show');
 }
 
+// Timeout Timer Functionality
+let timeoutInterval = null;
+let remainingTime = INACTIVITY_TIMEOUT;
+
+function updateTimeoutTimer() {
+    if (!isAuthenticated || !timeoutTimer || !timerText) return;
+    
+    const minutes = Math.floor(remainingTime / 60000);
+    const seconds = Math.floor((remainingTime % 60000) / 1000);
+    const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    timerText.textContent = timeString;
+    
+    // Update timer appearance based on remaining time
+    timeoutTimer.classList.remove('warning', 'critical');
+    
+    if (remainingTime <= 5000) {
+        // Critical - less than 5 seconds
+        timeoutTimer.classList.add('critical');
+    } else if (remainingTime <= 10000) {
+        // Warning - less than 10 seconds
+        timeoutTimer.classList.add('warning');
+    }
+    
+    remainingTime -= 1000;
+    
+    if (remainingTime <= 0) {
+        remainingTime = 0;
+        clearInterval(timeoutInterval);
+        timeoutInterval = null;
+    }
+}
+
+function startTimeoutTimer() {
+    if (timeoutInterval) {
+        clearInterval(timeoutInterval);
+    }
+    
+    remainingTime = INACTIVITY_TIMEOUT;
+    updateTimeoutTimer();
+    
+    timeoutInterval = setInterval(updateTimeoutTimer, 1000);
+}
+
+function stopTimeoutTimer() {
+    if (timeoutInterval) {
+        clearInterval(timeoutInterval);
+        timeoutInterval = null;
+    }
+    
+    if (timeoutTimer) {
+        timeoutTimer.classList.remove('warning', 'critical');
+        timerText.textContent = '20:00';
+    }
+}
+
 // Inactivity Timeout Functions
 function resetInactivityTimeout() {
     lastActivityTime = Date.now();
@@ -1036,6 +1107,9 @@ function resetInactivityTimeout() {
     
     // Only set timeout if user is authenticated
     if (isAuthenticated) {
+        // Start the visual timer
+        startTimeoutTimer();
+        
         // Set warning timeout (5 seconds before main timeout)
         warningTimeout = setTimeout(() => {
             showInactivityWarning();
@@ -1088,6 +1162,9 @@ function showInactivityWarning() {
 
 function lockApp() {
     console.log('App locked due to inactivity');
+    
+    // Stop the timeout timer
+    stopTimeoutTimer();
     
     // Reset authentication
     isAuthenticated = false;
@@ -1180,8 +1257,8 @@ function initializeMainApp() {
     loadDataFromGoogleSheets().then(() => {
         // Validate data before initializing UI
         if (!validateDeviceData()) {
-            console.error('Invalid device data after loading');
-            return;
+            console.error('Invalid device data after loading, using fallback data');
+            deviceData = fallbackData;
         }
         
         // Initialize UI after data is loaded and validated
@@ -1192,10 +1269,20 @@ function initializeMainApp() {
         // Ensure loading states are hidden
         clearAllLoadingStates();
         
-        console.log('Main app initialized successfully');
+        console.log('Main app initialized successfully with', deviceData.length, 'devices');
     }).catch(error => {
-        console.error('Failed to load device data:', error);
-        handleError(error);
+        console.error('Failed to load device data, using fallback:', error);
+        deviceData = fallbackData;
+        
+        // Initialize UI with fallback data
+        initializeDeviceFlow();
+        setupEventListeners();
+        setupMobileFeatures();
+        
+        // Ensure loading states are hidden
+        clearAllLoadingStates();
+        
+        console.log('Main app initialized with fallback data:', deviceData.length, 'devices');
     });
 }
 
@@ -1240,9 +1327,13 @@ function initializeSearch() {
 
 // Initialize device flow
 function initializeDeviceFlow() {
+    console.log('Initializing device flow with deviceData:', deviceData);
+    
     // Get unique brands and sort them
     const uniqueBrands = [...new Set(deviceData.map(device => device.deviceBrand))];
     const sortedBrands = sortBrands(uniqueBrands);
+    
+    console.log('Found brands:', sortedBrands);
     
     // Clear existing content
     brandGrid.innerHTML = '';
@@ -1399,27 +1490,41 @@ function closeSettingsMenu(event) {
 
 // Setup event listeners
 function setupEventListeners() {
-    showMdnBtn.addEventListener('click', toggleMdnDisplay);
-    refreshButton.addEventListener('click', handleRefresh);
-    reloadButton.addEventListener('click', function() {
+    // Legacy modal listeners (for backward compatibility)
+    const mdnBtn = document.getElementById('showMdnBtn');
+    if (mdnBtn) mdnBtn.addEventListener('click', toggleMdnDisplay);
+    if (closeModal) closeModal.addEventListener('click', closeModalWindow);
+    
+    // New UPC modal listeners
+    if (upcShowMdnBtn) upcShowMdnBtn.addEventListener('click', toggleUpcMdnDisplay);
+    if (upcCloseModal) upcCloseModal.addEventListener('click', closeUpcModal);
+    if (upcCopyMdnBtn) upcCopyMdnBtn.addEventListener('click', function() {
+        const mdn = upcShowMdnBtn.dataset.mdn;
+        copyToClipboard(mdn, upcCopyMdnBtn);
+    });
+    if (upcRefreshBtn) upcRefreshBtn.addEventListener('click', handleRefresh);
+    if (upcNewSearchBtn) upcNewSearchBtn.addEventListener('click', startNewSearch);
+    
+    // General listeners
+    if (refreshButton) refreshButton.addEventListener('click', handleRefresh);
+    if (reloadButton) reloadButton.addEventListener('click', function() {
         window.location.reload();
     });
-    backToBrands.addEventListener('click', goBackToBrands);
-    settingsButton.addEventListener('click', toggleSettingsMenu);
+    if (backToBrands) backToBrands.addEventListener('click', goBackToBrands);
+    if (settingsButton) settingsButton.addEventListener('click', toggleSettingsMenu);
     document.addEventListener('click', closeSettingsMenu);
-    closeModal.addEventListener('click', closeModalWindow);
     
     // Close modal when clicking outside
     resultsModal.addEventListener('click', function(e) {
-        if (e.target === resultsModal) {
-            closeModalWindow();
+        if (e.target === resultsModal || e.target.classList.contains('upc-modal-backdrop')) {
+            closeUpcModal();
         }
     });
     
     // Close modal with Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && resultsModal.style.display !== 'none') {
-            closeModalWindow();
+            closeUpcModal();
         }
     });
 }
@@ -1682,57 +1787,212 @@ function getBrandLogo(brand) {
     return BRAND_LOGOS[brandLower] || brand.substring(0, 2).toUpperCase();
 }
 
-// Display device information
+// Display device information in modern UPC modal
 function displayDeviceInfo(deviceOptions) {
     const firstOption = deviceOptions[0];
     
-    // Simple modal display
+    // Show the modern UPC modal
     resultsModal.style.display = 'flex';
-    resultsModal.style.opacity = '1';
+    resultsModal.classList.add('show');
     
-    // Update device info with logo
+    // Update device header with icon
     const deviceIconElement = createBrandIcon(firstOption.deviceBrand.toLowerCase());
-    deviceName.innerHTML = `
-        <span class="device-logo">${deviceIconElement}</span>
-        <span class="device-name-text">${firstOption.deviceBrand} ${firstOption.deviceModel}</span>
-    `;
-    deviceModel.textContent = `${deviceOptions.length} unit${deviceOptions.length !== 1 ? 's' : ''} available`;
+    upcDeviceIcon.innerHTML = deviceIconElement;
+    upcDeviceName.textContent = `${firstOption.deviceBrand} ${firstOption.deviceModel}`;
+    upcDeviceModel.textContent = `${deviceOptions.length} protection option${deviceOptions.length !== 1 ? 's' : ''} available`;
     
-    // Clear and populate options
-    optionsGrid.innerHTML = '';
-    deviceOptions.forEach(option => {
-        const optionElement = createSimpleOptionElement(option);
-        optionsGrid.appendChild(optionElement);
+    // Update options count
+    upcOptionsCount.textContent = `${deviceOptions.length} option${deviceOptions.length !== 1 ? 's' : ''}`;
+    
+    // Clear and populate options with modern cards
+    upcOptionsGrid.innerHTML = '';
+    deviceOptions.forEach((option, index) => {
+        const optionElement = createModernProtectionCard(option, index);
+        upcOptionsGrid.appendChild(optionElement);
     });
     
     // Store MDN for display
-    showMdnBtn.dataset.mdn = firstOption.mdn;
+    upcShowMdnBtn.dataset.mdn = firstOption.mdn;
     
     // Show results section
     showResults();
 }
 
-// Create simple option element
-function createSimpleOptionElement(option) {
-    const div = document.createElement('div');
-    div.className = 'simple-option';
+// Create modern protection card element
+function createModernProtectionCard(option, index) {
+    const card = document.createElement('div');
+    card.className = 'upc-protection-card';
     
     const lastFourUPC = option.upc.slice(-4);
     const availabilityClass = option.available ? 'available' : 'unavailable';
     const availabilityText = option.available ? 'Available' : 'Unavailable';
+    const availabilityIcon = option.available ? 'fas fa-check-circle' : 'fas fa-times-circle';
     
-    div.innerHTML = `
-        <div class="option-row">
-            <span class="brand-text">${option.brand}</span>
-            <span class="type-text">${option.type}</span>
+    // Get brand logo
+    const brandLogo = getBrandLogo(option.brand);
+    
+    card.innerHTML = `
+        <div class="upc-card-header">
+            <div class="upc-brand-info">
+                <div class="upc-brand-logo">${brandLogo}</div>
+                <div class="upc-brand-name">${option.brand}</div>
+            </div>
+            <div class="upc-protection-type">${option.type}</div>
         </div>
-        <div class="upc-row">
-            <span class="upc-text">UPC: ${lastFourUPC}</span>
-            <span class="status-text ${availabilityClass}">${availabilityText}</span>
+        
+        <div class="upc-upc-section">
+            <div class="upc-upc-label">UPC Code</div>
+            <div class="upc-upc-code">
+                <span>${lastFourUPC}</span>
+                <button class="upc-copy-upc-btn" onclick="copyToClipboard('${lastFourUPC}', this)" title="Copy UPC">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="upc-availability ${availabilityClass}">
+            <i class="${availabilityIcon}"></i>
+            <span>${availabilityText}</span>
         </div>
     `;
     
-    return div;
+    // Add entrance animation
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+        card.style.transition = 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, index * 100);
+    
+    return card;
+}
+
+// Copy to clipboard functionality
+async function copyToClipboard(text, button) {
+    try {
+        await navigator.clipboard.writeText(text);
+        
+        // Visual feedback
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.style.background = 'rgba(16, 185, 129, 0.2)';
+        button.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        button.style.color = 'var(--success-color)';
+        
+        // Reset after 2 seconds
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+            button.style.background = '';
+            button.style.borderColor = '';
+            button.style.color = '';
+        }, 2000);
+        
+        // Show toast notification
+        showToastNotification(`${text} copied to clipboard!`);
+        
+    } catch (err) {
+        console.error('Failed to copy: ', err);
+        showToastNotification('Failed to copy to clipboard', 'error');
+    }
+}
+
+// Show toast notification
+function showToastNotification(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `upc-toast upc-toast-${type}`;
+    toast.textContent = message;
+    
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? 'var(--success-color)' : 'var(--error-color)'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideInRight 0.3s ease-out;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Toggle MDN display for new modal
+function toggleUpcMdnDisplay() {
+    const mdn = upcShowMdnBtn.dataset.mdn;
+    
+    if (upcMdnDisplay.style.display === 'none' || upcMdnDisplay.style.display === '') {
+        // Show MDN with animation
+        upcMdnValue.textContent = mdn;
+        upcMdnDisplay.style.display = 'block';
+        upcMdnDisplay.style.opacity = '0';
+        upcMdnDisplay.style.transform = 'scale(0.8) translateY(-10px)';
+        
+        // Animate MDN display entrance
+        requestAnimationFrame(() => {
+            upcMdnDisplay.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+            upcMdnDisplay.style.opacity = '1';
+            upcMdnDisplay.style.transform = 'scale(1) translateY(0)';
+        });
+        
+        upcShowMdnBtn.innerHTML = '<i class="fas fa-eye-slash"></i><span>Hide MDN</span>';
+        
+        // Add button animation
+        upcShowMdnBtn.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+            upcShowMdnBtn.style.transform = '';
+        }, 200);
+    } else {
+        // Hide MDN with animation
+        upcMdnDisplay.style.transition = 'all 0.2s ease-in';
+        upcMdnDisplay.style.opacity = '0';
+        upcMdnDisplay.style.transform = 'scale(0.8) translateY(-10px)';
+        
+        setTimeout(() => {
+            upcMdnDisplay.style.display = 'none';
+        }, 200);
+        
+        upcShowMdnBtn.innerHTML = '<i class="fas fa-eye"></i><span>Reveal MDN</span>';
+        
+        // Add button animation
+        upcShowMdnBtn.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            upcShowMdnBtn.style.transform = '';
+        }, 150);
+    }
+}
+
+// Close UPC modal
+function closeUpcModal() {
+    resultsModal.style.display = 'none';
+    resultsModal.classList.remove('show');
+    
+    // Reset MDN display
+    if (upcMdnDisplay) upcMdnDisplay.style.display = 'none';
+    if (upcShowMdnBtn) upcShowMdnBtn.innerHTML = '<i class="fas fa-eye"></i><span>Reveal MDN</span>';
+}
+
+// New search functionality
+function startNewSearch() {
+    closeUpcModal();
+    // Go back to brand selection
+    modelStep.classList.remove('active');
+    brandStep.classList.add('active');
 }
 
 // Toggle MDN display
@@ -1782,24 +2042,34 @@ function toggleMdnDisplay() {
 
 // Show results modal
 function showResults() {
-    emptyState.style.display = 'none';
-    resultsModal.style.display = 'flex';
+    // Hide empty state and show results modal
+    if (emptyState) emptyState.style.display = 'none';
+    if (resultsModal) {
+        resultsModal.style.display = 'flex';
+        resultsModal.classList.add('show');
+    }
     
-    // Reset MDN display
-    mdnDisplay.style.display = 'none';
-    showMdnBtn.innerHTML = '<i class="fas fa-eye"></i> Show MDN';
+    // Reset MDN display (only if old modal elements exist)
+    if (mdnDisplay) mdnDisplay.style.display = 'none';
+    if (showMdnBtn) showMdnBtn.innerHTML = '<i class="fas fa-eye"></i> Show MDN';
 }
 
 // Close modal window
 function closeModalWindow() {
-    resultsModal.style.display = 'none';
+    if (resultsModal) {
+        resultsModal.style.display = 'none';
+        resultsModal.classList.remove('show');
+    }
     // Search functionality replaced with device flow
 }
 
 // Show empty state
 function showEmptyState() {
-    resultsModal.style.display = 'none';
-    emptyState.style.display = 'block';
+    if (resultsModal) {
+        resultsModal.style.display = 'none';
+        resultsModal.classList.remove('show');
+    }
+    if (emptyState) emptyState.style.display = 'block';
 }
 
 // Add some interactive effects
@@ -1817,14 +2087,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Add click effect to MDN button
-    showMdnBtn.addEventListener('mousedown', function() {
-        this.style.transform = 'translateY(0)';
-    });
-    
-    showMdnBtn.addEventListener('mouseup', function() {
-        this.style.transform = 'translateY(-2px)';
-    });
+    // Add click effect to MDN button (only if element exists)
+    const mdnButton = document.getElementById('showMdnBtn');
+    if (mdnButton) {
+        mdnButton.addEventListener('mousedown', function() {
+            this.style.transform = 'translateY(0)';
+        });
+        
+        mdnButton.addEventListener('mouseup', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+    }
 });
 
 // Add keyboard navigation support
