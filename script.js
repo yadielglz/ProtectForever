@@ -1659,9 +1659,18 @@ function getDeviceIcon(brand) {
 function createBrandIcon(brandKey) {
     const brandInfo = DEVICE_BRAND_ICONS[brandKey] || DEVICE_BRAND_ICONS['samsung'];
     
-    // Use custom Apple logo image instead of Font Awesome icon
-    if (brandKey === 'apple') {
-        return `<img src="apple-logo.png" alt="Apple" class="brand-icon-image">`;
+    // Use custom logo images instead of Font Awesome icons
+    const logoMap = {
+        'apple': 'apple-logo.png',
+        'samsung': 'samsung-logo.png',
+        'motorola': 'motorola-logo.png',
+        'google': 'google-logo.png',
+        'pixel': 'google-logo.png',
+        'revvl': 'revvl-logo.png'
+    };
+    
+    if (logoMap[brandKey]) {
+        return `<img src="${logoMap[brandKey]}" alt="${brandKey}" class="brand-icon-image">`;
     }
     
     return `<i class="${brandInfo.icon}"></i>`;
