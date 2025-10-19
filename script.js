@@ -6,7 +6,7 @@ let isAuthenticated = false;
 // Inactivity timeout variables
 let inactivityTimeout;
 let warningTimeout;
-const INACTIVITY_TIMEOUT = 35000; // 35 seconds of inactivity
+const INACTIVITY_TIMEOUT = 20000; // 20 seconds of inactivity
 const WARNING_TIME = 5000; // Show warning 5 seconds before timeout
 let lastActivityTime = Date.now();
 

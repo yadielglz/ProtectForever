@@ -300,9 +300,10 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 /* Add bottom padding for mobile to prevent bottom bar hiding */
 @media (max-width: 768px) {
     .container {
-        padding-bottom: 60px; /* Space for bottom bar */
-        height: calc(100vh - 60px);
-        min-height: calc(100vh - 60px);
+        /* Account for bottom bar + safe area */
+        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 60px - env(safe-area-inset-bottom, 0px));
+        min-height: calc(100vh - 60px - env(safe-area-inset-bottom, 0px));
     }
     
     body {
@@ -314,11 +315,18 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     /* Ensure bottom bar is always visible on mobile */
     .bottom-bar {
         z-index: 9999;
-        bottom: env(safe-area-inset-bottom, 0px);
         /* Additional iOS Safari fixes */
         position: fixed;
         transform: translateZ(0);
         -webkit-transform: translateZ(0);
+        /* Enhanced curved corner support */
+        border-radius: max(env(safe-area-inset-left, 0px), 12px) max(env(safe-area-inset-right, 0px), 12px) 0 0;
+    }
+    
+    /* Adjust bottom bar content for safe areas */
+    .bottom-bar-content {
+        padding-left: max(env(safe-area-inset-left, 0px), var(--spacing-sm));
+        padding-right: max(env(safe-area-inset-right, 0px), var(--spacing-sm));
     }
 }
 
@@ -464,8 +472,12 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     right: 0;
     z-index: 1000;
     width: 100%;
-    /* Ensure it's above mobile browser UI */
-    bottom: env(safe-area-inset-bottom, 0px);
+    /* Safe area support for curved devices */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    /* Curved corner support */
+    border-radius: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px) 0 0;
 }
 
 .bottom-bar-content {
@@ -1985,12 +1997,52 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     }
 }
 
+/* Modern Mobile Device Support */
+@supports (padding: max(0px)) {
+    .bottom-bar {
+        /* Enhanced safe area support for modern devices */
+        padding-left: max(env(safe-area-inset-left, 0px), 0px);
+        padding-right: max(env(safe-area-inset-right, 0px), 0px);
+        padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+    }
+    
+    .bottom-bar-content {
+        padding-left: max(env(safe-area-inset-left, 0px), var(--spacing-sm));
+        padding-right: max(env(safe-area-inset-right, 0px), var(--spacing-sm));
+    }
+}
+
+/* iPhone-specific optimizations */
+@supports (-webkit-touch-callout: none) {
+    .bottom-bar {
+        /* iOS Safari specific fixes */
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        /* Enhanced curved corner support for iOS */
+        border-radius: max(env(safe-area-inset-left, 0px), 16px) max(env(safe-area-inset-right, 0px), 16px) 0 0;
+    }
+}
+
+/* Home indicator support for newer iPhones */
+@supports (padding: env(safe-area-inset-bottom)) {
+    .bottom-bar {
+        /* Ensure proper spacing for home indicator */
+        padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+    }
+    
+    .container {
+        /* Adjust container padding for home indicator */
+        padding-bottom: calc(60px + max(env(safe-area-inset-bottom, 0px), 8px));
+    }
+}
+
 /* Extra Small Mobile Screens */
 @media (max-width: 360px) {
     .container {
-        padding-bottom: 50px; /* Smaller space for extra small screens */
-        height: calc(100vh - 50px);
-        min-height: calc(100vh - 50px);
+        /* Account for smaller bottom bar + safe area */
+        padding-bottom: calc(50px + env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 50px - env(safe-area-inset-bottom, 0px));
+        min-height: calc(100vh - 50px - env(safe-area-inset-bottom, 0px));
     }
     
     .bottom-bar-content {
