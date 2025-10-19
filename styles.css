@@ -332,10 +332,10 @@ button, .protection-option, .search-result-item, .suggestion-tag {
 
 /* Header Styles */
 .header {
-    margin-bottom: 40px;
+    margin-bottom: 25px; /* Reduced from 40px */
     background: var(--background-white);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-xxl) 35px;
+    padding: var(--spacing-lg) 30px; /* Reduced from var(--spacing-xxl) 35px */
     box-shadow: var(--shadow-medium), 0 1px 3px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.8);
 }
@@ -489,6 +489,9 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     margin: 0 auto;
     gap: var(--spacing-md);
     min-height: 50px;
+    /* Add left and right padding */
+    padding-left: max(var(--spacing-xl), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--spacing-xl), env(safe-area-inset-right, 0px));
 }
 
 /* Left section - Date */
@@ -580,10 +583,11 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-bottom: calc(var(--bottom-bar-height) + var(--spacing-lg));
-    min-height: calc(100vh - var(--bottom-bar-height));
-    max-height: calc(100vh - var(--bottom-bar-height));
+    /* Stretch from top to bottom bar */
+    min-height: calc(100vh - 120px - env(safe-area-inset-bottom, 0px)); /* Account for header + bottom bar */
+    max-height: calc(100vh - 120px - env(safe-area-inset-bottom, 0px));
     overflow-y: auto;
+    padding-bottom: 20px; /* Small padding at bottom */
 }
 
 /* Sort Icons */
@@ -2161,6 +2165,9 @@ button, .protection-option, .search-result-item, .suggestion-tag {
         gap: var(--spacing-xs);
         padding: var(--spacing-xs) var(--spacing-sm);
         min-height: 40px;
+        /* Enhanced mobile padding */
+        padding-left: max(var(--spacing-sm), env(safe-area-inset-left, 0px));
+        padding-right: max(var(--spacing-sm), env(safe-area-inset-right, 0px));
     }
     
     .bottom-left {
@@ -2304,8 +2311,8 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     /* Mobile Spacing Adjustments */
     .main-content {
         padding-bottom: calc(var(--bottom-bar-height) + 10px);
-        min-height: calc(100vh - var(--bottom-bar-height));
-        max-height: calc(100vh - var(--bottom-bar-height));
+        min-height: calc(100vh - var(--bottom-bar-height) - 100px); /* Account for smaller header */
+        max-height: calc(100vh - var(--bottom-bar-height) - 100px);
     }
     
     /* Mobile Device Flow */

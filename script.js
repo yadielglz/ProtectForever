@@ -13,7 +13,6 @@ let lastActivityTime = Date.now();
 // Passcode Screen Elements
 const passcodeScreen = document.getElementById('passcodeScreen');
 const mainApp = document.getElementById('mainApp');
-const passcodeTime = document.getElementById('passcodeTime');
 const passcodeDate = document.getElementById('passcodeDate');
 const passcodeDots = document.querySelectorAll('.passcode-dot');
 const passcodeKeys = document.querySelectorAll('.passcode-key');
