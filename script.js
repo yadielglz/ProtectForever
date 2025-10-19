@@ -1686,58 +1686,19 @@ function getBrandLogo(brand) {
 function displayDeviceInfo(deviceOptions) {
     const firstOption = deviceOptions[0];
     
-    // Add entrance animation to modal
-    resultsModal.style.opacity = '0';
-    resultsModal.style.transform = 'scale(0.9) translateY(20px)';
+    // Simple modal display
     resultsModal.style.display = 'flex';
+    resultsModal.style.opacity = '1';
     
-    // Animate modal entrance
-    requestAnimationFrame(() => {
-        resultsModal.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-        resultsModal.style.opacity = '1';
-        resultsModal.style.transform = 'scale(1) translateY(0)';
-    });
-    
-    // Update device header with icon
-    const deviceIconElement = getDeviceIcon(firstOption.deviceBrand);
-    deviceIcon.innerHTML = deviceIconElement;
-    
-    // Add animation to device icon
-    const iconElement = deviceIcon.querySelector('i');
-    if (iconElement) {
-        iconElement.style.transform = 'scale(0) rotate(180deg)';
-        setTimeout(() => {
-            iconElement.style.transition = 'transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
-            iconElement.style.transform = 'scale(1) rotate(0deg)';
-        }, 100);
-    }
-    
+    // Update device info
     deviceName.textContent = `${firstOption.deviceBrand} ${firstOption.deviceModel}`;
+    deviceModel.textContent = `${deviceOptions.length} unit${deviceOptions.length !== 1 ? 's' : ''} available`;
     
-    // Accurate unit count
-    if (deviceOptions.length === 1) {
-        deviceModel.textContent = `1 unit available`;
-    } else {
-        deviceModel.textContent = `${deviceOptions.length} units available`;
-    }
-    
-    // Clear previous options
+    // Clear and populate options
     optionsGrid.innerHTML = '';
-    
-    // Display protection options with staggered animation
-    deviceOptions.forEach((option, index) => {
-        const optionElement = createProtectionOptionElement(option);
-        
-        // Add staggered entrance animation
-        optionElement.style.opacity = '0';
-        optionElement.style.transform = 'translateY(20px)';
+    deviceOptions.forEach(option => {
+        const optionElement = createSimpleOptionElement(option);
         optionsGrid.appendChild(optionElement);
-        
-        setTimeout(() => {
-            optionElement.style.transition = 'all 0.3s ease-out';
-            optionElement.style.opacity = '1';
-            optionElement.style.transform = 'translateY(0)';
-        }, 100 + (index * 100));
     });
     
     // Store MDN for display
@@ -1747,28 +1708,23 @@ function displayDeviceInfo(deviceOptions) {
     showResults();
 }
 
-// Create protection option element
-function createProtectionOptionElement(option) {
+// Create simple option element
+function createSimpleOptionElement(option) {
     const div = document.createElement('div');
-    div.className = 'protection-option';
+    div.className = 'simple-option';
     
-    // Get last 4 digits of UPC
     const lastFourUPC = option.upc.slice(-4);
+    const availabilityClass = option.available ? 'available' : 'unavailable';
+    const availabilityText = option.available ? 'Available' : 'Unavailable';
     
     div.innerHTML = `
-        <div class="option-header">
-            <span class="brand-name">
-                ${option.brand}
-            </span>
-            <span class="protection-type">${option.type}</span>
+        <div class="option-row">
+            <span class="brand-text">${option.brand}</span>
+            <span class="type-text">${option.type}</span>
         </div>
-        <div class="upc-display">
-            <span class="upc-label">UPC (Last 4):</span>
-            <span class="upc-code">${lastFourUPC}</span>
-        </div>
-        <div class="availability ${option.available ? 'available' : 'unavailable'}">
-            <i class="fas ${option.available ? 'fa-check-circle' : 'fa-times-circle'}"></i>
-            ${option.available ? 'Available' : 'Unavailable'}
+        <div class="upc-row">
+            <span class="upc-text">UPC: ${lastFourUPC}</span>
+            <span class="status-text ${availabilityClass}">${availabilityText}</span>
         </div>
     `;
     

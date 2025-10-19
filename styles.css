@@ -823,8 +823,8 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     font-weight: 500;
 }
 
-/* Protection Option Styles */
-.protection-option {
+/* Simple Option Styles */
+.simple-option {
     background: var(--background-white);
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
@@ -833,71 +833,49 @@ button, .protection-option, .search-result-item, .suggestion-tag {
     box-shadow: var(--shadow-light);
 }
 
-.option-header {
+.option-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-sm);
 }
 
-.brand-name {
-    display: flex;
-    align-items: center;
+.brand-text {
     font-weight: 600;
     color: var(--text-primary);
+    font-size: 1rem;
 }
 
-.protection-type {
+.type-text {
     font-size: 0.9rem;
     color: var(--text-muted);
     font-weight: 500;
 }
 
-.upc-display {
+.upc-row {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-sm);
-    padding: var(--spacing-xs);
-    background: var(--background-light);
-    border-radius: var(--radius-sm);
 }
 
-.upc-label {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin-right: var(--spacing-sm);
-    font-weight: 500;
-}
-
-.upc-code {
+.upc-text {
     font-size: 0.9rem;
     color: var(--text-primary);
-    font-weight: 600;
     font-family: 'Courier New', monospace;
-    background: var(--background-white);
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-light);
+    font-weight: 600;
 }
 
-.availability {
-    display: flex;
-    align-items: center;
+.status-text {
     font-size: 0.9rem;
     font-weight: 500;
 }
 
-.availability.available {
+.status-text.available {
     color: var(--success-color);
 }
 
-.availability.unavailable {
+.status-text.unavailable {
     color: var(--error-color);
-}
-
-.availability i {
-    margin-right: var(--spacing-xs);
-    font-size: 1rem;
 }
 
 /* Brand Card Styles */
