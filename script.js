@@ -13,6 +13,89 @@ class ProtectApp {
         // DOM Elements
         this.elements = {};
         
+        // Device model sorting order (oldest to newest)
+        this.deviceModelOrder = {
+            'Apple': {
+                'iPhone 12': 1,
+                'iPhone 12 mini': 2,
+                'iPhone 12 Pro': 3,
+                'iPhone 12 Pro Max': 4,
+                'iPhone 13': 5,
+                'iPhone 13 mini': 6,
+                'iPhone 13 Pro': 7,
+                'iPhone 13 Pro Max': 8,
+                'iPhone 14': 9,
+                'iPhone 14 Plus': 10,
+                'iPhone 14 Pro': 11,
+                'iPhone 14 Pro Max': 12,
+                'iPhone 15': 13,
+                'iPhone 15 Plus': 14,
+                'iPhone 15 Pro': 15,
+                'iPhone 15 Pro Max': 16,
+                'iPhone 16': 17,
+                'iPhone 16 Plus': 18,
+                'iPhone 16 Pro': 19,
+                'iPhone 16 Pro Max': 20
+            },
+            'Samsung': {
+                'Galaxy S21': 1,
+                'Galaxy S21+': 2,
+                'Galaxy S21 Ultra': 3,
+                'Galaxy S22': 4,
+                'Galaxy S22+': 5,
+                'Galaxy S22 Ultra': 6,
+                'Galaxy S23': 7,
+                'Galaxy S23+': 8,
+                'Galaxy S23 Ultra': 9,
+                'Galaxy S24': 10,
+                'Galaxy S24+': 11,
+                'Galaxy S24 Ultra': 12,
+                'Galaxy Note 20': 1,
+                'Galaxy Note 20 Ultra': 2,
+                'Galaxy Z Fold 3': 1,
+                'Galaxy Z Fold 4': 2,
+                'Galaxy Z Fold 5': 3,
+                'Galaxy Z Flip 3': 1,
+                'Galaxy Z Flip 4': 2,
+                'Galaxy Z Flip 5': 3
+            },
+            'Google': {
+                'Pixel 6': 1,
+                'Pixel 6 Pro': 2,
+                'Pixel 6a': 3,
+                'Pixel 7': 4,
+                'Pixel 7 Pro': 5,
+                'Pixel 7a': 6,
+                'Pixel 8': 7,
+                'Pixel 8 Pro': 8,
+                'Pixel 8a': 9
+            },
+            'Motorola': {
+                'Moto G Power (2021)': 1,
+                'Moto G Stylus (2021)': 2,
+                'Moto G Power (2022)': 3,
+                'Moto G Stylus (2022)': 4,
+                'Moto G Power (2023)': 5,
+                'Moto G Stylus (2023)': 6,
+                'Moto G Power (2024)': 7,
+                'Moto G Stylus (2024)': 8,
+                'Edge 30': 1,
+                'Edge 30 Pro': 2,
+                'Edge 40': 3,
+                'Edge 40 Pro': 4,
+                'Edge 50': 5,
+                'Edge 50 Pro': 6
+            },
+            'T-Mobile': {
+                'REVVL 6': 1,
+                'REVVL 6 Pro': 2,
+                'REVVL 6x': 3,
+                'REVVL 7': 4,
+                'REVVL 7 Pro': 5,
+                'REVVL 7x': 6
+            }
+        };
+        
         // Initialize the app
         this.init();
     }
@@ -666,15 +749,46 @@ class ProtectApp {
         });
     }
     
+    getModelSortOrder(brand, model) {
+        // Get the sort order for a specific model within a brand
+        if (this.deviceModelOrder[brand] && this.deviceModelOrder[brand][model]) {
+            return this.deviceModelOrder[brand][model];
+        }
+        
+        // If model not found in our mapping, try to extract year from model name
+        const yearMatch = model.match(/(\d{4})/);
+        if (yearMatch) {
+            const year = parseInt(yearMatch[1]);
+            return year; // Use year as sort order
+        }
+        
+        // If no year found, try to extract number from model name
+        const numberMatch = model.match(/(\d+)/);
+        if (numberMatch) {
+            return parseInt(numberMatch[1]);
+        }
+        
+        // Default fallback - put unknown models at the end
+        return 9999;
+    }
+    
     populateModels(brand) {
         const models = this.deviceData
             .filter(device => device['Device Brand'] === brand)
             .map(device => device['Device Model'])
             .filter(Boolean);
         
+        // Remove duplicates and sort by release order (oldest to newest)
+        const uniqueModels = [...new Set(models)];
+        const sortedModels = uniqueModels.sort((a, b) => {
+            const orderA = this.getModelSortOrder(brand, a);
+            const orderB = this.getModelSortOrder(brand, b);
+            return orderA - orderB;
+        });
+        
         this.elements.modelGrid.innerHTML = '';
         
-        models.forEach(model => {
+        sortedModels.forEach(model => {
             const modelCard = this.createModelCard(model, brand);
             this.elements.modelGrid.appendChild(modelCard);
         });
