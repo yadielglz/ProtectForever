@@ -1,5 +1,5 @@
 // Modern Mobile-First PWA JavaScript
-class ProtectForeverApp {
+class ProtectApp {
     constructor() {
         this.config = CONFIG;
         this.deviceData = [];
@@ -23,21 +23,53 @@ class ProtectForeverApp {
             this.setupEventListeners();
             this.setupInactivityTimeout();
             
+            // Check if this is the first time loading the app
+            const isFirstLoad = !localStorage.getItem('appHasLoaded');
+            
+            if (isFirstLoad) {
+                // Show splash screen on first load
+                this.showSplashScreen();
+                
+                // Wait for splash screen animation (3 seconds)
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Hide splash screen
+                this.hideSplashScreen();
+                
+                // Wait for splash screen hide animation
+                await new Promise(resolve => setTimeout(resolve, 600));
+                
+                // Mark app as loaded
+                localStorage.setItem('appHasLoaded', 'true');
+            }
+            
+            // Show loading animation
+            this.showLoading('Initializing Protect...');
+            
             // Clear cache to force fresh data load
             console.log('Clearing cache to force fresh data load...');
             localStorage.removeItem(this.config.CACHE_KEY);
             localStorage.removeItem('lastDataUpdate');
             
             await this.loadData();
-            this.startTimeDateDisplay();
-            this.showPasscodeScreen();
+            this.hideLoading();
+            
+            // Small delay before showing passcode screen for smooth transition
+            setTimeout(() => {
+                this.startTimeDateDisplay();
+                this.showPasscodeScreen();
+            }, 300);
         } catch (error) {
             console.error('Failed to initialize app:', error);
+            this.hideLoading();
             this.showError('Failed to initialize app');
         }
     }
     
     cacheDOM() {
+        // Splash screen
+        this.elements.splashScreen = document.getElementById('splashScreen');
+        
         // Passcode screen
         this.elements.passcodeScreen = document.getElementById('passcodeScreen');
         this.elements.passcodeDots = document.querySelectorAll('.dot');
@@ -348,7 +380,7 @@ class ProtectForeverApp {
         try {
             const cached = localStorage.getItem(this.config.CACHE_KEY);
             return cached ? JSON.parse(cached) : null;
-    } catch (error) {
+        } catch (error) {
             console.error('Failed to parse cached data:', error);
         return null;
     }
@@ -396,19 +428,53 @@ class ProtectForeverApp {
         ];
     }
     
+    showSplashScreen() {
+        if (this.elements.splashScreen) {
+            this.elements.splashScreen.style.display = 'flex';
+            this.elements.splashScreen.classList.add('show');
+            this.elements.splashScreen.classList.remove('hide');
+        }
+    }
+    
+    hideSplashScreen() {
+        if (this.elements.splashScreen) {
+            this.elements.splashScreen.classList.remove('show');
+            this.elements.splashScreen.classList.add('hide');
+            
+            // Hide splash screen after animation completes
+            setTimeout(() => {
+                this.elements.splashScreen.style.display = 'none';
+                this.elements.splashScreen.classList.remove('hide');
+            }, 600);
+        }
+    }
+    
     showPasscodeScreen() {
         this.elements.passcodeScreen.style.display = 'flex';
         this.elements.mainApp.style.display = 'none';
         this.isAuthenticated = false;
+        
+        // Trigger passcode screen animation
+        setTimeout(() => {
+            this.elements.passcodeScreen.classList.add('show');
+        }, 50);
     }
     
     showMainApp() {
-        this.elements.passcodeScreen.style.display = 'none';
-        this.elements.mainApp.style.display = 'block';
-        this.elements.mainApp.classList.add('authenticated');
-        this.isAuthenticated = true;
-        this.startTimeDateDisplay();
-        this.initializeDeviceFlow();
+        // Hide passcode screen with animation
+        this.elements.passcodeScreen.classList.remove('show');
+        this.elements.passcodeScreen.classList.add('hide');
+        
+        // Show main app after passcode animation completes
+    setTimeout(() => {
+            this.elements.passcodeScreen.style.display = 'none';
+            this.elements.passcodeScreen.classList.remove('hide');
+            this.elements.mainApp.style.display = 'block';
+            this.elements.mainApp.classList.add('authenticated');
+            this.isAuthenticated = true;
+            this.startTimeDateDisplay();
+            this.initializeDeviceFlow();
+        }, 400);
     }
     
     startTimeDateDisplay() {
@@ -443,6 +509,13 @@ class ProtectForeverApp {
     
     handleKeypadInput(key) {
         console.log('handleKeypadInput called with:', key); // Debug log
+        
+        // Add press animation to the key
+        const pressedKey = event.target;
+        pressedKey.classList.add('pressed');
+        setTimeout(() => {
+            pressedKey.classList.remove('pressed');
+        }, 300);
         
         if (key === 'clear') {
             this.currentPasscode = '';
@@ -512,6 +585,7 @@ class ProtectForeverApp {
         // Use 'Device Brand' column from the actual sheet structure
         const brands = [...new Set(this.deviceData.map(device => device['Device Brand']))].filter(Boolean);
         console.log('Extracted brands:', brands);
+        console.log('Brand count:', brands.length);
         
         this.elements.brandGrid.innerHTML = '';
         
@@ -521,10 +595,13 @@ class ProtectForeverApp {
             return;
         }
         
-        brands.forEach(brand => {
+        brands.forEach((brand, index) => {
+            console.log(`Creating brand card ${index + 1}:`, brand);
             const brandCard = this.createBrandCard(brand);
             this.elements.brandGrid.appendChild(brandCard);
         });
+        
+        console.log('Brand grid populated with', brands.length, 'brands');
     }
     
     showFallbackBrands() {
@@ -907,7 +984,7 @@ class ProtectForeverApp {
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new ProtectForeverApp();
+    window.app = new ProtectApp();
 });
 
 // Service Worker Registration

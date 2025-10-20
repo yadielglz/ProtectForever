@@ -1,4 +1,166 @@
 /* Modern Mobile-First PWA Design */
+
+/* ===== SPLASH SCREEN ===== */
+.splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 1;
+    transform: scale(1);
+    transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.splash-screen.show {
+    display: flex;
+    opacity: 1;
+    transform: scale(1);
+}
+
+.splash-screen.hide {
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+.splash-container {
+    text-align: center;
+    color: white;
+    animation: splashFadeIn 1.2s ease-out;
+}
+
+.splash-logo {
+    margin-bottom: var(--space-6);
+    animation: splashLogoFloat 2s ease-in-out infinite;
+}
+
+.splash-icon {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    animation: splashIconPulse 2s ease-in-out infinite;
+}
+
+.splash-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    animation: splashTitleSlide 1s ease-out 0.3s both;
+}
+
+.splash-subtitle {
+    font-size: 1.1rem;
+    font-weight: 400;
+    opacity: 0.9;
+    margin-bottom: var(--space-8);
+    animation: splashSubtitleSlide 1s ease-out 0.6s both;
+}
+
+.splash-loader {
+    animation: splashLoaderSlide 1s ease-out 0.9s both;
+}
+
+.loader-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid white;
+    border-radius: 50%;
+    animation: splashSpinner 1s linear infinite;
+    margin: 0 auto;
+}
+
+.header-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: white;
+    padding: 2px;
+}
+
+/* Splash Screen Animations */
+@keyframes splashFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes splashLogoFloat {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes splashIconPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+    }
+}
+
+@keyframes splashTitleSlide {
+    0% {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes splashSubtitleSlide {
+    0% {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    100% {
+        opacity: 0.9;
+        transform: translateX(0);
+    }
+}
+
+@keyframes splashLoaderSlide {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes splashSpinner {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 :root {
     /* Color Palette */
     --primary: #E20074;
@@ -87,6 +249,10 @@
     --z-popover: 1060;
     --z-tooltip: 1070;
     --z-toast: 1080;
+    
+    /* Layout Heights */
+    --header-height: 60px;
+    --bottom-bar-height: 80px;
 }
 
 /* Reset and Base Styles */
@@ -249,15 +415,320 @@ body {
     font-size: var(--font-size-lg);
 }
 
-/* Main App */
+/* Passcode Screen Animations */
+.passcode-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-modal);
+    padding: var(--space-6);
+    opacity: 0;
+    transform: translateY(50px) scale(0.9);
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.passcode-screen.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.passcode-screen.hide {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+    transition: all 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+.passcode-container {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition-delay: 0.2s;
+}
+
+.passcode-screen.show .passcode-container {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.passcode-header {
+    margin-bottom: var(--space-12);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition-delay: 0.4s;
+}
+
+.passcode-screen.show .passcode-header {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.app-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+}
+
+.logo-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-2xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--text-inverse);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    opacity: 0;
+    transform: scale(0.5) rotate(-180deg);
+    transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition-delay: 0.6s;
+}
+
+.passcode-screen.show .logo-icon {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+
+.app-logo h1 {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    color: var(--text-inverse);
+    letter-spacing: -0.025em;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition-delay: 0.8s;
+}
+
+.passcode-screen.show .app-logo h1 {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.passcode-subtitle {
+    font-size: var(--font-size-lg);
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition-delay: 1s;
+}
+
+.passcode-screen.show .passcode-subtitle {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.passcode-display {
+    margin-bottom: var(--space-12);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition-delay: 1.2s;
+}
+
+.passcode-screen.show .passcode-display {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.passcode-dots {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.dot {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    opacity: 0;
+    transform: scale(0);
+}
+
+.passcode-screen.show .dot {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.dot:nth-child(1) { transition-delay: 1.4s; }
+.dot:nth-child(2) { transition-delay: 1.5s; }
+.dot:nth-child(3) { transition-delay: 1.6s; }
+.dot:nth-child(4) { transition-delay: 1.7s; }
+
+.dot.filled {
+    background: var(--text-inverse);
+    transform: scale(1.2);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+.passcode-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+    max-width: 300px;
+    margin: 0 auto;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition-delay: 1.8s;
+}
+
+.passcode-screen.show .passcode-keypad {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.keypad-key {
+    aspect-ratio: 1;
+    border: none;
+    border-radius: var(--radius-xl);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-inverse);
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0) rotate(180deg);
+}
+
+.passcode-screen.show .keypad-key {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+
+.keypad-key:nth-child(1) { transition-delay: 2.0s; }
+.keypad-key:nth-child(2) { transition-delay: 2.1s; }
+.keypad-key:nth-child(3) { transition-delay: 2.2s; }
+.keypad-key:nth-child(4) { transition-delay: 2.3s; }
+.keypad-key:nth-child(5) { transition-delay: 2.4s; }
+.keypad-key:nth-child(6) { transition-delay: 2.5s; }
+.keypad-key:nth-child(7) { transition-delay: 2.6s; }
+.keypad-key:nth-child(8) { transition-delay: 2.7s; }
+.keypad-key:nth-child(9) { transition-delay: 2.8s; }
+.keypad-key:nth-child(10) { transition-delay: 2.9s; }
+.keypad-key:nth-child(11) { transition-delay: 3.0s; }
+.keypad-key:nth-child(12) { transition-delay: 3.1s; }
+
+.keypad-key:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.keypad-key:active {
+    transform: scale(0.95);
+}
+
+.keypad-clear,
+.keypad-enter {
+    font-size: var(--font-size-lg);
+}
+
+/* Main App Animation */
 .main-app {
     display: none;
     min-height: 100vh;
     background: var(--bg-secondary);
+    opacity: 0;
+    transform: translateX(100px);
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    height: 100vh;
+    overflow: hidden;
 }
 
 .main-app.authenticated {
     display: block;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.main-app.authenticated .nav-header {
+    opacity: 0;
+    transform: translateY(-30px);
+    animation: slideInFromTop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.3s forwards;
+}
+
+.main-app.authenticated .main-content {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: slideInFromBottom 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.5s forwards;
+}
+
+.main-app.authenticated .bottom-nav {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: slideInFromBottom 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.7s forwards;
+}
+
+@keyframes slideInFromTop {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInFromBottom {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Keypad Key Press Animation */
+.keypad-key.pressed {
+    animation: keyPress 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes keyPress {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+
+/* Passcode Error Animation */
+.passcode-error {
+    color: #FFB3BA;
+    font-size: var(--font-size-sm);
+    opacity: 0;
+    transform: translateY(-10px) scale(0.8);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.passcode-error.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    animation: shake 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
 
 /* Navigation Header */
@@ -349,6 +820,9 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding-bottom: calc(var(--space-20) + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    height: calc(100vh - var(--header-height) - var(--bottom-bar-height));
+    box-sizing: border-box;
 }
 
 /* Welcome Section */
@@ -445,6 +919,8 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: var(--space-4);
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-4);
 }
 
 .brand-card {
@@ -1274,11 +1750,13 @@ body {
 @media (max-width: 768px) {
     .main-content {
         padding: var(--space-4);
+        height: calc(100vh - var(--header-height) - var(--bottom-bar-height));
     }
     
     .brand-grid {
         grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
         gap: var(--space-3);
+        margin-bottom: var(--space-4);
     }
     
     .model-grid {

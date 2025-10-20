@@ -1,5 +1,5 @@
-// Modern Service Worker for Protect Forever PWA
-const CACHE_NAME = 'protect-forever-v1';
+// Modern Service Worker for Protect PWA
+const CACHE_NAME = 'protect-v1';
 const STATIC_CACHE_URLS = [
     '/',
     '/index.html',
@@ -8,10 +8,13 @@ const STATIC_CACHE_URLS = [
     '/config.js',
     '/manifest.json',
     '/sw.js',
+    '/app-icon.png',
     '/icon-192x192.png',
     '/icon-512x512.png',
     '/favicon-16x16.png',
     '/favicon-32x32.png',
+    '/favicon.ico',
+    '/favicon.png',
     'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
 ];
@@ -32,6 +35,8 @@ self.addEventListener('install', event => {
             })
             .catch(error => {
                 console.error('Service Worker installation failed:', error);
+                // Don't fail the installation completely
+                return self.skipWaiting();
             })
     );
 });
@@ -56,6 +61,11 @@ self.addEventListener('activate', event => {
                 console.log('Service Worker activated successfully');
                 return self.clients.claim();
             })
+            .catch(error => {
+                console.error('Service Worker activation failed:', error);
+                // Still try to claim clients
+                return self.clients.claim();
+            })
     );
 });
 
@@ -71,17 +81,22 @@ self.addEventListener('fetch', event => {
         return;
     }
     
+    // Skip requests to external domains that might cause issues
+    if (!event.request.url.startsWith(self.location.origin) && 
+        !event.request.url.includes('fonts.googleapis.com') &&
+        !event.request.url.includes('cdnjs.cloudflare.com')) {
+        return;
+    }
+    
     event.respondWith(
         caches.match(event.request)
             .then(response => {
                 // Return cached version if available
                 if (response) {
-                    console.log('Serving from cache:', event.request.url);
                     return response;
                 }
                 
                 // Otherwise fetch from network
-                console.log('Fetching from network:', event.request.url);
                 return fetch(event.request)
                     .then(response => {
                         // Don't cache non-successful responses
@@ -96,6 +111,9 @@ self.addEventListener('fetch', event => {
                         caches.open(CACHE_NAME)
                             .then(cache => {
                                 cache.put(event.request, responseToCache);
+                            })
+                            .catch(error => {
+                                console.error('Cache put failed:', error);
                             });
                         
                         return response;
@@ -110,6 +128,16 @@ self.addEventListener('fetch', event => {
                         
                         throw error;
                     });
+            })
+            .catch(error => {
+                console.error('Cache match failed:', error);
+                
+                // Return offline page for navigation requests
+                if (event.request.mode === 'navigate') {
+                    return caches.match('/index.html');
+                }
+                
+                throw error;
             })
     );
 });
@@ -132,8 +160,8 @@ self.addEventListener('push', event => {
     
     const options = {
         body: event.data ? event.data.text() : 'New update available',
-        icon: '/icon-192x192.png',
-        badge: '/icon-192x192.png',
+        icon: '/app-icon.png',
+        badge: '/favicon-32x32.png',
         vibrate: [200, 100, 200],
         data: {
             dateOfArrival: Date.now(),
@@ -143,18 +171,18 @@ self.addEventListener('push', event => {
             {
                 action: 'explore',
                 title: 'View Details',
-                icon: '/icon-192x192.png'
+                icon: '/app-icon.png'
             },
             {
                 action: 'close',
                 title: 'Close',
-                icon: '/icon-192x192.png'
+                icon: '/favicon-32x32.png'
             }
         ]
     };
     
     event.waitUntil(
-        self.registration.showNotification('Protect Forever', options)
+        self.registration.showNotification('Protect', options)
     );
 });
 
@@ -166,13 +194,27 @@ self.addEventListener('notificationclick', event => {
     
     if (event.action === 'explore') {
         event.waitUntil(
-            clients.matchAll().then(clientList => {
-                if (clientList.length > 0) {
-                    return clientList[0].focus();
-                } else {
-                    return clients.openWindow('/');
-                }
-            })
+            clients.matchAll({ type: 'window', includeUncontrolled: true })
+                .then(clientList => {
+                    // Try to focus existing window first
+                    for (const client of clientList) {
+                        if (client.url === self.location.origin + '/' && 'focus' in client) {
+                            return client.focus();
+                        }
+                    }
+                    
+                    // If no existing window, open new one
+                    if (clients.openWindow) {
+                        return clients.openWindow('/');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error handling notification click:', error);
+                    // Fallback: try to open window anyway
+                    if (clients.openWindow) {
+                        return clients.openWindow('/');
+                    }
+                })
         );
     }
 });

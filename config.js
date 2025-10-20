@@ -1,4 +1,4 @@
-// Configuration file for Protect Forever
+// Configuration file for Protect
 // Edit this file to customize your Google Sheets integration
 
 const CONFIG = {
@@ -29,7 +29,7 @@ const CONFIG = {
     CACHE_KEY: 'protect_serve_data_cache',
     
     // App settings
-    APP_NAME: 'Protect Forever',
+    APP_NAME: 'Protect',
     APP_VERSION: '2.0.0',
     
     // Security settings

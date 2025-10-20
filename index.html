@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Protect Forever">
+    <meta name="apple-mobile-web-app-title" content="Protect">
     <meta name="theme-color" content="#E20074">
     <meta name="msapplication-TileColor" content="#E20074">
     <meta name="msapplication-TileImage" content="icon-192x192.png">
     
-    <title>Protect Forever - Device Protection</title>
+    <title>Protect - Device Protection</title>
     
     <!-- Preload critical resources -->
     <link rel="preload" href="styles.css" as="style">
@@ -28,9 +28,26 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="app-icon.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512x512.png">
 </head>
 <body>
+    <!-- Splash Screen -->
+    <div id="splashScreen" class="splash-screen">
+        <div class="splash-container">
+            <div class="splash-logo">
+                <img src="https://i.ibb.co/ZpV0Xn3y/Chat-GPT-Image-Oct-19-2025-08-27-49-PM.png" alt="Protect" class="splash-icon">
+            </div>
+            <div class="splash-title">Protect</div>
+            <div class="splash-subtitle">Device Protection Solutions</div>
+            <div class="splash-loader">
+                <div class="loader-spinner"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Passcode Screen -->
     <div id="passcodeScreen" class="passcode-screen">
         <div class="passcode-container">
@@ -39,7 +56,7 @@
                     <div class="logo-icon">
                         <i class="fas fa-shield-alt"></i>
                     </div>
-                    <h1>Protect Forever</h1>
+                    <h1>Protect</h1>
                 </div>
                 <p class="passcode-subtitle">Enter your access code</p>
             </div>
@@ -83,9 +100,9 @@
                 <div class="nav-left">
                     <div class="app-brand">
                         <div class="brand-icon">
-                            <i class="fas fa-shield-alt"></i>
+                            <img src="https://i.ibb.co/ZpV0Xn3y/Chat-GPT-Image-Oct-19-2025-08-27-49-PM.png" alt="Protect" class="header-icon">
                         </div>
-                        <span class="brand-text">Protect Forever</span>
+                        <span class="brand-text">Protect</span>
                     </div>
                 </div>
                 <div class="nav-right">
