@@ -34,7 +34,7 @@ const CONFIG = {
     
     // Security settings
     PASSCODE: '6974',
-    INACTIVITY_TIMEOUT: 20 * 60 * 1000, // 20 minutes in milliseconds
+    INACTIVITY_TIMEOUT: 20 * 1000, // 20 seconds in milliseconds
     
     // Debug mode (shows console logs)
     DEBUG_MODE: true

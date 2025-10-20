@@ -29,6 +29,7 @@ class ProtectForeverApp {
             localStorage.removeItem('lastDataUpdate');
             
             await this.loadData();
+            this.startTimeDateDisplay();
             this.showPasscodeScreen();
         } catch (error) {
             console.error('Failed to initialize app:', error);
@@ -45,9 +46,18 @@ class ProtectForeverApp {
         
         // Main app
         this.elements.mainApp = document.getElementById('mainApp');
-        this.elements.settingsBtn = document.getElementById('settingsBtn');
         this.elements.settingsMenu = document.getElementById('settingsMenu');
         this.elements.closeSettings = document.getElementById('closeSettings');
+        
+        // Time and date display
+        this.elements.timeDateDisplay = document.getElementById('timeDateDisplay');
+        this.elements.currentTime = document.getElementById('currentTime');
+        this.elements.currentDate = document.getElementById('currentDate');
+        
+        // Bottom navigation
+        this.elements.settingsNavBtn = document.getElementById('settingsNavBtn');
+        this.elements.timerNavBtn = document.getElementById('timerNavBtn');
+        this.elements.timerNavLabel = document.getElementById('timerNavLabel');
         
         // Device flow
         this.elements.brandStep = document.getElementById('brandStep');
@@ -101,8 +111,11 @@ class ProtectForeverApp {
             });
         
         // Settings
-        this.elements.settingsBtn.addEventListener('click', () => this.toggleSettings());
         this.elements.closeSettings.addEventListener('click', () => this.closeSettings());
+        
+        // Bottom navigation
+        this.elements.settingsNavBtn.addEventListener('click', () => this.toggleSettings());
+        this.elements.timerNavBtn.addEventListener('click', () => this.showTimerInfo());
         
         // Settings options
         this.elements.refreshDataBtn.addEventListener('click', () => this.refreshData());
@@ -169,9 +182,17 @@ class ProtectForeverApp {
         
         const resetTimer = () => {
             clearTimeout(this.inactivityTimer);
+            clearInterval(this.timerInterval);
+            this.timerStartTime = Date.now();
+            this.updateTimerDisplay();
+            
+            // Start the inactivity timer
             this.inactivityTimer = setTimeout(() => {
                 this.lockApp();
             }, this.config.INACTIVITY_TIMEOUT);
+            
+            // Start real-time countdown display
+            this.startTimerCountdown();
         };
         
         events.forEach(event => {
@@ -179,6 +200,42 @@ class ProtectForeverApp {
         });
         
         resetTimer();
+    }
+    
+    startTimerCountdown() {
+        this.timerInterval = setInterval(() => {
+            this.updateTimerDisplay();
+        }, 100); // Update every 100ms for smooth countdown
+    }
+    
+    updateTimerDisplay() {
+        if (!this.elements.timerNavLabel) return;
+        
+        const remainingTime = this.getRemainingTime();
+        const seconds = Math.floor(remainingTime / 1000);
+        
+        // Display as SS format (e.g., 20, 19, 18...)
+        this.elements.timerNavLabel.textContent = `${seconds.toString().padStart(2, '0')}`;
+        
+        // Update timer button styling based on remaining time
+        const timerBtn = this.elements.timerNavBtn;
+        timerBtn.classList.remove('warning', 'critical');
+        
+        if (remainingTime <= 5000) { // 5 seconds or less
+            timerBtn.classList.add('critical');
+        } else if (remainingTime <= 10000) { // 10 seconds or less
+            timerBtn.classList.add('warning');
+        }
+    }
+    
+    getRemainingTime() {
+        if (!this.timerStartTime) return this.config.INACTIVITY_TIMEOUT;
+        
+        const now = Date.now();
+        const elapsed = now - this.timerStartTime;
+        const remaining = this.config.INACTIVITY_TIMEOUT - elapsed;
+        
+        return Math.max(0, remaining);
     }
     
     async loadData() {
@@ -301,7 +358,7 @@ class ProtectForeverApp {
         try {
             localStorage.setItem(this.config.CACHE_KEY, JSON.stringify(data));
             localStorage.setItem('lastDataUpdate', Date.now().toString());
-        } catch (error) {
+    } catch (error) {
             console.error('Failed to cache data:', error);
         }
     }
@@ -350,7 +407,38 @@ class ProtectForeverApp {
         this.elements.mainApp.style.display = 'block';
         this.elements.mainApp.classList.add('authenticated');
         this.isAuthenticated = true;
+        this.startTimeDateDisplay();
         this.initializeDeviceFlow();
+    }
+    
+    startTimeDateDisplay() {
+        this.updateTimeDate();
+        // Update every second
+        this.timeDateInterval = setInterval(() => {
+            this.updateTimeDate();
+        }, 1000);
+    }
+    
+    updateTimeDate() {
+        if (!this.elements.currentTime || !this.elements.currentDate) return;
+        
+    const now = new Date();
+    
+        // Format time (12-hour format with AM/PM)
+    const timeOptions = {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    };
+        this.elements.currentTime.textContent = now.toLocaleTimeString('en-US', timeOptions);
+    
+        // Format date
+        const dateOptions = { 
+        month: 'short',
+            day: 'numeric', 
+            year: 'numeric' 
+        };
+        this.elements.currentDate.textContent = now.toLocaleDateString('en-US', dateOptions);
     }
     
     handleKeypadInput(key) {
@@ -550,9 +638,9 @@ class ProtectForeverApp {
         setTimeout(() => {
                     card.style.transform = '';
         }, 150);
-    }
-        });
-    }
+        }
+    });
+}
 
     showBrandStep() {
         this.elements.brandStep.classList.add('active');
@@ -573,9 +661,9 @@ class ProtectForeverApp {
         
         if (!device) {
             this.showToast('Device not found', 'error');
-            return;
-        }
-        
+        return;
+    }
+    
         this.populateDeviceModal(device);
         this.elements.deviceModal.classList.add('show');
         
@@ -703,6 +791,13 @@ class ProtectForeverApp {
     
     closeSettings() {
         this.elements.settingsMenu.classList.remove('show');
+    }
+    
+    showTimerInfo() {
+        const remainingTime = this.getRemainingTime();
+        const seconds = Math.floor(remainingTime / 1000);
+        
+        this.showToast(`Inactivity timer: ${seconds}s remaining`, 'info');
     }
     
     async refreshData() {

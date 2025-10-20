@@ -322,6 +322,27 @@ body {
     color: var(--text-primary);
 }
 
+/* Time and Date Display */
+.time-date-display {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-1);
+}
+
+.current-time {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.current-date {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    line-height: 1;
+}
+
 /* Main Content */
 .main-content {
     padding: var(--space-6);
@@ -629,6 +650,17 @@ body {
     color: var(--text-primary);
 }
 
+.nav-item.warning {
+    background: var(--warning);
+    color: var(--text-inverse);
+}
+
+.nav-item.critical {
+    background: var(--error);
+    color: var(--text-inverse);
+    animation: pulse 1s infinite;
+}
+
 .nav-icon {
     font-size: var(--font-size-lg);
 }
@@ -636,6 +668,18 @@ body {
 .nav-label {
     font-size: var(--font-size-xs);
     font-weight: 500;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 /* Device Modal */
