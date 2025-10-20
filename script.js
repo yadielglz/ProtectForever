@@ -1,2351 +1,829 @@
-// Passcode Configuration
-const PASSCODE = '6974';
-let currentPasscode = '';
-let isAuthenticated = false;
-
-// Inactivity timeout variables
-let inactivityTimeout;
-let warningTimeout;
-const INACTIVITY_TIMEOUT = 20000; // 20 seconds of inactivity
-const WARNING_TIME = 5000; // Show warning 5 seconds before timeout
-let lastActivityTime = Date.now();
-
-// Passcode Screen Elements
-const passcodeScreen = document.getElementById('passcodeScreen');
-const mainApp = document.getElementById('mainApp');
-const passcodeDate = document.getElementById('passcodeDate');
-const passcodeDots = document.querySelectorAll('.passcode-dot');
-const passcodeKeys = document.querySelectorAll('.passcode-key');
-const passcodeError = document.getElementById('passcodeError');
-
-// Configuration - loaded from config.js
-const CONFIG = typeof PROTECT_SERVE_CONFIG !== 'undefined' ? PROTECT_SERVE_CONFIG : {
-    // Fallback configuration if config.js is not loaded
-    GOOGLE_SHEETS_URL: 'https://docs.google.com/spreadsheets/d/1nj6k7ouNzxImks-9CEuYvkSkFQfgOeR43Py2c2XH2eU/edit?usp=sharing',
-    CORS_PROXIES: [
-        'https://api.allorigins.win/raw?url=',
-        'https://cors-anywhere.herokuapp.com/',
-        'https://thingproxy.freeboard.io/fetch/',
-        'https://corsproxy.io/?'
-    ],
-    USE_GOOGLE_API: false,
-    GOOGLE_API_KEY: 'YOUR_GOOGLE_API_KEY_HERE',
-    CACHE_DURATION: 5 * 60 * 1000,
-    CACHE_KEY: 'protect_serve_data_cache',
-    DEBUG_MODE: true
-};
-
-// Brand priority for sorting (most popular first)
-const BRAND_PRIORITY = {
-    'Apple': 1,
-    'Samsung': 2,
-    'Google': 3,
-    'Pixel': 3, // Same as Google
-    'Motorola': 4,
-    'OnePlus': 5,
-    'Huawei': 6,
-    'Xiaomi': 7,
-    'Oppo': 8,
-    'Vivo': 9,
-    'LG': 10,
-    'Sony': 11,
-    'Nokia': 12,
-    'BlackBerry': 13,
-    'Revvl': 14
-};
-
-// Sort brands by priority and popularity
-function sortBrands(brands) {
-    return brands.sort((a, b) => {
-        const priorityA = BRAND_PRIORITY[a] || 999;
-        const priorityB = BRAND_PRIORITY[b] || 999;
+// Modern Mobile-First PWA JavaScript
+class ProtectForeverApp {
+    constructor() {
+        this.config = CONFIG;
+        this.deviceData = [];
+        this.currentPasscode = '';
+        this.selectedBrand = null;
+        this.selectedModel = null;
+        this.inactivityTimer = null;
+        this.timeoutTimer = null;
+        this.isAuthenticated = false;
         
-        // First sort by priority
-        if (priorityA !== priorityB) {
-            return priorityA - priorityB;
-        }
+        // DOM Elements
+        this.elements = {};
         
-        // Then sort alphabetically for brands with same priority
-        return a.localeCompare(b);
-    });
-}
-
-// Sort models alphabetically within a brand
-function sortModels(models) {
-    return models.sort((a, b) => {
-        // Extract model numbers for better sorting
-        const modelA = a.deviceModel.toLowerCase();
-        const modelB = b.deviceModel.toLowerCase();
-        
-        // Try to extract numbers for numeric sorting
-        const numA = modelA.match(/\d+/);
-        const numB = modelB.match(/\d+/);
-        
-        if (numA && numB) {
-            const numAVal = parseInt(numA[0]);
-            const numBVal = parseInt(numB[0]);
+        // Initialize the app
+        this.init();
+    }
+    
+    async init() {
+        try {
+            this.cacheDOM();
+            this.setupEventListeners();
+            this.setupInactivityTimeout();
             
-            // If numbers are different, sort by number (descending for newer models first)
-            if (numAVal !== numBVal) {
-                return numBVal - numAVal;
-            }
+            // Clear cache to force fresh data load
+            console.log('Clearing cache to force fresh data load...');
+            localStorage.removeItem(this.config.CACHE_KEY);
+            localStorage.removeItem('lastDataUpdate');
+            
+            await this.loadData();
+            this.showPasscodeScreen();
+        } catch (error) {
+            console.error('Failed to initialize app:', error);
+            this.showError('Failed to initialize app');
         }
-        
-        // Otherwise sort alphabetically
-        return modelA.localeCompare(modelB);
-    });
-}
-
-// Device brand icon mapping
-const DEVICE_BRAND_ICONS = {
-    'apple': {
-        icon: 'fab fa-apple',
-        color: '#ffffff',
-        background: '#000000'
-    },
-    'samsung': {
-        icon: 'fas fa-tablet-alt',
-        color: '#ffffff',
-        background: '#1428a0'
-    },
-    'google': {
-        icon: 'fab fa-google',
-        color: '#ffffff',
-        background: '#4285f4'
-    },
-    'pixel': {
-        icon: 'fab fa-google',
-        color: '#ffffff',
-        background: '#4285f4'
-    },
-    'motorola': {
-        icon: 'fas fa-broadcast-tower',
-        color: '#ffffff',
-        background: '#5c92fa'
-    },
-    'revvl': {
-        icon: 'fas fa-mobile-alt',
-        color: '#ffffff',
-        background: '#e20074'
-    },
-    'oneplus': {
-        icon: 'fas fa-mobile-alt',
-        color: '#ffffff',
-        background: '#f5010c'
-    },
-    'huawei': {
-        icon: 'fas fa-mobile-alt',
-        color: '#ffffff',
-        background: '#ff6900'
-    },
-    'xiaomi': {
-        icon: 'fas fa-mobile-alt',
-        color: '#ffffff',
-        background: '#ff6900'
-    },
-    'oppo': {
-        icon: 'fas fa-mobile-alt',
-        color: '#ffffff',
-        background: '#0088ff'
-    },
-    'vivo': {
-        icon: 'fas fa-mobile-alt',
-        color: '#ffffff',
-        background: '#5c2d91'
-    },
-    'lg': {
-        icon: 'fas fa-mobile-alt',
-        color: '#ffffff',
-        background: '#a50034'
-    },
-    'sony': {
-        icon: 'fas fa-mobile-alt',
-        color: '#ffffff',
-        background: '#000000'
-    },
-    'nokia': {
-        icon: 'fas fa-mobile-alt',
-        color: '#ffffff',
-        background: '#124191'
-    },
-    'blackberry': {
-        icon: 'fas fa-mobile-alt',
-        color: '#ffffff',
-        background: '#000000'
     }
-};
-
-// Brand logo mapping
-const BRAND_LOGOS = {
-    'goto': 'GT',
-    'zagg': 'ZG',
-    'is gls': 'IG',
-    'spigen': 'SP',
-    'otterbox': 'OB',
-    'caseology': 'CS',
-    'tech21': 'T21',
-    'incipio': 'IN',
-    'lifeproof': 'LP',
-    'mous': 'MS'
-};
-
-// Current search state
-let currentSearchResults = [];
-let selectedDeviceIndex = -1;
-
-// Debounce utility function
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Fallback data in case Google Sheets is unavailable
-const fallbackData = [
-    {
-        mdn: "7869913289",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 16 Pro Max",
-        brand: "GoTo",
-        type: "Clear",
-        upc: "2161",
-        available: true
-    },
-    {
-        mdn: "7869913289",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 16 Pro Max",
-        brand: "ZAGG",
-        type: "Privacy",
-        upc: "8091",
-        available: true
-    },
-    {
-        mdn: "7869913289",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 12/12Pro",
-        brand: "GoTo",
-        type: "Clear",
-        upc: "76",
-        available: true
-    },
-    {
-        mdn: "7879638400",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 15 Plus",
-        brand: "GoTo",
-        type: "Clear",
-        upc: "8737",
-        available: true
-    },
-    {
-        mdn: "7879638400",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 16 Plus",
-        brand: "GoTo",
-        type: "Clear",
-        upc: "2147",
-        available: true
-    },
-    {
-        mdn: "7879638400",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 15 Pro Max",
-        brand: "GoTo",
-        type: "Clear",
-        upc: "8744",
-        available: true
-    },
-    {
-        mdn: "7876192300",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 16",
-        brand: "ZAGG",
-        type: "Privacy",
-        upc: "8107",
-        available: true
-    },
-    {
-        mdn: "4076248654",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 14 Plus",
-        brand: "IS GLS",
-        type: "Privacy",
-        upc: "7997",
-        available: true
-    },
-    {
-        mdn: "4076248654",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 11/XR",
-        brand: "ZAGG",
-        type: "VG",
-        upc: "5591",
-        available: true
-    },
-    {
-        mdn: "3214247089",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 13 Pro Max",
-        brand: "GoTo",
-        type: "Clear",
-        upc: "724",
-        available: true
-    },
-    {
-        mdn: "3214247089",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 14 Pro Max",
-        brand: "GoTo",
-        type: "Clear",
-        upc: "6757",
-        available: true
-    },
-    {
-        mdn: "3214247089",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 7 Plus/8 Plus",
-        brand: "GoTo",
-        type: "Clear",
-        upc: "1975",
-        available: true
-    },
-    {
-        mdn: "3214247089",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 11/XR",
-        brand: "GoTo",
-        type: "Clear",
-        upc: "21",
-        available: true
-    },
-    {
-        mdn: "4847259509",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 16 Pro",
-        brand: "GoTo",
-        type: "Clear",
-        upc: "2154",
-        available: true
-    },
-    {
-        mdn: "8632429037",
-        deviceBrand: "Apple",
-        deviceModel: "iPhone 13/ 13 Pro/ 14/ 14 Pro/16e",
-        brand: "GoTo",
-        type: "Clear",
-        upc: "6764",
-        available: true
-    }
-];
-
-// DOM elements
-const brandStep = document.getElementById('brandStep');
-const modelStep = document.getElementById('modelStep');
-const brandGrid = document.getElementById('brandGrid');
-const modelGrid = document.getElementById('modelGrid');
-const backToBrands = document.getElementById('backToBrands');
-const settingsButton = document.getElementById('settingsButton');
-const settingsMenu = document.getElementById('settingsMenu');
-const resultsModal = document.getElementById('resultsModal');
-const closeModal = document.getElementById('closeModal');
-const emptyState = document.getElementById('emptyState');
-const deviceName = document.getElementById('deviceName');
-const deviceModel = document.getElementById('deviceModel');
-const deviceIcon = document.querySelector('.device-icon');
-const optionsGrid = document.getElementById('optionsGrid');
-const showMdnBtn = document.getElementById('showMdnBtn');
-const mdnDisplay = document.getElementById('mdnDisplay');
-const mdnValue = document.getElementById('mdnValue');
-const dataStatus = document.getElementById('dataStatus');
-const statusText = document.getElementById('statusText');
-const refreshButton = document.getElementById('refreshButton');
-const clearCacheButton = document.getElementById('clearCacheButton');
-const reloadButton = document.getElementById('reloadButton');
-const currentTime = document.getElementById('currentTime');
-const currentDate = document.getElementById('currentDate');
-const lastUpdated = document.getElementById('lastUpdated');
-const dataSource = document.getElementById('dataSource');
-
-// Timeout Timer Elements
-const timeoutTimer = document.getElementById('timeoutTimer');
-const timerText = document.getElementById('timerText');
-
-// New UPC Modal Elements
-const upcDeviceIcon = document.getElementById('upcDeviceIcon');
-const upcDeviceName = document.getElementById('upcDeviceName');
-const upcDeviceModel = document.getElementById('upcDeviceModel');
-const upcOptionsCount = document.getElementById('upcOptionsCount');
-const upcOptionsGrid = document.getElementById('upcOptionsGrid');
-const upcShowMdnBtn = document.getElementById('upcShowMdnBtn');
-const upcMdnDisplay = document.getElementById('upcMdnDisplay');
-const upcMdnValue = document.getElementById('upcMdnValue');
-const upcCopyMdnBtn = document.getElementById('upcCopyMdnBtn');
-const upcCloseModal = document.getElementById('upcCloseModal');
-const upcRefreshBtn = document.getElementById('upcRefreshBtn');
-const upcNewSearchBtn = document.getElementById('upcNewSearchBtn');
-
-// Google Sheets integration functions
-async function loadDataFromGoogleSheets() {
-    try {
-        // Check cache first
-        const cachedData = getCachedData();
-        if (cachedData) {
-            console.log('Using cached data');
-            deviceData = cachedData;
-            hideLoadingState(); // Hide loading state when using cached data
-            return;
-        }
+    
+    cacheDOM() {
+        // Passcode screen
+        this.elements.passcodeScreen = document.getElementById('passcodeScreen');
+        this.elements.passcodeDots = document.querySelectorAll('.dot');
+        this.elements.passcodeError = document.getElementById('passcodeError');
+        this.elements.keypadKeys = document.querySelectorAll('.keypad-key');
         
-        // Use requestIdleCallback for non-critical data loading
-        if ('requestIdleCallback' in window) {
-            return new Promise((resolve) => {
-                requestIdleCallback(async () => {
-                    await performDataLoad();
-                    resolve();
+        // Main app
+        this.elements.mainApp = document.getElementById('mainApp');
+        this.elements.settingsBtn = document.getElementById('settingsBtn');
+        this.elements.settingsMenu = document.getElementById('settingsMenu');
+        this.elements.closeSettings = document.getElementById('closeSettings');
+        
+        // Device flow
+        this.elements.brandStep = document.getElementById('brandStep');
+        this.elements.modelStep = document.getElementById('modelStep');
+        this.elements.brandGrid = document.getElementById('brandGrid');
+        this.elements.modelGrid = document.getElementById('modelGrid');
+        this.elements.backToBrands = document.getElementById('backToBrands');
+        
+        // Device modal
+        this.elements.deviceModal = document.getElementById('deviceModal');
+        this.elements.closeModal = document.getElementById('closeModal');
+        this.elements.deviceIcon = document.getElementById('deviceIcon');
+        this.elements.deviceName = document.getElementById('deviceName');
+        this.elements.deviceModel = document.getElementById('deviceModel');
+        this.elements.optionsList = document.getElementById('optionsList');
+        this.elements.optionsCount = document.getElementById('optionsCount');
+        this.elements.showMdnBtn = document.getElementById('showMdnBtn');
+        this.elements.mdnDisplay = document.getElementById('mdnDisplay');
+        this.elements.mdnValue = document.getElementById('mdnValue');
+        this.elements.copyMdnBtn = document.getElementById('copyMdnBtn');
+        this.elements.refreshBtn = document.getElementById('refreshBtn');
+        this.elements.newSearchBtn = document.getElementById('newSearchBtn');
+        
+        // Settings
+        this.elements.refreshDataBtn = document.getElementById('refreshDataBtn');
+        this.elements.clearCacheBtn = document.getElementById('clearCacheBtn');
+        this.elements.reloadAppBtn = document.getElementById('reloadAppBtn');
+        
+        // Toast and loading
+        this.elements.toastContainer = document.getElementById('toastContainer');
+        this.elements.loadingOverlay = document.getElementById('loadingOverlay');
+    }
+    
+    setupEventListeners() {
+        // Passcode keypad
+        this.elements.keypadKeys.forEach(key => {
+            key.addEventListener('click', (e) => {
+                e.preventDefault();
+                const keyValue = e.currentTarget.dataset.key;
+                console.log('Keypad clicked:', keyValue); // Debug log
+                this.handleKeypadInput(keyValue);
+            });
+            
+            // Add touch events for mobile
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const keyValue = e.currentTarget.dataset.key;
+                console.log('Keypad touched:', keyValue); // Debug log
+                this.handleKeypadInput(keyValue);
                 });
             });
-        } else {
-            await performDataLoad();
-        }
-    } catch (error) {
-        console.error('Error loading data from Google Sheets:', error);
-        console.log('Falling back to local data');
-        deviceData = fallbackData;
-        showErrorMessage('Could not load data from Google Sheets. Using local data.');
-        showDataStatus('Using offline data', 'offline');
         
-        // Update source status
-        updateSourceStatus('Vault (Offline)', null);
+        // Settings
+        this.elements.settingsBtn.addEventListener('click', () => this.toggleSettings());
+        this.elements.closeSettings.addEventListener('click', () => this.closeSettings());
         
-        // Hide status after 5 seconds
-        setTimeout(() => {
-            hideDataStatus();
-        }, 5000);
-    } finally {
-        hideLoadingState();
-    }
-}
-
-async function performDataLoad() {
-    // Show loading state
-    showLoadingState();
-    showDataStatus('Getting info from vault...', 'offline');
-
-    let response;
-    
-    // Try Google Sheets API v4 first if configured
-    if (CONFIG.USE_GOOGLE_API && CONFIG.GOOGLE_API_KEY !== 'YOUR_GOOGLE_API_KEY_HERE') {
-        try {
-            response = await fetchFromGoogleSheetsAPI();
-        } catch (error) {
-            console.warn('Google Sheets API failed, trying CORS proxies:', error.message);
-            // Fall back to CORS proxies
-            const csvUrl = convertToCsvUrl(CONFIG.GOOGLE_SHEETS_URL);
-            response = await fetchWithCorsProxies(csvUrl);
-        }
-    } else {
-        // Use CORS proxies
-        const csvUrl = convertToCsvUrl(CONFIG.GOOGLE_SHEETS_URL);
-        response = await fetchWithCorsProxies(csvUrl);
-    }
-    
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const csvText = await response.text();
-    const parsedData = parseCsvData(csvText);
-    
-    if (parsedData.length > 0) {
-        deviceData = parsedData;
-        // Cache the data
-        cacheData(deviceData);
-        console.log(`Loaded ${deviceData.length} devices from Google Sheets`);
-        showDataStatus(`Loaded ${deviceData.length} devices`, 'online');
+        // Settings options
+        this.elements.refreshDataBtn.addEventListener('click', () => this.refreshData());
+        this.elements.clearCacheBtn.addEventListener('click', () => this.clearCache());
+        this.elements.reloadAppBtn.addEventListener('click', () => this.reloadApp());
         
-        // Update source status
-        updateSourceStatus('Vault', new Date());
+        // Device flow
+        this.elements.backToBrands.addEventListener('click', () => this.showBrandStep());
         
-        // Hide status after 3 seconds
-        setTimeout(() => {
-            hideDataStatus();
-        }, 3000);
-    } else {
-        throw new Error('No data found in Google Sheets');
-    }
-}
-
-// Convert Google Sheets URL to CSV export URL
-function convertToCsvUrl(sheetsUrl) {
-    // Extract sheet ID from the URL
-    const sheetIdMatch = sheetsUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-    
-    if (!sheetIdMatch) {
-        throw new Error('Invalid Google Sheets URL format');
-    }
-    
-    const sheetId = sheetIdMatch[1];
-    
-    // Return CSV export URL
-    return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=0`;
-}
-
-// Fetch data using CORS proxies with fallback
-async function fetchWithCorsProxies(url) {
-    let lastError = null;
-    
-    // Try each CORS proxy
-    for (let i = 0; i < CONFIG.CORS_PROXIES.length; i++) {
-        const proxy = CONFIG.CORS_PROXIES[i];
+        // Device modal
+        this.elements.closeModal.addEventListener('click', () => this.closeDeviceModal());
+        this.elements.showMdnBtn.addEventListener('click', () => this.toggleMdnDisplay());
+        this.elements.copyMdnBtn.addEventListener('click', () => this.copyMdn());
+        this.elements.refreshBtn.addEventListener('click', () => this.refreshDeviceData());
+        this.elements.newSearchBtn.addEventListener('click', () => this.startNewSearch());
         
-        try {
-            if (CONFIG.DEBUG_MODE) {
-                console.log(`Trying CORS proxy ${i + 1}/${CONFIG.CORS_PROXIES.length}: ${proxy}`);
+        // Modal backdrop
+        this.elements.deviceModal.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-backdrop')) {
+                this.closeDeviceModal();
             }
-            
-            let proxyUrl;
-            if (proxy.includes('allorigins.win')) {
-                proxyUrl = proxy + encodeURIComponent(url);
-            } else if (proxy.includes('corsproxy.io')) {
-                proxyUrl = proxy + encodeURIComponent(url);
-            } else {
-                proxyUrl = proxy + url;
+        });
+        
+        // Settings backdrop
+        this.elements.settingsMenu.addEventListener('click', (e) => {
+            if (e.target.classList.contains('settings-menu')) {
+                this.closeSettings();
             }
+        });
+        
+        // Touch gestures for mobile
+        this.setupTouchGestures();
+    }
+    
+    setupTouchGestures() {
+        let startY = 0;
+        let startX = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            startX = e.touches[0].clientX;
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            const endY = e.changedTouches[0].clientY;
+            const endX = e.changedTouches[0].clientX;
+            const diffY = startY - endY;
+            const diffX = startX - endX;
             
-            // Update status for user feedback
-            updateDataStatus(`Trying connection ${i + 1}/${CONFIG.CORS_PROXIES.length}...`, 'offline');
-            
-            const response = await fetch(proxyUrl, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'text/csv,text/plain,*/*',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            // Swipe down to close modals
+            if (Math.abs(diffY) > Math.abs(diffX) && diffY < -50) {
+                if (this.elements.deviceModal.classList.contains('show')) {
+                    this.closeDeviceModal();
                 }
+                if (this.elements.settingsMenu.classList.contains('show')) {
+                    this.closeSettings();
+                }
+            }
+        });
+    }
+    
+    setupInactivityTimeout() {
+        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+        
+        const resetTimer = () => {
+            clearTimeout(this.inactivityTimer);
+            this.inactivityTimer = setTimeout(() => {
+                this.lockApp();
+            }, this.config.INACTIVITY_TIMEOUT);
+        };
+        
+        events.forEach(event => {
+            document.addEventListener(event, resetTimer, true);
+        });
+        
+        resetTimer();
+    }
+    
+    async loadData() {
+        try {
+            console.log('Starting data load...');
+            this.showLoading('Loading device data...');
+            
+            // Try to load from cache first
+            const cachedData = this.getCachedData();
+            console.log('Cached data:', cachedData);
+            
+            if (cachedData && this.isCacheValid()) {
+                console.log('Using cached data');
+                this.deviceData = cachedData;
+                this.hideLoading();
+                return;
+            }
+            
+            console.log('Loading from Google Sheets...');
+            // Load from Google Sheets
+            await this.loadFromGoogleSheets();
+            this.hideLoading();
+            
+        } catch (error) {
+            console.error('Failed to load data:', error);
+            this.hideLoading();
+            
+            // Fallback to cached data or default data
+            const fallbackData = this.getCachedData() || this.getFallbackData();
+            console.log('Using fallback data:', fallbackData);
+            this.deviceData = fallbackData;
+            
+            this.showToast('Using offline data', 'warning');
+        }
+    }
+    
+    async loadFromGoogleSheets() {
+        try {
+            console.log('Fetching from Google Sheets URL:', this.config.GOOGLE_SHEETS_URL);
+            
+            // Try direct fetch first
+            let response;
+            try {
+                response = await fetch(this.config.GOOGLE_SHEETS_URL);
+                console.log('Direct fetch response status:', response.status);
+            } catch (directError) {
+                console.log('Direct fetch failed, trying CORS proxies...');
+                
+                // Try CORS proxies
+                for (const proxy of this.config.CORS_PROXIES) {
+                    try {
+                        const proxyUrl = proxy + encodeURIComponent(this.config.GOOGLE_SHEETS_URL);
+                        console.log('Trying proxy:', proxy);
+                        response = await fetch(proxyUrl);
+                        console.log('Proxy response status:', response.status);
+                        
+                        if (response.ok) {
+                            break;
+                        }
+                    } catch (proxyError) {
+                        console.log('Proxy failed:', proxy, proxyError);
+                        continue;
+                    }
+                }
+            }
+            
+            if (!response || !response.ok) {
+                throw new Error(`HTTP error! status: ${response ? response.status : 'No response'}`);
+            }
+            
+            const csvText = await response.text();
+            console.log('CSV text received:', csvText.substring(0, 200) + '...');
+            
+            this.deviceData = this.parseCSVData(csvText);
+            console.log('Parsed device data:', this.deviceData);
+            
+            this.cacheData(this.deviceData);
+            
+        } catch (error) {
+            console.error('Failed to load from Google Sheets:', error);
+            throw error;
+        }
+    }
+    
+    parseCSVData(csvText) {
+        console.log('Parsing CSV data...');
+        const lines = csvText.split('\n').filter(line => line.trim());
+        console.log('CSV lines:', lines.length);
+        console.log('First line (headers):', lines[0]);
+        
+        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        console.log('Parsed headers:', headers);
+        
+        const parsedData = lines.slice(1).map(line => {
+            const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+            const device = {};
+            
+            headers.forEach((header, index) => {
+                device[header] = values[index] || '';
             });
             
-            if (response.ok) {
-                if (CONFIG.DEBUG_MODE) {
-                    console.log(`Successfully fetched data using proxy ${i + 1}`);
-                }
-                return response;
-            } else {
-                throw new Error(`Proxy ${i + 1} returned status ${response.status}`);
-            }
-            
-        } catch (error) {
-            if (CONFIG.DEBUG_MODE) {
-                console.warn(`CORS proxy ${i + 1} failed:`, error.message);
-            }
-            lastError = error;
-            continue;
-        }
-    }
-    
-    // If all proxies fail, try direct access (might work in some browsers)
-    try {
-        console.log('Trying direct access as last resort...');
-        const response = await fetch(url);
-        if (response.ok) {
-            console.log('Direct access succeeded');
-            return response;
-        }
-    } catch (error) {
-        console.warn('Direct access also failed:', error.message);
-    }
-    
-    // If everything fails, throw the last error
-    throw new Error(`All CORS proxies failed. Last error: ${lastError?.message || 'Unknown error'}`);
-}
-
-// Fetch data using Google Sheets API v4
-async function fetchFromGoogleSheetsAPI() {
-    const sheetId = CONFIG.GOOGLE_SHEETS_URL.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)[1];
-    const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1?key=${CONFIG.GOOGLE_API_KEY}`;
-    
-    console.log('Fetching data using Google Sheets API v4...');
-    
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-        throw new Error(`Google Sheets API error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    if (!data.values || data.values.length === 0) {
-        throw new Error('No data found in Google Sheets');
-    }
-    
-    // Convert API response to CSV-like format for parsing
-    const csvText = data.values.map(row => row.join(',')).join('\n');
-    
-    // Create a mock response object
-    return {
-        ok: true,
-        text: () => Promise.resolve(csvText)
-    };
-}
-
-// Parse CSV data into device objects
-function parseCsvData(csvText) {
-    const lines = csvText.split('\n').filter(line => line.trim());
-    
-    if (lines.length < 2) {
-        throw new Error('CSV file must have at least a header and one data row');
-    }
-    
-    // Parse header
-    const headers = parseCsvLine(lines[0]);
-    const expectedHeaders = ['MDN', 'Device Brand', 'Device Model', 'Brand', 'Type', 'UPC', 'Available'];
-    
-    // Validate headers
-    const headerMap = {};
-    expectedHeaders.forEach(header => {
-        const index = headers.findIndex(h => h.toLowerCase().includes(header.toLowerCase()));
-        if (index === -1) {
-            throw new Error(`Missing required column: ${header}`);
-        }
-        headerMap[header] = index;
-    });
-    
-    // Parse data rows
-    const devices = [];
-    for (let i = 1; i < lines.length; i++) {
-        const row = parseCsvLine(lines[i]);
+            return device;
+        });
         
-        if (row.length < expectedHeaders.length) {
-            console.warn(`Skipping incomplete row ${i + 1}`);
-            continue;
-        }
-        
+        console.log('Parsed devices:', parsedData);
+        return parsedData;
+    }
+    
+    getCachedData() {
         try {
-            const device = {
-                mdn: row[headerMap['MDN']]?.trim() || '',
-                deviceBrand: row[headerMap['Device Brand']]?.trim() || '',
-                deviceModel: row[headerMap['Device Model']]?.trim() || '',
-                brand: row[headerMap['Brand']]?.trim() || '',
-                type: row[headerMap['Type']]?.trim() || '',
-                upc: row[headerMap['UPC']]?.trim() || '',
-                available: parseAvailability(row[headerMap['Available']]?.trim() || '')
-            };
-            
-            // Validate required fields
-            if (device.mdn && device.deviceBrand && device.deviceModel && device.brand && device.type && device.upc) {
-                devices.push(device);
-            } else {
-                console.warn(`Skipping row ${i + 1} due to missing required fields`);
-            }
-        } catch (error) {
-            console.warn(`Error parsing row ${i + 1}:`, error);
-        }
-    }
-    
-    return devices;
-}
-
-// Parse a single CSV line handling quoted fields
-function parseCsvLine(line) {
-    const result = [];
-    let current = '';
-    let inQuotes = false;
-    
-    for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        
-        if (char === '"') {
-            inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-            result.push(current.trim());
-            current = '';
-        } else {
-            current += char;
-        }
-    }
-    
-    result.push(current.trim());
-    return result;
-}
-
-// Parse availability status
-function parseAvailability(availability) {
-    const available = availability.toLowerCase();
-    return available === 'true' || available === 'yes' || available === '✅' || available === 'available';
-}
-
-// Cache management
-function getCachedData() {
-    try {
-        const cached = localStorage.getItem(CONFIG.CACHE_KEY);
-        if (!cached) return null;
-        
-        const { data, timestamp } = JSON.parse(cached);
-        
-        // Check if cache is still valid
-        if (Date.now() - timestamp > CONFIG.CACHE_DURATION) {
-            localStorage.removeItem(CONFIG.CACHE_KEY);
-            return null;
-        }
-        
-        return data;
+            const cached = localStorage.getItem(this.config.CACHE_KEY);
+            return cached ? JSON.parse(cached) : null;
     } catch (error) {
-        console.error('Error reading cache:', error);
+            console.error('Failed to parse cached data:', error);
         return null;
     }
 }
 
-function cacheData(data) {
-    try {
-        const cacheObject = {
-            data: data,
-            timestamp: Date.now()
-        };
-        localStorage.setItem(CONFIG.CACHE_KEY, JSON.stringify(cacheObject));
-    } catch (error) {
-        console.error('Error caching data:', error);
-    }
-}
-
-// Loading and error states
-function showLoadingState() {
-    const loadingDiv = document.createElement('div');
-    loadingDiv.id = 'loadingState';
-    loadingDiv.className = 'loading-state';
-    loadingDiv.innerHTML = `
-        <div class="loading-content">
-            <i class="fas fa-spinner fa-spin loading-icon"></i>
-            <h3>Loading Device Data</h3>
-            <p>Getting info from vault...</p>
-        </div>
-    `;
-    
-    // Hide other content
-    resultsModal.style.display = 'none';
-    emptyState.style.display = 'none';
-    
-    // Show loading
-    document.querySelector('.main-content').appendChild(loadingDiv);
-}
-
-function hideLoadingState() {
-    const loadingState = document.getElementById('loadingState');
-    if (loadingState) {
-        loadingState.remove();
-    }
-}
-
-function showErrorMessage(message) {
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.innerHTML = `
-        <div class="error-content">
-            <i class="fas fa-exclamation-triangle error-icon"></i>
-            <h3>Connection Issue</h3>
-            <p>${message}</p>
-            <button onclick="location.reload()" class="retry-button">
-                <i class="fas fa-refresh"></i> Retry
-            </button>
-        </div>
-    `;
-    
-    // Hide other content
-    resultsModal.style.display = 'none';
-    emptyState.style.display = 'none';
-    
-    // Show error
-    document.querySelector('.main-content').appendChild(errorDiv);
-    
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-        if (errorDiv.parentNode) {
-            errorDiv.remove();
-            emptyState.style.display = 'block';
+    cacheData(data) {
+        try {
+            localStorage.setItem(this.config.CACHE_KEY, JSON.stringify(data));
+            localStorage.setItem('lastDataUpdate', Date.now().toString());
+        } catch (error) {
+            console.error('Failed to cache data:', error);
         }
-    }, 5000);
-}
-
-// Clock functionality
-function updateClock() {
-    const now = new Date();
-    
-    // Format date - compact for mobile
-    const isMobile = window.innerWidth <= 768;
-    const dateOptions = isMobile ? {
-        month: 'short',
-        day: 'numeric'
-    } : {
-        weekday: 'long',
-        month: 'short',
-        day: 'numeric'
-    };
-    const dateString = now.toLocaleDateString('en-US', dateOptions);
-    
-    // Only update date since we removed the clock and replaced it with timeout timer
-    const dateElement = document.getElementById('currentDate');
-    if (dateElement) {
-        dateElement.textContent = dateString;
-    } else {
-        console.warn('currentDate element not found');
     }
-}
-
-// Source status functionality
-function updateSourceStatus(source, timestamp) {
-    const now = new Date();
     
-    // Update data source
-    dataSource.textContent = `Source: ${source}`;
+    isCacheValid() {
+        try {
+            const lastUpdate = localStorage.getItem('lastDataUpdate');
+            if (!lastUpdate) return false;
+            
+            const cacheAge = Date.now() - parseInt(lastUpdate);
+            return cacheAge < this.config.CACHE_DURATION;
+        } catch (error) {
+            return false;
+        }
+    }
     
-    // Update last updated time
-    if (timestamp) {
-        const timeDiff = now - timestamp;
-        const minutesAgo = Math.floor(timeDiff / (1000 * 60));
-        const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));
+    getFallbackData() {
+        return [
+            {
+                Brand: 'Samsung',
+                Model: 'Galaxy S24',
+                UPC: '123456789012',
+                MDN: '5551234567',
+                Protection: 'Premium Protection',
+                Available: 'Yes'
+            },
+            {
+                Brand: 'Apple',
+                Model: 'iPhone 15',
+                UPC: '234567890123',
+                MDN: '5552345678',
+                Protection: 'AppleCare+',
+                Available: 'Yes'
+            }
+        ];
+    }
+    
+    showPasscodeScreen() {
+        this.elements.passcodeScreen.style.display = 'flex';
+        this.elements.mainApp.style.display = 'none';
+        this.isAuthenticated = false;
+    }
+    
+    showMainApp() {
+        this.elements.passcodeScreen.style.display = 'none';
+        this.elements.mainApp.style.display = 'block';
+        this.elements.mainApp.classList.add('authenticated');
+        this.isAuthenticated = true;
+        this.initializeDeviceFlow();
+    }
+    
+    handleKeypadInput(key) {
+        console.log('handleKeypadInput called with:', key); // Debug log
         
-        let timeString;
-        if (minutesAgo < 1) {
-            timeString = 'Just now';
-        } else if (minutesAgo < 60) {
-            timeString = `${minutesAgo}m ago`;
-        } else if (hoursAgo < 24) {
-            timeString = `${hoursAgo}h ago`;
-        } else {
-            const daysAgo = Math.floor(hoursAgo / 24);
-            timeString = `${daysAgo}d ago`;
+        if (key === 'clear') {
+            this.currentPasscode = '';
+            this.updatePasscodeDisplay();
+        } else if (key === 'enter') {
+            this.verifyPasscode();
+        } else if (this.currentPasscode.length < 4) {
+            this.currentPasscode += key;
+            this.updatePasscodeDisplay();
         }
         
-        lastUpdated.textContent = `Last updated: ${timeString}`;
-    } else {
-        lastUpdated.textContent = 'Last updated: Never';
-    }
-}
-
-// Initialize source status
-function initializeSourceStatus() {
-    const cached = localStorage.getItem(CONFIG.CACHE_KEY);
-    if (cached) {
-        try {
-            const { timestamp } = JSON.parse(cached);
-            updateSourceStatus('Vault (Cached)', new Date(timestamp));
-        } catch (error) {
-            updateSourceStatus('Vault', null);
-        }
-    } else {
-        updateSourceStatus('Vault', null);
-    }
-}
-
-// Mobile-specific features
-function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-           window.innerWidth <= 768;
-}
-
-function isTouchDevice() {
-    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-}
-
-// Application state management
-let clockInterval = null;
-let cleanupFunctions = [];
-
-// Cleanup function to prevent memory leaks
-function addCleanupFunction(fn) {
-    cleanupFunctions.push(fn);
-}
-
-function cleanup() {
-    cleanupFunctions.forEach(fn => fn());
-    cleanupFunctions = [];
-    if (clockInterval) {
-        clearInterval(clockInterval);
-        clockInterval = null;
+        console.log('Current passcode:', this.currentPasscode); // Debug log
     }
     
-    // Clear inactivity timeouts
-    if (inactivityTimeout) {
-        clearTimeout(inactivityTimeout);
-        inactivityTimeout = null;
-    }
-    if (warningTimeout) {
-        clearTimeout(warningTimeout);
-        warningTimeout = null;
-    }
-}
-
-// Initialize the application
-// Clear all loading states
-function clearAllLoadingStates() {
-    console.log('Clearing all loading states...');
-    
-    hideLoadingState();
-    hideDataStatus();
-    
-    // Also clear any generic loading elements
-    const genericLoading = document.querySelector('.loading');
-    if (genericLoading) {
-        console.log('Removing generic loading element');
-        genericLoading.remove();
-    }
-    
-    // Clear any loading spinners
-    const spinners = document.querySelectorAll('.fa-spinner');
-    spinners.forEach(spinner => {
-        if (spinner.classList.contains('fa-spin')) {
-            console.log('Removing spinning icon');
-            spinner.parentElement.remove();
-        }
-    });
-    
-    // Clear any loading-state elements
-    const loadingStates = document.querySelectorAll('.loading-state');
-    loadingStates.forEach(state => {
-        console.log('Removing loading state element');
-        state.remove();
-    });
-    
-    console.log('All loading states cleared');
-}
-
-document.addEventListener('DOMContentLoaded', async function() {
-    // Clear any existing loading states first
-    clearAllLoadingStates();
-    
-    // Ensure passcode screen is visible
-    passcodeScreen.style.display = 'flex';
-    mainApp.style.display = 'none';
-    
-    // Initialize passcode screen
-    setupPasscodeEventListeners();
-    
-    // Register Service Worker for PWA functionality
-    if ('serviceWorker' in navigator) {
-        try {
-            await navigator.serviceWorker.register('/sw.js');
-            console.log('Service Worker registered successfully');
-        } catch (error) {
-            console.log('Service Worker registration failed:', error);
-        }
-    }
-    
-    console.log('PIN screen initialized. Waiting for authentication...');
-    
-    // Setup inactivity timeout tracking
-    setupInactivityTracking();
-    
-    // Debug: Add manual show main app function to window for testing
-    window.showMainApp = function() {
-        console.log('Manually showing main app...');
-        passcodeScreen.style.display = 'none';
-        mainApp.style.display = 'block';
-        mainApp.style.visibility = 'visible';
-        mainApp.style.opacity = '1';
-        console.log('Main app should now be visible');
-    };
-});
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', cleanup);
-
-// PIN Functions
-
-function updatePasscodeDots() {
-    passcodeDots.forEach((dot, index) => {
-        if (index < currentPasscode.length) {
+    updatePasscodeDisplay() {
+        this.elements.passcodeDots.forEach((dot, index) => {
+            if (index < this.currentPasscode.length) {
             dot.classList.add('filled');
         } else {
             dot.classList.remove('filled');
         }
     });
-}
-
-function addPasscodeDigit(digit) {
-    if (currentPasscode.length < 4) {
-        currentPasscode += digit;
-        updatePasscodeDots();
-        hidePasscodeError();
         
-        // Auto-submit when 4 digits are entered
-        if (currentPasscode.length === 4) {
-            setTimeout(() => {
-                verifyPasscode();
-            }, 300);
-        }
+        this.hidePasscodeError();
     }
-}
-
-function clearPasscode() {
-    currentPasscode = '';
-    updatePasscodeDots();
-    hidePasscodeError();
-}
-
-function verifyPasscode() {
-    console.log('Verifying passcode:', currentPasscode, 'Expected:', PASSCODE);
     
-    if (currentPasscode === PASSCODE) {
-        console.log('PIN correct - transitioning to main app');
-        // Correct passcode - show main app
-        isAuthenticated = true;
-        
-        // Force hide passcode screen
-        passcodeScreen.style.display = 'none';
-        passcodeScreen.style.visibility = 'hidden';
-        
-        // Use setTimeout to ensure DOM updates
-        setTimeout(() => {
-            // Add authenticated class to body for CSS targeting
-            document.body.classList.add('authenticated');
-            
-            // Force show main app with multiple methods
-            mainApp.style.display = 'block';
-            mainApp.style.visibility = 'visible';
-            mainApp.style.opacity = '1';
-            mainApp.classList.remove('hidden');
-            
-            console.log('Main app display:', mainApp.style.display);
-            console.log('Main app visibility:', mainApp.style.visibility);
-            console.log('Main app offsetParent:', mainApp.offsetParent);
-            console.log('Body has authenticated class:', document.body.classList.contains('authenticated'));
-            
-            // Initialize the main app
-            initializeMainApp();
-            
-            // Start inactivity timeout
-            resetInactivityTimeout();
-        }, 100);
+    verifyPasscode() {
+        if (this.currentPasscode === this.config.PASSCODE) {
+            this.showMainApp();
     } else {
-        console.log('PIN incorrect - showing error');
-        // Wrong passcode - show error and clear
-        showPasscodeError();
-        setTimeout(() => {
-            clearPasscode();
-        }, 1000);
-    }
-}
-
-function showPasscodeError() {
-    passcodeError.classList.add('show');
-}
-
-function hidePasscodeError() {
-    passcodeError.classList.remove('show');
-}
-
-// Timeout Timer Functionality
-let timeoutInterval = null;
-let remainingTime = INACTIVITY_TIMEOUT;
-
-function updateTimeoutTimer() {
-    if (!isAuthenticated || !timeoutTimer || !timerText) return;
-    
-    const minutes = Math.floor(remainingTime / 60000);
-    const seconds = Math.floor((remainingTime % 60000) / 1000);
-    const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    
-    timerText.textContent = timeString;
-    
-    // Update timer appearance based on remaining time
-    timeoutTimer.classList.remove('warning', 'critical');
-    
-    if (remainingTime <= 5000) {
-        // Critical - less than 5 seconds
-        timeoutTimer.classList.add('critical');
-    } else if (remainingTime <= 10000) {
-        // Warning - less than 10 seconds
-        timeoutTimer.classList.add('warning');
+            this.showPasscodeError();
+            this.currentPasscode = '';
+            this.updatePasscodeDisplay();
+        }
     }
     
-    remainingTime -= 1000;
-    
-    if (remainingTime <= 0) {
-        remainingTime = 0;
-        clearInterval(timeoutInterval);
-        timeoutInterval = null;
-    }
-}
-
-function startTimeoutTimer() {
-    if (timeoutInterval) {
-        clearInterval(timeoutInterval);
-    }
-    
-    remainingTime = INACTIVITY_TIMEOUT;
-    updateTimeoutTimer();
-    
-    timeoutInterval = setInterval(updateTimeoutTimer, 1000);
-}
-
-function stopTimeoutTimer() {
-    if (timeoutInterval) {
-        clearInterval(timeoutInterval);
-        timeoutInterval = null;
-    }
-    
-    if (timeoutTimer) {
-        timeoutTimer.classList.remove('warning', 'critical');
-        timerText.textContent = '20:00';
-    }
-}
-
-// Inactivity Timeout Functions
-function resetInactivityTimeout() {
-    lastActivityTime = Date.now();
-    
-    // Clear existing timeouts
-    if (inactivityTimeout) {
-        clearTimeout(inactivityTimeout);
-    }
-    if (warningTimeout) {
-        clearTimeout(warningTimeout);
-    }
-    
-    // Only set timeout if user is authenticated
-    if (isAuthenticated) {
-        // Start the visual timer
-        startTimeoutTimer();
-        
-        // Set warning timeout (5 seconds before main timeout)
-        warningTimeout = setTimeout(() => {
-            showInactivityWarning();
-        }, INACTIVITY_TIMEOUT - WARNING_TIME);
-        
-        // Set main timeout
-        inactivityTimeout = setTimeout(() => {
-            lockApp();
-        }, INACTIVITY_TIMEOUT);
-    }
-}
-
-function showInactivityWarning() {
-    console.log('Showing inactivity warning');
-    
-    // Create or show warning notification
-    let warningDiv = document.getElementById('inactivityWarning');
-    if (!warningDiv) {
-        warningDiv = document.createElement('div');
-        warningDiv.id = 'inactivityWarning';
-        warningDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ff6b35;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 10000;
-            font-family: 'Google Sans', sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            animation: slideDown 0.3s ease-out;
-        `;
-        document.body.appendChild(warningDiv);
-    }
-    
-    warningDiv.textContent = 'App will lock in 5 seconds due to inactivity';
-    warningDiv.style.display = 'block';
-    
-    // Auto-hide warning after 5 seconds
+    showPasscodeError() {
+        this.elements.passcodeError.classList.add('show');
     setTimeout(() => {
-        if (warningDiv) {
-            warningDiv.style.display = 'none';
-        }
-    }, WARNING_TIME);
-}
-
-function lockApp() {
-    console.log('App locked due to inactivity');
-    
-    // Stop the timeout timer
-    stopTimeoutTimer();
-    
-    // Reset authentication
-    isAuthenticated = false;
-    
-    // Clear timeouts
-    if (inactivityTimeout) {
-        clearTimeout(inactivityTimeout);
-        inactivityTimeout = null;
-    }
-    if (warningTimeout) {
-        clearTimeout(warningTimeout);
-        warningTimeout = null;
+            this.hidePasscodeError();
+        }, 2000);
     }
     
-    // Hide warning if visible
-    const warningDiv = document.getElementById('inactivityWarning');
-    if (warningDiv) {
-        warningDiv.style.display = 'none';
+    hidePasscodeError() {
+        this.elements.passcodeError.classList.remove('show');
     }
     
-    // Show PIN screen
-    passcodeScreen.style.display = 'flex';
-    passcodeScreen.style.visibility = 'visible';
-    
-    // Hide main app
-    mainApp.style.display = 'none';
-    mainApp.style.visibility = 'hidden';
-    
-    // Remove authenticated class from body
-    document.body.classList.remove('authenticated');
-    
-    // Clear current passcode
-    currentPasscode = '';
-    updatePasscodeDots();
-    hidePasscodeError();
-    
-    // Reset activity time
-    lastActivityTime = Date.now();
-}
-
-function trackUserActivity() {
-    lastActivityTime = Date.now();
-    resetInactivityTimeout();
-}
-
-function setupInactivityTracking() {
-    // Events that indicate user activity
-    const activityEvents = [
-        'mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'
-    ];
-    
-    // Add event listeners to track user activity
-    activityEvents.forEach(event => {
-        document.addEventListener(event, trackUserActivity, true);
-    });
-    
-    // Also track visibility changes (when user switches tabs/apps)
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            // User switched away - don't reset timeout
-            console.log('App hidden - timeout continues');
-        } else {
-            // User returned - reset timeout
-            console.log('App visible - resetting timeout');
-            trackUserActivity();
-        }
-    });
-    
-    console.log('Inactivity tracking setup complete');
-}
-
-function initializeMainApp() {
-    // Initialize clock for main app
-    updateClock();
-    clockInterval = setInterval(updateClock, 1000);
-    
-    // Initialize source status
-    initializeSourceStatus();
-    
-    // Add mobile-specific classes
-    if (isMobileDevice()) {
-        document.body.classList.add('mobile-device');
+    lockApp() {
+        this.showPasscodeScreen();
+        this.currentPasscode = '';
+        this.updatePasscodeDisplay();
     }
     
-    if (isTouchDevice()) {
-        document.body.classList.add('touch-device');
+    initializeDeviceFlow() {
+        console.log('Initializing device flow...');
+        console.log('Device data:', this.deviceData);
+        console.log('Device data length:', this.deviceData.length);
+        
+        this.populateBrands();
+        this.showBrandStep();
     }
     
-    // Load data from Google Sheets
-    loadDataFromGoogleSheets().then(() => {
-        // Validate data before initializing UI
-        if (!validateDeviceData()) {
-            console.error('Invalid device data after loading, using fallback data');
-            deviceData = fallbackData;
+    populateBrands() {
+        console.log('Populating brands...');
+        console.log('Raw device data:', this.deviceData);
+        
+        // Use 'Device Brand' column from the actual sheet structure
+        const brands = [...new Set(this.deviceData.map(device => device['Device Brand']))].filter(Boolean);
+        console.log('Extracted brands:', brands);
+        
+        this.elements.brandGrid.innerHTML = '';
+        
+        if (brands.length === 0) {
+            console.log('No brands found, showing fallback data');
+            this.showFallbackBrands();
+            return;
         }
         
-        // Initialize UI after data is loaded and validated
-        initializeDeviceFlow();
-        setupEventListeners();
-        setupMobileFeatures();
-        
-        // Ensure loading states are hidden
-        clearAllLoadingStates();
-        
-        console.log('Main app initialized successfully with', deviceData.length, 'devices');
-    }).catch(error => {
-        console.error('Failed to load device data, using fallback:', error);
-        deviceData = fallbackData;
-        
-        // Initialize UI with fallback data
-        initializeDeviceFlow();
-        setupEventListeners();
-        setupMobileFeatures();
-        
-        // Ensure loading states are hidden
-        clearAllLoadingStates();
-        
-        console.log('Main app initialized with fallback data:', deviceData.length, 'devices');
-    });
-}
-
-function setupPasscodeEventListeners() {
-    // Keypad event listeners
-    passcodeKeys.forEach(key => {
-        key.addEventListener('click', () => {
-            const keyValue = key.dataset.key;
-            
-            if (keyValue === 'clear') {
-                clearPasscode();
-            } else if (keyValue === 'enter') {
-                verifyPasscode();
-            } else if (keyValue >= '0' && keyValue <= '9') {
-                addPasscodeDigit(keyValue);
-            }
+        brands.forEach(brand => {
+            const brandCard = this.createBrandCard(brand);
+            this.elements.brandGrid.appendChild(brandCard);
         });
-    });
+    }
     
-    // Keyboard support
-    document.addEventListener('keydown', (e) => {
-        // Only handle keys when passcode screen is visible
-        if (passcodeScreen.style.display !== 'none') {
-            if (e.key >= '0' && e.key <= '9') {
-                e.preventDefault();
-                addPasscodeDigit(e.key);
-            } else if (e.key === 'Backspace') {
-                e.preventDefault();
-                clearPasscode();
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                verifyPasscode();
-            }
-        }
-    });
-}
-
-// Initialize search functionality (replaced with device flow)
-function initializeSearch() {
-    console.log('Search functionality replaced with device flow');
-}
-
-// Initialize device flow
-function initializeDeviceFlow() {
-    console.log('Initializing device flow with deviceData:', deviceData);
+    showFallbackBrands() {
+        console.log('Showing fallback brands');
+        const fallbackBrands = ['Samsung', 'Apple', 'Google', 'OnePlus'];
+        
+        fallbackBrands.forEach(brand => {
+            const brandCard = this.createBrandCard(brand);
+            this.elements.brandGrid.appendChild(brandCard);
+        });
+    }
     
-    // Get unique brands and sort them
-    const uniqueBrands = [...new Set(deviceData.map(device => device.deviceBrand))];
-    const sortedBrands = sortBrands(uniqueBrands);
-    
-    console.log('Found brands:', sortedBrands);
-    
-    // Clear existing content
-    brandGrid.innerHTML = '';
-    
-    // Create brand cards in sorted order
-    sortedBrands.forEach((brand, index) => {
-        const brandCard = createBrandCard(brand, index);
-        brandGrid.appendChild(brandCard);
-    });
-    
-    console.log('Device flow initialized with', sortedBrands.length, 'brands (sorted by popularity)');
-}
-
-// Create brand card element
-function createBrandCard(brand, index) {
+    createBrandCard(brand) {
     const card = document.createElement('div');
     card.className = 'brand-card';
-    card.dataset.brand = brand;
-    
-    // Count devices for this brand
-    const deviceCount = deviceData.filter(d => d.deviceBrand === brand).length;
-    
-    // Get brand icon
-    const brandIcon = getDeviceIcon(brand);
+        
+        // Get the appropriate logo for each brand
+        const logoPath = this.getBrandLogo(brand);
     
     card.innerHTML = `
-        <div class="brand-card-icon">
-            ${brandIcon}
+            <div class="brand-icon">
+                <img src="${logoPath}" alt="${brand}" class="brand-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="brand-logo-fallback" style="display: none;">
+                    <i class="fas fa-mobile-alt"></i>
         </div>
-        <div class="brand-card-info">
-            <h3>${brand}</h3>
-            <p>${deviceCount} Device${deviceCount !== 1 ? 's' : ''}</p>
         </div>
-    `;
-    
-    // Add click handler
-    card.addEventListener('click', () => selectBrand(brand));
-    
-    // Add entrance animation
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(20px)';
-    
-    setTimeout(() => {
-        card.style.transition = 'all 0.3s ease-out';
-        card.style.opacity = '1';
-        card.style.transform = 'translateY(0)';
-    }, index * 100);
+            <div class="brand-name">${brand}</div>
+        `;
+        
+        card.addEventListener('click', () => this.selectBrand(brand));
     
     return card;
 }
 
-// Create model card element
-function createModelCard(device, index) {
-    const card = document.createElement('div');
-    card.className = 'model-card';
-    card.dataset.deviceModel = device.deviceModel;
-    
-    // Count units for this device
-    const unitCount = deviceData.filter(d => d.deviceModel === device.deviceModel).length;
-    
-    // Check if any protection options are available
-    const hasAvailableOptions = deviceData.some(d => d.deviceModel === device.deviceModel && d.available);
-    
-    // Simple availability status
-    const availabilityStatus = hasAvailableOptions ? 'Available' : 'Unavailable';
-    const availabilityClass = hasAvailableOptions ? 'available' : 'unavailable';
-    const availabilityIcon = hasAvailableOptions ? 'fas fa-check-circle' : 'fas fa-times-circle';
-    
-    // Get device icon
-    const deviceIcon = getDeviceIcon(device.deviceBrand);
-    
-    card.innerHTML = `
-        <div class="model-card-header">
-            <div class="model-card-icon">
-                ${deviceIcon}
-            </div>
-            <div class="model-card-info">
-                <h3>${device.deviceModel}</h3>
-                <p>${device.deviceBrand} Device</p>
-            </div>
-        </div>
-        <div class="model-card-footer">
-            <div class="availability-info">
-                <div class="availability-status ${availabilityClass}">
-                    <i class="${availabilityIcon}"></i>
-                    <span>${availabilityStatus}</span>
-                </div>
-                <div class="availability-details">
-                    <span class="unit-count">${unitCount} Unit${unitCount !== 1 ? 's' : ''}</span>
-                </div>
-            </div>
-            <span class="device-brand">${device.deviceBrand}</span>
-        </div>
-    `;
-    
-    // Add click handler
-    card.addEventListener('click', () => selectDevice(device));
-    
-    // Add entrance animation
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(20px)';
-    
+    getBrandLogo(brand) {
+        const logoMap = {
+            'Apple': 'apple-logo.png',
+            'Samsung': 'samsung-logo.png',
+            'Google': 'google-logo.png',
+            'Motorola': 'motorola-logo.png',
+            'T-Mobile': 'tmobile-logo.png',
+            'Revvl': 'revvl-logo.png'
+        };
+        
+        return logoMap[brand] || 'app-icon.png';
+    }
+
+    selectBrand(brand) {
+        this.selectedBrand = brand;
+        this.populateModels(brand);
+        this.showModelStep();
+        
+        // Add animation
+        const brandCards = document.querySelectorAll('.brand-card');
+        brandCards.forEach(card => {
+            if (card.querySelector('.brand-name').textContent === brand) {
+                card.style.transform = 'scale(0.95)';
     setTimeout(() => {
-        card.style.transition = 'all 0.3s ease-out';
-        card.style.opacity = '1';
-        card.style.transform = 'translateY(0)';
-    }, index * 100);
-    
-    return card;
-}
-
-// Select brand and show models
-function selectBrand(brand) {
-    // Get models for this brand
-    const brandDevices = deviceData.filter(device => device.deviceBrand === brand);
-    const uniqueModels = [...new Map(brandDevices.map(device => [device.deviceModel, device])).values()];
-    
-    // Sort models by name and number
-    const sortedModels = sortModels(uniqueModels);
-    
-    // Clear model grid
-    modelGrid.innerHTML = '';
-    
-    // Create model cards in sorted order
-    sortedModels.forEach((device, index) => {
-        const modelCard = createModelCard(device, index);
-        modelGrid.appendChild(modelCard);
-    });
-    
-    // Switch to model step
-    brandStep.classList.remove('active');
-    modelStep.classList.add('active');
-    
-    console.log('Selected brand:', brand, 'with', sortedModels.length, 'models (sorted)');
-}
-
-// Go back to brand selection
-function goBackToBrands() {
-    modelStep.classList.remove('active');
-    brandStep.classList.add('active');
-}
-
-// Toggle settings menu
-function toggleSettingsMenu() {
-    settingsMenu.classList.toggle('active');
-}
-
-// Close settings menu when clicking outside
-function closeSettingsMenu(event) {
-    if (!settingsButton.contains(event.target) && !settingsMenu.contains(event.target)) {
-        settingsMenu.classList.remove('active');
-    }
-}
-
-// Setup event listeners
-function setupEventListeners() {
-    // Legacy modal listeners (for backward compatibility)
-    const mdnBtn = document.getElementById('showMdnBtn');
-    if (mdnBtn) mdnBtn.addEventListener('click', toggleMdnDisplay);
-    if (closeModal) closeModal.addEventListener('click', closeModalWindow);
-    
-    // New UPC modal listeners
-    if (upcShowMdnBtn) upcShowMdnBtn.addEventListener('click', toggleUpcMdnDisplay);
-    if (upcCloseModal) upcCloseModal.addEventListener('click', closeUpcModal);
-    if (upcCopyMdnBtn) upcCopyMdnBtn.addEventListener('click', function() {
-        const mdn = upcShowMdnBtn.dataset.mdn;
-        copyToClipboard(mdn, upcCopyMdnBtn);
-    });
-    if (upcRefreshBtn) upcRefreshBtn.addEventListener('click', handleRefresh);
-    if (upcNewSearchBtn) upcNewSearchBtn.addEventListener('click', startNewSearch);
-    
-    // General listeners
-    if (refreshButton) refreshButton.addEventListener('click', handleRefresh);
-    if (clearCacheButton) clearCacheButton.addEventListener('click', handleClearCache);
-    if (reloadButton) reloadButton.addEventListener('click', function() {
-        window.location.reload();
-    });
-    if (backToBrands) backToBrands.addEventListener('click', goBackToBrands);
-    if (settingsButton) settingsButton.addEventListener('click', toggleSettingsMenu);
-    document.addEventListener('click', closeSettingsMenu);
-    
-    // Close modal when clicking outside
-    resultsModal.addEventListener('click', function(e) {
-        if (e.target === resultsModal || e.target.classList.contains('upc-modal-backdrop')) {
-            closeUpcModal();
-        }
-    });
-    
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && resultsModal.style.display !== 'none') {
-            closeUpcModal();
-        }
-    });
-}
-
-// Handle search input
-function handleSearchInput(e) {
-    const query = e.target.value.trim().toLowerCase();
-    
-    if (query.length < 2) {
-        hideSearchResults();
-        return;
-    }
-    
-    // Search through device data
-    const results = deviceData.filter(device => {
-        const deviceModel = device.deviceModel.toLowerCase();
-        const deviceBrand = device.deviceBrand.toLowerCase();
-        return deviceModel.includes(query) || deviceBrand.includes(query);
-    });
-    
-    // Get unique devices
-    const uniqueDevices = [...new Map(results.map(device => [device.deviceModel, device])).values()];
-    
-    currentSearchResults = uniqueDevices;
-    selectedDeviceIndex = -1;
-    
-    if (uniqueDevices.length > 0) {
-        displaySearchResults(uniqueDevices);
-    } else {
-        showNoResults();
-    }
-}
-
-// Handle search focus (replaced with device flow)
-function handleSearchFocus() {
-    console.log('Search focus handling replaced with device flow');
-}
-
-// Handle search keyboard navigation
-function handleSearchKeydown(e) {
-    if (!searchResults.style.display || searchResults.style.display === 'none') {
-        return;
-    }
-    
-    switch (e.key) {
-        case 'ArrowDown':
-            e.preventDefault();
-            selectedDeviceIndex = Math.min(selectedDeviceIndex + 1, currentSearchResults.length - 1);
-            updateSelectedItem();
-            break;
-        case 'ArrowUp':
-            e.preventDefault();
-            selectedDeviceIndex = Math.max(selectedDeviceIndex - 1, -1);
-            updateSelectedItem();
-            break;
-        case 'Enter':
-            e.preventDefault();
-            if (selectedDeviceIndex >= 0 && currentSearchResults[selectedDeviceIndex]) {
-                selectDevice(currentSearchResults[selectedDeviceIndex]);
+                    card.style.transform = '';
+                }, 150);
             }
-            break;
-        case 'Escape':
-            hideSearchResults();
-            break;
+        });
     }
-}
-
-// Display search results
-function displaySearchResults(devices) {
-    searchResults.innerHTML = '';
     
-    devices.forEach((device, index) => {
-        const resultItem = document.createElement('div');
-        resultItem.className = 'search-result-item';
-        resultItem.dataset.index = index;
-        resultItem.dataset.deviceModel = device.deviceModel;
+    populateModels(brand) {
+        const models = this.deviceData
+            .filter(device => device['Device Brand'] === brand)
+            .map(device => device['Device Model'])
+            .filter(Boolean);
         
-        const deviceIcon = getDeviceIcon(device.deviceBrand);
-        const unitCount = deviceData.filter(d => d.deviceModel === device.deviceModel).length;
+        this.elements.modelGrid.innerHTML = '';
         
-        // Accurate unit count for search results
-        const unitText = unitCount === 1 ? 
-            '1 unit available' : 
-            `${unitCount} units available`;
+        models.forEach(model => {
+            const modelCard = this.createModelCard(model, brand);
+            this.elements.modelGrid.appendChild(modelCard);
+        });
+    }
+    
+    createModelCard(model, brand) {
+        // Get availability for this model
+        const device = this.deviceData.find(d => 
+            d['Device Brand'] === brand && d['Device Model'] === model
+        );
+        const isAvailable = device && (device.Available === '✅' || device.Available === 'yes');
         
-        resultItem.innerHTML = `
-            <div class="device-icon-small">
-                ${deviceIcon}
-            </div>
-            <div class="device-info-small">
-                <div class="device-name-small">${device.deviceBrand} ${device.deviceModel}</div>
-                <div class="device-details-small">${unitText}</div>
+        const card = document.createElement('div');
+        card.className = 'model-card';
+        card.innerHTML = `
+            <div class="model-name">${model}</div>
+            <div class="model-count ${isAvailable ? 'available' : 'unavailable'}">
+                <i class="fas fa-circle"></i>
+                <span>${isAvailable ? 'Available' : 'Unavailable'}</span>
             </div>
         `;
         
-        // Add staggered entrance animation
-        resultItem.style.opacity = '0';
-        resultItem.style.transform = 'translateX(-20px)';
-        searchResults.appendChild(resultItem);
+        card.addEventListener('click', () => this.selectModel(model, brand));
         
-        setTimeout(() => {
-            resultItem.style.transition = 'all 0.3s ease-out';
-            resultItem.style.opacity = '1';
-            resultItem.style.transform = 'translateX(0)';
-        }, index * 50);
-    });
-    
-    searchResults.style.display = 'block';
-}
+        return card;
+    }
 
-// Show no results message
-function showNoResults() {
-    searchResults.innerHTML = `
-        <div class="no-results">
-            <i class="fas fa-search"></i>
-            <p>No devices found matching your search</p>
-        </div>
-    `;
-    searchResults.style.display = 'block';
-}
-
-// Hide search results
-function hideSearchResults() {
-    searchResults.style.display = 'none';
-    selectedDeviceIndex = -1;
-}
-
-// Update selected item in search results
-function updateSelectedItem() {
-    const items = searchResults.querySelectorAll('.search-result-item');
-    items.forEach((item, index) => {
-        if (index === selectedDeviceIndex) {
-            item.classList.add('selected');
-        } else {
-            item.classList.remove('selected');
-        }
-    });
-}
-
-// Select a device from device selector
-function selectDevice(device) {
-    // Add visual feedback for selection
-    const selectedCard = document.querySelector(`[data-device-model="${device.deviceModel}"]`);
-    if (selectedCard) {
-        selectedCard.style.transform = 'scale(0.95)';
-        selectedCard.style.opacity = '0.8';
+    selectModel(model, brand) {
+        this.selectedModel = model;
+        this.selectedBrand = brand; // Store the brand for the modal
+        this.showDeviceModal();
         
-        // Add selection animation
+        // Add animation
+        const modelCards = document.querySelectorAll('.model-card');
+        modelCards.forEach(card => {
+            if (card.querySelector('.model-name').textContent === model) {
+                card.style.transform = 'scale(0.95)';
         setTimeout(() => {
-            selectedCard.style.transform = '';
-            selectedCard.style.opacity = '';
+                    card.style.transform = '';
         }, 150);
     }
+        });
+    }
+
+    showBrandStep() {
+        this.elements.brandStep.classList.add('active');
+        this.elements.modelStep.classList.remove('active');
+        this.selectedBrand = null;
+        this.selectedModel = null;
+    }
     
-    // Filter data for selected device
-    const deviceOptions = deviceData.filter(d => d.deviceModel === device.deviceModel);
+    showModelStep() {
+        this.elements.brandStep.classList.remove('active');
+        this.elements.modelStep.classList.add('active');
+    }
     
-    if (deviceOptions.length > 0) {
-        // Add delay for smooth transition
+    showDeviceModal() {
+        const device = this.deviceData.find(d => 
+            d['Device Brand'] === this.selectedBrand && d['Device Model'] === this.selectedModel
+        );
+        
+        if (!device) {
+            this.showToast('Device not found', 'error');
+            return;
+        }
+        
+        this.populateDeviceModal(device);
+        this.elements.deviceModal.classList.add('show');
+        
+        // Add entrance animation
         setTimeout(() => {
-            displayDeviceInfo(deviceOptions);
-        }, 200);
+            this.elements.deviceModal.querySelector('.modal-container').style.transform = 'scale(1)';
+        }, 10);
+    }
+    
+    populateDeviceModal(device) {
+        // Device info
+        this.elements.deviceName.textContent = `${device['Device Brand']} ${device['Device Model']}`;
+        this.elements.deviceModel.textContent = `${device['Device Brand']} ${device['Device Model']}`;
+        
+        // Protection options - get all options for this device
+        const options = this.deviceData.filter(d => 
+            d['Device Brand'] === device['Device Brand'] && d['Device Model'] === device['Device Model']
+        );
+        
+        this.elements.optionsCount.textContent = `${options.length} option${options.length !== 1 ? 's' : ''}`;
+        
+        this.elements.optionsList.innerHTML = '';
+        options.forEach(option => {
+            const optionCard = this.createProtectionCard(option);
+            this.elements.optionsList.appendChild(optionCard);
+        });
+        
+        // MDN button - hide by default
+        this.elements.showMdnBtn.dataset.mdn = device.MDN;
+        this.elements.mdnDisplay.style.display = 'none';
+        this.elements.showMdnBtn.innerHTML = '<i class="fas fa-eye"></i><span>Reveal MDN</span>';
+    }
+    
+    createProtectionCard(device) {
+        const card = document.createElement('div');
+        card.className = 'protection-card';
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="brand-info">
+                    <div class="brand-logo">${device.Brand.charAt(0)}</div>
+                    <div class="brand-name">${device.Brand}</div>
+        </div>
+                <div class="protection-type">${device.Type}</div>
+            </div>
+            <div class="upc-section">
+                <div class="upc-label">UPC Code</div>
+                <div class="upc-code">
+                    <span class="upc-value">${device.UPC}</span>
+                    <button class="copy-button" onclick="app.copyUPC('${device.UPC}')">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="availability ${device.Available === '✅' || device.Available === 'yes' ? 'available' : 'unavailable'}">
+                <i class="fas fa-circle"></i>
+                <span>${device.Available === '✅' || device.Available === 'yes' ? 'Available' : 'Unavailable'}</span>
+        </div>
+    `;
+    
+        return card;
+    }
+    
+    closeDeviceModal() {
+        this.elements.deviceModal.classList.remove('show');
+        this.elements.mdnDisplay.style.display = 'none';
+    }
+    
+    toggleMdnDisplay() {
+        const mdn = this.elements.showMdnBtn.dataset.mdn;
+        const isVisible = this.elements.mdnDisplay.style.display !== 'none';
+        
+        if (isVisible) {
+            this.elements.mdnDisplay.style.display = 'none';
+            this.elements.showMdnBtn.innerHTML = '<i class="fas fa-eye"></i><span>Reveal MDN</span>';
     } else {
-        showEmptyState();
-    }
-}
-
-// Animate search input when device is selected (replaced with device flow)
-function animateSearchInput() {
-    console.log('Search input animation replaced with device flow');
-}
-
-// Get device icon based on brand
-function getDeviceIcon(brand) {
-    const brandLower = brand.toLowerCase();
-    
-    // Debug: Log the brand to see what we're getting
-    if (CONFIG.DEBUG_MODE) {
-        console.log('Device brand detected:', brand, '->', brandLower);
-    }
-    
-    // Check for specific device types first
-    if (brandLower.includes('iphone') || brandLower.includes('ipad') || brandLower.includes('apple')) {
-        return createBrandIcon('apple');
-    }
-    if (brandLower.includes('samsung')) {
-        return createBrandIcon('samsung');
-    }
-    if (brandLower.includes('pixel')) {
-        return createBrandIcon('pixel');
-    }
-    if (brandLower.includes('google')) {
-        return createBrandIcon('google');
-    }
-    if (brandLower.includes('motorola')) {
-        return createBrandIcon('motorola');
-    }
-    if (brandLower.includes('revvl')) {
-        return createBrandIcon('revvl');
-    }
-    if (brandLower.includes('oneplus')) {
-        return createBrandIcon('oneplus');
-    }
-    if (brandLower.includes('huawei')) {
-        return createBrandIcon('huawei');
-    }
-    if (brandLower.includes('xiaomi')) {
-        return createBrandIcon('xiaomi');
-    }
-    if (brandLower.includes('oppo')) {
-        return createBrandIcon('oppo');
-    }
-    if (brandLower.includes('vivo')) {
-        return createBrandIcon('vivo');
-    }
-    if (brandLower.includes('lg')) {
-        return createBrandIcon('lg');
-    }
-    if (brandLower.includes('sony')) {
-        return createBrandIcon('sony');
-    }
-    if (brandLower.includes('nokia')) {
-        return createBrandIcon('nokia');
-    }
-    if (brandLower.includes('blackberry')) {
-        return createBrandIcon('blackberry');
-    }
-    
-    // Default to a generic mobile icon instead of Apple
-    if (CONFIG.DEBUG_MODE) {
-        console.log('Using default Samsung icon for brand:', brand);
-    }
-    return createBrandIcon('samsung'); // Default to Samsung (generic mobile icon)
-}
-
-// Create brand icon element
-function createBrandIcon(brandKey) {
-    const brandInfo = DEVICE_BRAND_ICONS[brandKey] || DEVICE_BRAND_ICONS['samsung'];
-    
-    // Use custom logo images instead of Font Awesome icons
-    const logoMap = {
-        'apple': 'apple-logo.png',
-        'samsung': 'samsung-logo.png',
-        'motorola': 'motorola-logo.png',
-        'google': 'google-logo.png',
-        'pixel': 'google-logo.png',
-        'revvl': 'revvl-logo.png'
-    };
-    
-    if (logoMap[brandKey]) {
-        return `<img src="${logoMap[brandKey]}" alt="${brandKey}" class="brand-icon-image">`;
-    }
-    
-    return `<i class="${brandInfo.icon}"></i>`;
-}
-
-// Get brand logo
-function getBrandLogo(brand) {
-    const brandLower = brand.toLowerCase();
-    return BRAND_LOGOS[brandLower] || brand.substring(0, 2).toUpperCase();
-}
-
-// Display device information in modern UPC modal
-function displayDeviceInfo(deviceOptions) {
-    const firstOption = deviceOptions[0];
-    
-    // Show the modern UPC modal
-    resultsModal.style.display = 'flex';
-    resultsModal.classList.add('show');
-    
-    // Update device header with icon
-    const deviceIconElement = createBrandIcon(firstOption.deviceBrand.toLowerCase());
-    upcDeviceIcon.innerHTML = deviceIconElement;
-    upcDeviceName.textContent = `${firstOption.deviceBrand} ${firstOption.deviceModel}`;
-    upcDeviceModel.textContent = `${deviceOptions.length} protection option${deviceOptions.length !== 1 ? 's' : ''} available`;
-    
-    // Update options count
-    upcOptionsCount.textContent = `${deviceOptions.length} option${deviceOptions.length !== 1 ? 's' : ''}`;
-    
-    // Clear and populate options with modern cards
-    upcOptionsGrid.innerHTML = '';
-    deviceOptions.forEach((option, index) => {
-        const optionElement = createModernProtectionCard(option, index);
-        upcOptionsGrid.appendChild(optionElement);
-    });
-    
-    // Store MDN for display
-    upcShowMdnBtn.dataset.mdn = firstOption.mdn;
-    
-    // Show results section
-    showResults();
-}
-
-// Create modern protection card element
-function createModernProtectionCard(option, index) {
-    const card = document.createElement('div');
-    card.className = 'upc-protection-card';
-    
-    const lastFourUPC = option.upc.slice(-4);
-    const availabilityClass = option.available ? 'available' : 'unavailable';
-    const availabilityText = option.available ? 'Available' : 'Unavailable';
-    const availabilityIcon = option.available ? 'fas fa-check-circle' : 'fas fa-times-circle';
-    
-    // Get brand logo
-    const brandLogo = getBrandLogo(option.brand);
-    
-    card.innerHTML = `
-        <div class="upc-card-header">
-            <div class="upc-brand-info">
-                <div class="upc-brand-logo">${brandLogo}</div>
-                <div class="upc-brand-name">${option.brand}</div>
-            </div>
-            <div class="upc-protection-type">${option.type}</div>
-        </div>
-        
-        <div class="upc-upc-section">
-            <div class="upc-upc-label">UPC Code</div>
-            <div class="upc-upc-code">
-                <span>${lastFourUPC}</span>
-                <button class="upc-copy-upc-btn" onclick="copyToClipboard('${lastFourUPC}', this)" title="Copy UPC">
-                    <i class="fas fa-copy"></i>
-                </button>
-            </div>
-        </div>
-        
-        <div class="upc-availability ${availabilityClass}">
-            <i class="${availabilityIcon}"></i>
-            <span>${availabilityText}</span>
-        </div>
-    `;
-    
-    // Add entrance animation
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(20px)';
-    
-    setTimeout(() => {
-        card.style.transition = 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-        card.style.opacity = '1';
-        card.style.transform = 'translateY(0)';
-    }, index * 100);
-    
-    return card;
-}
-
-// Copy to clipboard functionality
-async function copyToClipboard(text, button) {
-    try {
-        await navigator.clipboard.writeText(text);
-        
-        // Visual feedback
-        const originalIcon = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i>';
-        button.style.background = 'rgba(16, 185, 129, 0.2)';
-        button.style.borderColor = 'rgba(16, 185, 129, 0.3)';
-        button.style.color = 'var(--success-color)';
-        
-        // Reset after 2 seconds
-        setTimeout(() => {
-            button.innerHTML = originalIcon;
-            button.style.background = '';
-            button.style.borderColor = '';
-            button.style.color = '';
-        }, 2000);
-        
-        // Show toast notification
-        showToastNotification(`${text} copied to clipboard!`);
-        
-    } catch (err) {
-        console.error('Failed to copy: ', err);
-        showToastNotification('Failed to copy to clipboard', 'error');
-    }
-}
-
-// Show toast notification
-function showToastNotification(message, type = 'success') {
-    const toast = document.createElement('div');
-    toast.className = `upc-toast upc-toast-${type}`;
-    toast.textContent = message;
-    
-    toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'success' ? 'var(--success-color)' : 'var(--error-color)'};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        z-index: 10000;
-        animation: slideInRight 0.3s ease-out;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto-remove after 3 seconds
-    setTimeout(() => {
-        toast.style.animation = 'slideOutRight 0.3s ease-in';
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.parentNode.removeChild(toast);
-            }
-        }, 300);
-    }, 3000);
-}
-
-// Toggle MDN display for new modal
-function toggleUpcMdnDisplay() {
-    const mdn = upcShowMdnBtn.dataset.mdn;
-    
-    if (upcMdnDisplay.style.display === 'none' || upcMdnDisplay.style.display === '') {
-        // Show MDN with animation
-        upcMdnValue.textContent = mdn;
-        upcMdnDisplay.style.display = 'block';
-        upcMdnDisplay.style.opacity = '0';
-        upcMdnDisplay.style.transform = 'scale(0.8) translateY(-10px)';
-        
-        // Animate MDN display entrance
-        requestAnimationFrame(() => {
-            upcMdnDisplay.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
-            upcMdnDisplay.style.opacity = '1';
-            upcMdnDisplay.style.transform = 'scale(1) translateY(0)';
+            this.elements.mdnValue.textContent = mdn;
+            this.elements.mdnDisplay.style.display = 'block';
+            this.elements.mdnDisplay.classList.add('show');
+            this.elements.showMdnBtn.innerHTML = '<i class="fas fa-eye-slash"></i><span>Hide MDN</span>';
             
-            // Scroll to MDN section to ensure it's visible
-            setTimeout(() => {
-                upcMdnDisplay.scrollIntoView({ 
+            // Scroll to MDN section
+        setTimeout(() => {
+                this.elements.mdnDisplay.scrollIntoView({ 
                     behavior: 'smooth', 
-                    block: 'nearest',
-                    inline: 'nearest'
+                    block: 'nearest' 
                 });
             }, 100);
-        });
-        
-        upcShowMdnBtn.innerHTML = '<i class="fas fa-eye-slash"></i><span>Hide MDN</span>';
-        
-        // Add button animation
-        upcShowMdnBtn.style.transform = 'scale(1.05)';
-        setTimeout(() => {
-            upcShowMdnBtn.style.transform = '';
-        }, 200);
-    } else {
-        // Hide MDN with animation
-        upcMdnDisplay.style.transition = 'all 0.2s ease-in';
-        upcMdnDisplay.style.opacity = '0';
-        upcMdnDisplay.style.transform = 'scale(0.8) translateY(-10px)';
-        
-        setTimeout(() => {
-            upcMdnDisplay.style.display = 'none';
-        }, 200);
-        
-        upcShowMdnBtn.innerHTML = '<i class="fas fa-eye"></i><span>Reveal MDN</span>';
-        
-        // Add button animation
-        upcShowMdnBtn.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            upcShowMdnBtn.style.transform = '';
-        }, 150);
-    }
-}
-
-// Close UPC modal
-function closeUpcModal() {
-    resultsModal.style.display = 'none';
-    resultsModal.classList.remove('show');
-    
-    // Reset MDN display
-    if (upcMdnDisplay) upcMdnDisplay.style.display = 'none';
-    if (upcShowMdnBtn) upcShowMdnBtn.innerHTML = '<i class="fas fa-eye"></i><span>Reveal MDN</span>';
-}
-
-// New search functionality
-function startNewSearch() {
-    closeUpcModal();
-    // Go back to brand selection
-    modelStep.classList.remove('active');
-    brandStep.classList.add('active');
-}
-
-// Toggle MDN display
-function toggleMdnDisplay() {
-    const mdn = showMdnBtn.dataset.mdn;
-    
-    if (mdnDisplay.style.display === 'none' || mdnDisplay.style.display === '') {
-        // Show MDN with animation
-        mdnValue.textContent = mdn;
-        mdnDisplay.style.display = 'block';
-        mdnDisplay.style.opacity = '0';
-        mdnDisplay.style.transform = 'scale(0.8) translateY(-10px)';
-        
-        // Animate MDN display entrance
-        requestAnimationFrame(() => {
-            mdnDisplay.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
-            mdnDisplay.style.opacity = '1';
-            mdnDisplay.style.transform = 'scale(1) translateY(0)';
-        });
-        
-        showMdnBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide MDN';
-        
-        // Add button animation
-        showMdnBtn.style.transform = 'scale(1.1)';
-        setTimeout(() => {
-            showMdnBtn.style.transform = '';
-        }, 200);
-    } else {
-        // Hide MDN with animation
-        mdnDisplay.style.transition = 'all 0.2s ease-in';
-        mdnDisplay.style.opacity = '0';
-        mdnDisplay.style.transform = 'scale(0.8) translateY(-10px)';
-        
-        setTimeout(() => {
-            mdnDisplay.style.display = 'none';
-        }, 200);
-        
-        showMdnBtn.innerHTML = '<i class="fas fa-eye"></i> Show MDN';
-        
-        // Add button animation
-        showMdnBtn.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            showMdnBtn.style.transform = '';
-        }, 150);
-    }
-}
-
-// Show results modal
-function showResults() {
-    // Hide empty state and show results modal
-    if (emptyState) emptyState.style.display = 'none';
-    if (resultsModal) {
-        resultsModal.style.display = 'flex';
-        resultsModal.classList.add('show');
-    }
-    
-    // Reset MDN display (only if old modal elements exist)
-    if (mdnDisplay) mdnDisplay.style.display = 'none';
-    if (showMdnBtn) showMdnBtn.innerHTML = '<i class="fas fa-eye"></i> Show MDN';
-}
-
-// Close modal window
-function closeModalWindow() {
-    if (resultsModal) {
-        resultsModal.style.display = 'none';
-        resultsModal.classList.remove('show');
-    }
-    // Search functionality replaced with device flow
-}
-
-// Show empty state
-function showEmptyState() {
-    if (resultsModal) {
-        resultsModal.style.display = 'none';
-        resultsModal.classList.remove('show');
-    }
-    if (emptyState) emptyState.style.display = 'block';
-}
-
-// Add some interactive effects
-document.addEventListener('DOMContentLoaded', function() {
-    // Add hover effects to protection options
-    document.addEventListener('mouseover', function(e) {
-        if (e.target.closest('.protection-option')) {
-            e.target.closest('.protection-option').style.transform = 'translateY(-2px)';
-        }
-    });
-    
-    document.addEventListener('mouseout', function(e) {
-        if (e.target.closest('.protection-option')) {
-            e.target.closest('.protection-option').style.transform = 'translateY(0)';
-        }
-    });
-    
-    // Add click effect to MDN button (only if element exists)
-    const mdnButton = document.getElementById('showMdnBtn');
-    if (mdnButton) {
-        mdnButton.addEventListener('mousedown', function() {
-            this.style.transform = 'translateY(0)';
-        });
-        
-        mdnButton.addEventListener('mouseup', function() {
-            this.style.transform = 'translateY(-2px)';
-        });
-    }
-});
-
-// Add keyboard navigation support
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.key === ' ') {
-        if (document.activeElement === showMdnBtn) {
-            e.preventDefault();
-            toggleMdnDisplay();
         }
     }
-});
-
-// Add loading animation for better UX
-function showLoading() {
-    const loadingDiv = document.createElement('div');
-    loadingDiv.className = 'loading';
-    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-    document.querySelector('.main-content').appendChild(loadingDiv);
-}
-
-function hideLoading() {
-    const loading = document.querySelector('.loading');
-    if (loading) {
-        loading.remove();
-    }
-}
-
-// Enhanced device selection with search functionality
-function enhanceDeviceSelect() {
-    // This function is no longer needed as we use the search input directly
-    console.log('Search functionality is already implemented');
-}
-
-// Initialize enhanced features
-document.addEventListener('DOMContentLoaded', function() {
-    // Add smooth scrolling
-    document.documentElement.style.scrollBehavior = 'smooth';
-});
-
-// Add error handling
-function handleError(error) {
-    console.error('Application error:', error);
     
-    // Show user-friendly error message
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.innerHTML = `
-        <div class="error-content">
-            <i class="fas fa-exclamation-triangle error-icon"></i>
-            <h3>Application Error</h3>
-            <p>Something went wrong. Please try again.</p>
-            <button onclick="location.reload()" class="retry-button">
-                <i class="fas fa-refresh"></i> Retry
-            </button>
+    copyMdn() {
+        const mdn = this.elements.mdnValue.textContent;
+        this.copyToClipboard(mdn, 'MDN copied to clipboard');
+    }
+    
+    copyUPC(upc) {
+        this.copyToClipboard(upc, 'UPC copied to clipboard');
+    }
+    
+    async copyToClipboard(text, message) {
+        try {
+            await navigator.clipboard.writeText(text);
+            this.showToast(message, 'success');
+        } catch (error) {
+            console.error('Failed to copy to clipboard:', error);
+            this.showToast('Failed to copy', 'error');
+        }
+    }
+    
+    refreshDeviceData() {
+        this.closeDeviceModal();
+        this.loadData().then(() => {
+            this.showToast('Data refreshed', 'success');
+        });
+    }
+    
+    startNewSearch() {
+        this.closeDeviceModal();
+        this.showBrandStep();
+    }
+    
+    toggleSettings() {
+        this.elements.settingsMenu.classList.add('show');
+    }
+    
+    closeSettings() {
+        this.elements.settingsMenu.classList.remove('show');
+    }
+    
+    async refreshData() {
+        try {
+            this.showLoading('Refreshing data...');
+            
+            // Clear cache
+            localStorage.removeItem(this.config.CACHE_KEY);
+            localStorage.removeItem('lastDataUpdate');
+            
+            // Force reload from Google Sheets
+            await this.loadFromGoogleSheets();
+            this.hideLoading();
+            
+            // Reinitialize device flow with fresh data
+            this.initializeDeviceFlow();
+            
+            this.showToast('Data refreshed successfully', 'success');
+            this.closeSettings();
+        } catch (error) {
+            this.hideLoading();
+            this.showToast('Failed to refresh data', 'error');
+        }
+    }
+    
+    async clearCache() {
+        try {
+            // Clear localStorage
+            localStorage.removeItem(this.config.CACHE_KEY);
+            localStorage.removeItem('lastDataUpdate');
+            
+            // Clear service worker cache
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(
+                    cacheNames.map(cacheName => caches.delete(cacheName))
+                );
+            }
+            
+            this.showToast('Cache cleared successfully', 'success');
+            this.closeSettings();
+            
+            // Reload data
+            await this.loadData();
+        
+    } catch (error) {
+            console.error('Failed to clear cache:', error);
+            this.showToast('Failed to clear cache', 'error');
+        }
+    }
+    
+    reloadApp() {
+        window.location.reload();
+    }
+    
+    showLoading(message = 'Loading...') {
+        this.elements.loadingOverlay.querySelector('.loading-text').textContent = message;
+        this.elements.loadingOverlay.classList.add('show');
+    }
+    
+    hideLoading() {
+        this.elements.loadingOverlay.classList.remove('show');
+    }
+    
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <div class="toast-icon">
+                    <i class="fas fa-${this.getToastIcon(type)}"></i>
+                </div>
+                <div class="toast-message">${message}</div>
         </div>
     `;
     
-    // Show error in main content
-    document.querySelector('.main-content').appendChild(errorDiv);
-}
-
-// Add data validation
-function validateDeviceData() {
-    if (!deviceData || deviceData.length === 0) {
-        console.log('Device data not yet loaded');
-        return false;
+        this.elements.toastContainer.appendChild(toast);
+        
+        // Show toast
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
+        
+        // Hide toast
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
     }
     
-    return deviceData.every(device => {
-        return device.mdn && 
-               device.deviceBrand && 
-               device.deviceModel && 
-               device.brand && 
-               device.type && 
-               device.upc;
+    getToastIcon(type) {
+        const icons = {
+            success: 'check-circle',
+            error: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        return icons[type] || 'info-circle';
+    }
+    
+    showError(message) {
+        this.showToast(message, 'error');
+    }
+}
+
+// Initialize the app when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new ProtectForeverApp();
+});
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(registration => {
+                console.log('SW registered: ', registration);
+            })
+            .catch(registrationError => {
+                console.log('SW registration failed: ', registrationError);
+            });
     });
 }
-
-// Handle refresh button click
-async function handleRefresh() {
-    // Clear cache to force fresh data
-    localStorage.removeItem(CONFIG.CACHE_KEY);
-    
-    // Show loading state
-    refreshButton.classList.add('loading');
-        showDataStatus('Getting info from vault...', 'offline');
-    
-    try {
-        // Reload data from Google Sheets
-        await loadDataFromGoogleSheets();
-        
-        // Reinitialize device selector with new data
-        initializeDeviceFlow();
-        
-        // Show success status
-        showDataStatus('Data refreshed successfully', 'online');
-        
-        // Hide status after 3 seconds
-        setTimeout(() => {
-            hideDataStatus();
-        }, 3000);
-        
-    } catch (error) {
-        console.error('Error refreshing data:', error);
-        showDataStatus('Failed to refresh data', 'error');
-        
-        // Hide status after 5 seconds
-        setTimeout(() => {
-            hideDataStatus();
-        }, 5000);
-    } finally {
-        refreshButton.classList.remove('loading');
-    }
-}
-
-// Clear cache and reload data
-async function handleClearCache() {
-    // Clear all cached data
-    localStorage.removeItem(CONFIG.CACHE_KEY);
-    localStorage.removeItem('deviceDataCache');
-    localStorage.removeItem('lastDataUpdate');
-    
-    // Clear any service worker cache
-    if ('caches' in window) {
-        try {
-            const cacheNames = await caches.keys();
-            await Promise.all(
-                cacheNames.map(cacheName => caches.delete(cacheName))
-            );
-        } catch (error) {
-            console.warn('Could not clear service worker cache:', error);
-        }
-    }
-    
-    // Show loading state
-    clearCacheButton.classList.add('loading');
-    showDataStatus('Clearing cache and reloading...', 'offline');
-    
-    try {
-        // Force reload data from Google Sheets
-        await loadDataFromGoogleSheets();
-        
-        // Reinitialize device selector with fresh data
-        initializeDeviceFlow();
-        
-        // Show success status
-        showDataStatus('Cache cleared and data reloaded', 'online');
-        
-        // Hide status after 3 seconds
-        setTimeout(() => {
-            hideDataStatus();
-        }, 3000);
-        
-    } catch (error) {
-        console.error('Error clearing cache:', error);
-        showDataStatus('Failed to clear cache', 'error');
-        
-        // Hide status after 5 seconds
-        setTimeout(() => {
-            hideDataStatus();
-        }, 5000);
-    } finally {
-        clearCacheButton.classList.remove('loading');
-    }
-}
-
-// Data status management
-function showDataStatus(message, type) {
-    statusText.textContent = message;
-    dataStatus.className = `data-status ${type}`;
-    dataStatus.style.display = 'block';
-}
-
-function hideDataStatus() {
-    dataStatus.style.display = 'none';
-}
-
-// Update data status during loading
-function updateDataStatus(message, type) {
-    if (dataStatus.style.display !== 'none') {
-        showDataStatus(message, type);
-    }
-}
-
-// Setup mobile-specific features
-function setupMobileFeatures() {
-    // Prevent zoom on input focus (iOS)
-    if (isMobileDevice()) {
-        const viewport = document.querySelector('meta[name="viewport"]');
-        if (viewport) {
-            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-        }
-        
-        // Mobile optimizations complete
-        
-        // Add swipe gestures for modal (optional)
-        let startY = 0;
-        let currentY = 0;
-        
-        resultsModal.addEventListener('touchstart', function(e) {
-            startY = e.touches[0].clientY;
-        });
-        
-        resultsModal.addEventListener('touchmove', function(e) {
-            currentY = e.touches[0].clientY;
-        });
-        
-        resultsModal.addEventListener('touchend', function(e) {
-            const deltaY = currentY - startY;
-            
-            // Swipe down to close modal (if swiped down more than 100px)
-            if (deltaY > 100) {
-                closeModalWindow();
-            }
-        });
-    }
-    
-    // Add haptic feedback for supported devices
-    function hapticFeedback() {
-        if ('vibrate' in navigator) {
-            navigator.vibrate(50); // 50ms vibration
-        }
-    }
-    
-    // Add haptic feedback to buttons
-    const buttons = document.querySelectorAll('button, .protection-option, .search-result-item');
-    buttons.forEach(button => {
-        button.addEventListener('click', hapticFeedback);
-    });
-    
-    // Optimize for mobile performance
-    if (isMobileDevice()) {
-        // Reduce animation duration on mobile for better performance
-        document.documentElement.style.setProperty('--animation-duration', '0.2s');
-        
-        // Add mobile-specific optimizations
-        document.body.style.webkitTapHighlightColor = 'rgba(226, 0, 116, 0.2)';
-    }
-}
-

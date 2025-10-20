@@ -6,19 +6,11 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Protect Forever">
-    <meta name="theme-color" content="#e20074">
-    <meta name="msapplication-TileColor" content="#e20074">
+    <meta name="theme-color" content="#E20074">
+    <meta name="msapplication-TileColor" content="#E20074">
     <meta name="msapplication-TileImage" content="icon-192x192.png">
-    <title>Protect Forever - Device UPC Lookup</title>
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="icon-192x192.png">
-    <link rel="apple-touch-icon" sizes="512x512" href="icon-512x512.png">
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
+    <title>Protect Forever - Device Protection</title>
     
     <!-- Preload critical resources -->
     <link rel="preload" href="styles.css" as="style">
@@ -27,266 +19,265 @@
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/brands.min.css">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
 </head>
 <body>
-    <!-- PIN Screen -->
+    <!-- Passcode Screen -->
     <div id="passcodeScreen" class="passcode-screen">
         <div class="passcode-container">
             <div class="passcode-header">
-                <img src="app-icon.png" alt="Protect Forever" class="passcode-app-icon">
-                <h1 class="passcode-title">Protect Forever</h1>
-                <p class="passcode-subtitle">Enter your PIN to continue</p>
+                <div class="app-logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h1>Protect Forever</h1>
+                </div>
+                <p class="passcode-subtitle">Enter your access code</p>
             </div>
             
-            <div class="passcode-input-section">
-                <div class="passcode-prompt">
-                    <h2>Enter PIN</h2>
-                    <p>4-digit code</p>
+            <div class="passcode-display">
+                <div class="passcode-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
                 </div>
-                
-                <div class="passcode-display">
-                    <div class="passcode-dots">
-                        <span class="passcode-dot" data-index="0"></span>
-                        <span class="passcode-dot" data-index="1"></span>
-                        <span class="passcode-dot" data-index="2"></span>
-                        <span class="passcode-dot" data-index="3"></span>
-                    </div>
-                </div>
-                
-                <div class="passcode-keypad">
-                    <button class="passcode-key" data-key="1">1</button>
-                    <button class="passcode-key" data-key="2">2</button>
-                    <button class="passcode-key" data-key="3">3</button>
-                    <button class="passcode-key" data-key="4">4</button>
-                    <button class="passcode-key" data-key="5">5</button>
-                    <button class="passcode-key" data-key="6">6</button>
-                    <button class="passcode-key" data-key="7">7</button>
-                    <button class="passcode-key" data-key="8">8</button>
-                    <button class="passcode-key" data-key="9">9</button>
-                    <button class="passcode-key passcode-key-clear" data-key="clear">
-                        <i class="fas fa-backspace"></i>
-                    </button>
-                    <button class="passcode-key" data-key="0">0</button>
-                    <button class="passcode-key passcode-key-enter" data-key="enter">
-                        <i class="fas fa-check"></i>
-                    </button>
-                </div>
-                
-                <div class="passcode-error" id="passcodeError">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span>Invalid passcode. Please try again.</span>
-                </div>
+                <div id="passcodeError" class="passcode-error">Invalid code</div>
+            </div>
+            
+            <div class="passcode-keypad">
+                <button class="keypad-key" data-key="1">1</button>
+                <button class="keypad-key" data-key="2">2</button>
+                <button class="keypad-key" data-key="3">3</button>
+                <button class="keypad-key" data-key="4">4</button>
+                <button class="keypad-key" data-key="5">5</button>
+                <button class="keypad-key" data-key="6">6</button>
+                <button class="keypad-key" data-key="7">7</button>
+                <button class="keypad-key" data-key="8">8</button>
+                <button class="keypad-key" data-key="9">9</button>
+                <button class="keypad-key keypad-clear" data-key="clear">
+                    <i class="fas fa-backspace"></i>
+                </button>
+                <button class="keypad-key" data-key="0">0</button>
+                <button class="keypad-key keypad-enter" data-key="enter">
+                    <i class="fas fa-check"></i>
+                </button>
             </div>
         </div>
     </div>
 
-    <div class="container" id="mainApp" style="display: none;">
-        <header class="header">
-            <div class="header-content">
-                <div class="header-left">
-                    <img src="app-icon.png" alt="Protect Forever" class="header-icon">
-                </div>
-                <div class="header-center">
-                    <div class="header-text">
-                        <h1>Protect Forever</h1>
-                        <p class="subtitle">Your Friendly access to the vault</p>
-                    </div>
-                </div>
-                <div class="header-right">
-                    <div class="settings-container">
-                        <button id="settingsButton" class="settings-button" title="Settings">
-                            <i class="fas fa-cog"></i>
-                        </button>
-                        <div id="settingsMenu" class="settings-menu">
-                            <button id="refreshButton" class="settings-menu-item">
-                                <i class="fas fa-sync-alt"></i>
-                                <span>Refresh Data</span>
-                            </button>
-                            <button id="clearCacheButton" class="settings-menu-item">
-                                <i class="fas fa-trash-alt"></i>
-                                <span>Clear Cache</span>
-                            </button>
-                            <button id="reloadButton" class="settings-menu-item">
-                                <i class="fas fa-redo"></i>
-                                <span>Reload Website</span>
-                            </button>
+    <!-- Main App -->
+    <div id="mainApp" class="main-app">
+        <!-- Navigation Header -->
+        <nav class="nav-header">
+            <div class="nav-content">
+                <div class="nav-left">
+                    <div class="app-brand">
+                        <div class="brand-icon">
+                            <i class="fas fa-shield-alt"></i>
                         </div>
+                        <span class="brand-text">Protect Forever</span>
                     </div>
+                </div>
+                <div class="nav-right">
+                    <button id="settingsBtn" class="nav-button">
+                        <i class="fas fa-cog"></i>
+                    </button>
                 </div>
             </div>
-        </header>
+        </nav>
 
+        <!-- Main Content -->
         <main class="main-content">
-            <div class="device-flow-section">
-                <div class="device-flow-container">
-                    <!-- Step 1: Brand Selection -->
-                    <div id="brandStep" class="flow-step active">
-                        <h2 class="step-title">
-                            <i class="fas fa-sort-alpha-down-alt sort-icon"></i>
-                            Step 1: Choose Your Brand
-                        </h2>
-                        <div class="brand-grid" id="brandGrid">
-                            <!-- Brand cards will be populated here -->
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div class="welcome-content">
+                    <h2 class="welcome-title">Find Your Device Protection</h2>
+                    <p class="welcome-subtitle">Select your device to view available protection options</p>
+                </div>
+            </section>
+
+            <!-- Device Selection Flow -->
+            <section class="device-flow">
+                <!-- Step 1: Brand Selection -->
+                <div id="brandStep" class="flow-step active">
+                    <div class="step-header">
+                        <div class="step-indicator">
+                            <span class="step-number">1</span>
+                            <span class="step-label">Choose Brand</span>
                         </div>
                     </div>
-                    
-                    <!-- Step 2: Model Selection -->
-                    <div id="modelStep" class="flow-step">
-                        <div class="step-header">
-                            <button id="backToBrands" class="back-button">
-                                <i class="fas fa-arrow-left"></i>
-                                Back to Brands
-                            </button>
-                            <h2 class="step-title">
-                                <i class="fas fa-sort-numeric-down-alt sort-icon"></i>
-                                Step 2: Choose Your Model
-                            </h2>
-                        </div>
-                        <div class="model-grid" id="modelGrid">
-                            <!-- Model cards will be populated here -->
-                        </div>
+                    <div id="brandGrid" class="brand-grid">
+                        <!-- Brand cards will be populated here -->
                     </div>
                 </div>
-            </div>
 
-            <!-- Modern UPC Window Modal -->
-            <div id="resultsModal" class="upc-modal" style="display: none;">
-                <div class="upc-modal-backdrop"></div>
-                <div class="upc-modal-container">
-                    <div class="upc-modal-content">
-                        <!-- Modern Header -->
-                        <div class="upc-modal-header">
-                            <div class="upc-header-content">
-                                <div class="upc-header-left">
-                                    <div class="upc-device-icon" id="upcDeviceIcon"></div>
-                                    <div class="upc-device-info">
-                                        <h2 id="upcDeviceName">Device Name</h2>
-                                        <p id="upcDeviceModel">Model Information</p>
-                                    </div>
-                                </div>
-                                <button id="upcCloseModal" class="upc-close-button">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
+                <!-- Step 2: Model Selection -->
+                <div id="modelStep" class="flow-step">
+                    <div class="step-header">
+                        <div class="step-indicator">
+                            <span class="step-number">2</span>
+                            <span class="step-label">Choose Model</span>
                         </div>
-
-                        <!-- Protection Options Section -->
-                        <div class="upc-protection-section">
-                            <div class="upc-section-header">
-                                <h3>
-                                    <i class="fas fa-shield-alt"></i>
-                                    Protection Options
-                                </h3>
-                                <div class="upc-options-count" id="upcOptionsCount">0 options</div>
-                            </div>
-                            
-                            <div class="upc-options-container" id="upcOptionsGrid">
-                                <!-- Protection options will be populated here -->
-                            </div>
-                        </div>
-
-                        <!-- MDN Section -->
-                        <div class="upc-mdn-section">
-                            <div class="upc-mdn-header">
-                                <h4>
-                                    <i class="fas fa-key"></i>
-                                    Device Information
-                                </h4>
-                            </div>
-                            <div class="upc-mdn-content">
-                                <button id="upcShowMdnBtn" class="upc-mdn-button">
-                                    <i class="fas fa-eye"></i>
-                                    <span>Reveal MDN</span>
-                                </button>
-                                <div id="upcMdnDisplay" class="upc-mdn-display" style="display: none;">
-                                    <div class="upc-mdn-field">
-                                        <label>MDN:</label>
-                                        <div class="upc-mdn-value-container">
-                                            <span id="upcMdnValue" class="upc-mdn-value"></span>
-                                            <button id="upcCopyMdnBtn" class="upc-copy-button" title="Copy MDN">
-                                                <i class="fas fa-copy"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Footer Actions -->
-                        <div class="upc-modal-footer">
-                            <button id="upcRefreshBtn" class="upc-footer-button">
-                                <i class="fas fa-sync-alt"></i>
-                                Refresh
-                            </button>
-                            <button id="upcNewSearchBtn" class="upc-footer-button primary">
-                                <i class="fas fa-search"></i>
-                                New Search
-                            </button>
-                        </div>
+                        <button id="backToBrands" class="back-button">
+                            <i class="fas fa-arrow-left"></i>
+                            <span>Back</span>
+                        </button>
+                    </div>
+                    <div id="modelGrid" class="model-grid">
+                        <!-- Model cards will be populated here -->
                     </div>
                 </div>
-            </div>
-
-            <div class="empty-state" id="emptyState">
-                <i class="fas fa-search empty-icon"></i>
-                <h3>Search for a Device</h3>
-                <p>Type a device name in the search box above to find available protection options and UPC codes.</p>
-                <div class="search-suggestions">
-                    <p><strong>Try searching for:</strong></p>
-                    <div class="suggestion-tags">
-                        <span class="suggestion-tag">iPhone 16 Pro Max</span>
-                        <span class="suggestion-tag">iPhone 15 Plus</span>
-                        <span class="suggestion-tag">iPhone 14 Pro Max</span>
-                        <span class="suggestion-tag">iPhone 13 Pro Max</span>
-                    </div>
-                </div>
-            </div>
+            </section>
         </main>
 
-        <!-- Flat Bottom Bar -->
-        <div class="bottom-bar">
-            <div class="bottom-bar-content">
-                <!-- Date on the left -->
-                <div class="bottom-left">
-                    <div id="currentDate" class="date">Monday, Jan 1</div>
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <div class="nav-item active">
+                <div class="nav-icon">
+                    <i class="fas fa-home"></i>
                 </div>
-                
-                <!-- Timeout Timer in the center -->
-                <div class="bottom-center">
-                    <div id="timeoutTimer" class="timeout-timer">
-                        <i class="fas fa-clock"></i>
-                        <span class="timer-text" id="timerText">20:00</span>
+                <span class="nav-label">Home</span>
+            </div>
+            <div class="nav-item">
+                <div class="nav-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <span class="nav-label">Search</span>
+            </div>
+            <div class="nav-item">
+                <div class="nav-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <span class="nav-label">Timer</span>
+            </div>
+            <div class="nav-item">
+                <div class="nav-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <span class="nav-label">Profile</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Device Results Modal -->
+    <div id="deviceModal" class="device-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <div class="device-info">
+                        <div class="device-icon" id="deviceIcon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="device-details">
+                            <h3 id="deviceName">Device Name</h3>
+                            <p id="deviceModel">Model Information</p>
+                        </div>
+                    </div>
+                    <button id="closeModal" class="close-button">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Protection Options -->
+                <div class="protection-options">
+                    <div class="options-header">
+                        <h4>Protection Options</h4>
+                        <span id="optionsCount" class="options-count">0 options</span>
+                    </div>
+                    <div id="optionsList" class="options-list">
+                        <!-- Protection options will be populated here -->
                     </div>
                 </div>
-                
-                <!-- Status on the right -->
-                <div class="bottom-right">
-                    <div class="source-status">
-                        <i class="fas fa-database source-icon"></i>
-                        <div class="source-info">
-                            <div id="lastUpdated" class="last-updated">Last updated: Never</div>
-                            <div id="dataSource" class="data-source">Source: Vault</div>
+
+                <!-- MDN Section -->
+                <div class="mdn-section">
+                    <div class="mdn-header">
+                        <h4>Device Information</h4>
+                    </div>
+                    <div class="mdn-content">
+                        <button id="showMdnBtn" class="mdn-button">
+                            <i class="fas fa-eye"></i>
+                            <span>Reveal MDN</span>
+                        </button>
+                        <div id="mdnDisplay" class="mdn-display">
+                            <div class="mdn-field">
+                                <label>MDN:</label>
+                                <div class="mdn-value-container">
+                                    <span id="mdnValue" class="mdn-value"></span>
+                                    <button id="copyMdnBtn" class="copy-button">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Modal Actions -->
+                <div class="modal-actions">
+                    <button id="refreshBtn" class="action-button secondary">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Refresh</span>
+                    </button>
+                    <button id="newSearchBtn" class="action-button primary">
+                        <i class="fas fa-search"></i>
+                        <span>New Search</span>
+                    </button>
+                </div>
             </div>
         </div>
-
-        <footer class="footer">
-            <p>&copy; 2025 Protect Forever. All rights reserved.</p>
-        </footer>
     </div>
 
-    <!-- Data Status Indicator -->
-    <div id="dataStatus" class="data-status" style="display: none;">
-        <i class="fas fa-circle"></i>
-        <span id="statusText">Loading...</span>
+    <!-- Settings Menu -->
+    <div id="settingsMenu" class="settings-menu">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h3>Settings</h3>
+                <button id="closeSettings" class="close-button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="settings-options">
+                <button id="refreshDataBtn" class="settings-option">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh Data</span>
+                </button>
+                <button id="clearCacheBtn" class="settings-option">
+                    <i class="fas fa-trash-alt"></i>
+                    <span>Clear Cache</span>
+                </button>
+                <button id="reloadAppBtn" class="settings-option">
+                    <i class="fas fa-redo"></i>
+                    <span>Reload App</span>
+                </button>
+            </div>
+        </div>
     </div>
 
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
 
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="config.js"></script>
     <script src="script.js"></script>
 </body>

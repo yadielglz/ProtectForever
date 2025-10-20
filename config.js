@@ -1,10 +1,10 @@
-// Configuration file for Protect & Serve
+// Configuration file for Protect Forever
 // Edit this file to customize your Google Sheets integration
 
-const PROTECT_SERVE_CONFIG = {
-    // Your Google Sheets URL
+const CONFIG = {
+    // Your Google Sheets URL (CSV export format)
     // Make sure the sheet is set to "Anyone with the link can view"
-    GOOGLE_SHEETS_URL: 'https://docs.google.com/spreadsheets/d/1nj6k7ouNzxImks-9CEuYvkSkFQfgOeR43Py2c2XH2eU/edit?usp=sharing',
+    GOOGLE_SHEETS_URL: 'https://docs.google.com/spreadsheets/d/1nj6k7ouNzxImks-9CEuYvkSkFQfgOeR43Py2c2XH2eU/export?format=csv&gid=0',
     
     // CORS proxy options (try different proxies if one fails)
     CORS_PROXIES: [
@@ -32,11 +32,15 @@ const PROTECT_SERVE_CONFIG = {
     APP_NAME: 'Protect Forever',
     APP_VERSION: '2.0.0',
     
+    // Security settings
+    PASSCODE: '6974',
+    INACTIVITY_TIMEOUT: 20 * 60 * 1000, // 20 minutes in milliseconds
+    
     // Debug mode (shows console logs)
     DEBUG_MODE: true
 };
 
 // Export configuration
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = PROTECT_SERVE_CONFIG;
+    module.exports = CONFIG;
 }
