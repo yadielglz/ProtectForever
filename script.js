@@ -1115,9 +1115,8 @@ class ProtectApp {
     
     async clearCache() {
         try {
-            // Clear localStorage
-            localStorage.removeItem(this.config.CACHE_KEY);
-            localStorage.removeItem('lastDataUpdate');
+            // Clear ALL localStorage
+            localStorage.clear();
             
             // Clear service worker cache
             if ('caches' in window) {
@@ -1127,20 +1126,31 @@ class ProtectApp {
                 );
             }
             
-            this.showToast('Cache cleared successfully', 'success');
+            // Unregister service worker
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(
+                    registrations.map(registration => registration.unregister())
+                );
+            }
+            
+            this.showToast('All cache cleared successfully', 'success');
             this.closeSettings();
             
-            // Reload data
-            await this.loadData();
+            // Force reload with cache bypass
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 1000);
         
-    } catch (error) {
+        } catch (error) {
             console.error('Failed to clear cache:', error);
             this.showToast('Failed to clear cache', 'error');
         }
     }
     
     reloadApp() {
-        window.location.reload();
+        // Force reload with cache bypass
+        window.location.reload(true);
     }
     
     showLoading(message = 'Loading...') {

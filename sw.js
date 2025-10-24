@@ -1,5 +1,5 @@
 // Modern Service Worker for Protect PWA
-const CACHE_NAME = 'protect-v1';
+const CACHE_NAME = 'protect-v2';
 const STATIC_CACHE_URLS = [
     '/',
     '/index.html',
