@@ -189,10 +189,6 @@ class ProtectApp {
         this.elements.deviceModel = document.getElementById('deviceModel');
         this.elements.optionsList = document.getElementById('optionsList');
         this.elements.optionsCount = document.getElementById('optionsCount');
-        this.elements.showMdnBtn = document.getElementById('showMdnBtn');
-        this.elements.mdnDisplay = document.getElementById('mdnDisplay');
-        this.elements.mdnValue = document.getElementById('mdnValue');
-        this.elements.copyMdnBtn = document.getElementById('copyMdnBtn');
         this.elements.refreshBtn = document.getElementById('refreshBtn');
         this.elements.newSearchBtn = document.getElementById('newSearchBtn');
         
@@ -213,7 +209,7 @@ class ProtectApp {
                 e.preventDefault();
                 const keyValue = e.currentTarget.dataset.key;
                 console.log('Keypad clicked:', keyValue); // Debug log
-                this.handleKeypadInput(keyValue);
+                this.handleKeypadInput(keyValue, e.currentTarget);
             });
             
             // Add touch events for mobile
@@ -221,7 +217,7 @@ class ProtectApp {
                 e.preventDefault();
                 const keyValue = e.currentTarget.dataset.key;
                 console.log('Keypad touched:', keyValue); // Debug log
-                this.handleKeypadInput(keyValue);
+                this.handleKeypadInput(keyValue, e.currentTarget);
                 });
             });
         
@@ -242,8 +238,6 @@ class ProtectApp {
         
         // Device modal
         this.elements.closeModal.addEventListener('click', () => this.closeDeviceModal());
-        this.elements.showMdnBtn.addEventListener('click', () => this.toggleMdnDisplay());
-        this.elements.copyMdnBtn.addEventListener('click', () => this.copyMdn());
         this.elements.refreshBtn.addEventListener('click', () => this.refreshDeviceData());
         this.elements.newSearchBtn.addEventListener('click', () => this.startNewSearch());
         
@@ -590,15 +584,16 @@ class ProtectApp {
         this.elements.currentDate.textContent = now.toLocaleDateString('en-US', dateOptions);
     }
     
-    handleKeypadInput(key) {
+    handleKeypadInput(key, keyElement) {
         console.log('handleKeypadInput called with:', key); // Debug log
         
-        // Add press animation to the key
-        const pressedKey = event.target;
-        pressedKey.classList.add('pressed');
-        setTimeout(() => {
-            pressedKey.classList.remove('pressed');
-        }, 300);
+        // Add immediate press animation to the key
+        if (keyElement) {
+            keyElement.classList.add('pressed');
+            setTimeout(() => {
+                keyElement.classList.remove('pressed');
+            }, 100);
+        }
         
         if (key === 'clear') {
             this.currentPasscode = '';
@@ -869,84 +864,188 @@ class ProtectApp {
         this.elements.deviceName.textContent = `${device['Device Brand']} ${device['Device Model']}`;
         this.elements.deviceModel.textContent = `${device['Device Brand']} ${device['Device Model']}`;
         
-        // Protection options - get all options for this device
+        // Get all options for this device
         const options = this.deviceData.filter(d => 
             d['Device Brand'] === device['Device Brand'] && d['Device Model'] === device['Device Model']
         );
         
-        this.elements.optionsCount.textContent = `${options.length} option${options.length !== 1 ? 's' : ''}`;
+        // Group by protection type and brand
+        const groupedOptions = this.groupByProtectionType(options);
+        
+        this.elements.optionsCount.textContent = `${options.length} UPC option${options.length !== 1 ? 's' : ''}`;
         
         this.elements.optionsList.innerHTML = '';
-        options.forEach(option => {
-            const optionCard = this.createProtectionCard(option);
+        groupedOptions.forEach(group => {
+            const optionCard = this.createProtectionTypeCard(group, device['Device Model']);
             this.elements.optionsList.appendChild(optionCard);
         });
-        
-        // MDN button - hide by default
-        this.elements.showMdnBtn.dataset.mdn = device.MDN;
-        this.elements.mdnDisplay.style.display = 'none';
-        this.elements.showMdnBtn.innerHTML = '<i class="fas fa-eye"></i><span>Reveal MDN</span>';
     }
     
-    createProtectionCard(device) {
+    groupByProtectionType(options) {
+        const groups = {};
+        
+        options.forEach(option => {
+            const brand = option.Brand || option['Device Brand'] || 'Unknown';
+            const type = option.Type || option['Protection Type'] || 'Unknown';
+            const key = `${brand}-${type}`;
+            
+            if (!groups[key]) {
+                groups[key] = {
+                    brand: brand,
+                    type: type,
+                    entries: [],
+                    mdns: new Set()
+                };
+            }
+            
+            groups[key].entries.push(option);
+            if (option.MDN) {
+                groups[key].mdns.add(option.MDN);
+            }
+        });
+        
+        return Object.values(groups);
+    }
+    
+    createProtectionTypeCard(group, deviceModel) {
         const card = document.createElement('div');
         card.className = 'protection-card';
+        const mdns = Array.from(group.mdns);
+        const upcCount = group.entries.length;
+        
+        // Get unique UPCs
+        const upcs = [...new Set(group.entries.map(e => e.UPC || e['UPC Code']).filter(Boolean))];
+        
         card.innerHTML = `
             <div class="card-header">
                 <div class="brand-info">
-                    <div class="brand-logo">${device.Brand.charAt(0)}</div>
-                    <div class="brand-name">${device.Brand}</div>
-        </div>
-                <div class="protection-type">${device.Type}</div>
+                    <div class="brand-logo">${group.brand.charAt(0)}</div>
+                    <div class="brand-name">${group.brand}</div>
+                </div>
+                <div class="protection-type">${group.type}</div>
             </div>
-            <div class="upc-section">
-                <div class="upc-label">UPC Code</div>
-                <div class="upc-code">
-                    <span class="upc-value">${device.UPC}</span>
-                    <button class="copy-button" onclick="app.copyUPC('${device.UPC}')">
-                        <i class="fas fa-copy"></i>
-                    </button>
+            <div class="upc-info-section">
+                <div class="upc-count">
+                    <i class="fas fa-barcode"></i>
+                    <span>${upcCount} UPC${upcCount !== 1 ? 's' : ''}</span>
+                </div>
+                <div class="upc-list">
+                    ${upcs.map(upc => `
+                        <div class="upc-item">
+                            <span class="upc-value">${upc}</span>
+                            <button class="copy-button-small" onclick="app.copyUPC('${upc}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
-            <div class="availability ${device.Available === '✅' || device.Available === 'yes' ? 'available' : 'unavailable'}">
-                <i class="fas fa-circle"></i>
-                <span>${device.Available === '✅' || device.Available === 'yes' ? 'Available' : 'Unavailable'}</span>
-        </div>
-    `;
+            <button class="show-mdn-btn" onclick="app.showMdnForGroup('${group.brand}', '${group.type}', '${deviceModel}')">
+                <i class="fas fa-eye"></i>
+                <span>Show MDN${mdns.length > 1 ? 's' : ''} (${mdns.length})</span>
+            </button>
+        `;
     
         return card;
     }
     
     closeDeviceModal() {
         this.elements.deviceModal.classList.remove('show');
-        this.elements.mdnDisplay.style.display = 'none';
     }
     
-    toggleMdnDisplay() {
-        const mdn = this.elements.showMdnBtn.dataset.mdn;
-        const isVisible = this.elements.mdnDisplay.style.display !== 'none';
-        
-        if (isVisible) {
-            this.elements.mdnDisplay.style.display = 'none';
-            this.elements.showMdnBtn.innerHTML = '<i class="fas fa-eye"></i><span>Reveal MDN</span>';
-    } else {
-            this.elements.mdnValue.textContent = mdn;
-            this.elements.mdnDisplay.style.display = 'block';
-            this.elements.mdnDisplay.classList.add('show');
-            this.elements.showMdnBtn.innerHTML = '<i class="fas fa-eye-slash"></i><span>Hide MDN</span>';
+    showMdnForGroup(brand, type, deviceModel) {
+        // Find all devices with matching brand, type, AND device model
+        const matchingDevices = this.deviceData.filter(d => {
+            const deviceBrand = d.Brand || d['Device Brand'] || '';
+            const deviceType = d.Type || d['Protection Type'] || '';
+            const deviceModelName = d['Device Model'] || '';
             
-            // Scroll to MDN section
-        setTimeout(() => {
-                this.elements.mdnDisplay.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'nearest' 
-                });
-            }, 100);
+            // Match Brand, Type, AND Device Model
+            return deviceBrand === brand && 
+                   deviceType === type && 
+                   deviceModelName === deviceModel;
+        });
+        
+        // Get unique MDNs for this specific product
+        const mdns = [...new Set(matchingDevices.map(d => d.MDN).filter(Boolean))];
+        
+        if (mdns.length === 0) {
+            this.showToast('No MDN found for this product', 'warning');
+            return;
         }
+        
+        // Get all UPCs for this group
+        const upcs = [...new Set(matchingDevices.map(d => d.UPC || d['UPC Code']).filter(Boolean))];
+        
+        // Create product label
+        const productLabel = `${deviceModel} - ${brand} ${type}`.trim();
+        
+        // Show MDN(s) in a simplified modal
+        this.showMdnModal(upcs, mdns, productLabel);
     }
     
-    copyMdn() {
-        const mdn = this.elements.mdnValue.textContent;
+    showMdnModal(upcs, mdns, productLabel) {
+        // Create a simple modal overlay
+        const modal = document.createElement('div');
+        modal.className = 'mdn-modal-overlay';
+        const upcArray = Array.isArray(upcs) ? upcs : [upcs];
+        const upcDisplay = upcArray.join(', ');
+        
+        modal.innerHTML = `
+            <div class="mdn-modal-content">
+                <div class="mdn-modal-header">
+                    <div>
+                        <h3>MDN(s) for Product</h3>
+                        <p class="mdn-product-info">${productLabel}</p>
+                        <p class="mdn-upc-info">UPC${upcArray.length > 1 ? 's' : ''}: ${upcDisplay}</p>
+                    </div>
+                    <button class="close-mdn-modal" onclick="this.closest('.mdn-modal-overlay').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="mdn-modal-body">
+                    ${mdns.map((mdn, index) => {
+                        const formattedMdn = this.formatPhoneNumber(mdn);
+                        return `
+                        <div class="mdn-item">
+                            <label>MDN ${mdns.length > 1 ? index + 1 : ''}:</label>
+                            <div class="mdn-item-content">
+                                <span class="mdn-item-value">${formattedMdn}</span>
+                                <button class="copy-button" onclick="app.copyMdn('${mdn}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+    
+    formatPhoneNumber(phoneNumber) {
+        // Remove all non-digit characters
+        const cleaned = phoneNumber.replace(/\D/g, '');
+        
+        // Format as (XXX) XXX-XXXX for 10 digits
+        if (cleaned.length === 10) {
+            return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+        }
+        
+        // Return original if not 10 digits
+        return phoneNumber;
+    }
+    
+    copyMdn(mdn) {
         this.copyToClipboard(mdn, 'MDN copied to clipboard');
     }
     

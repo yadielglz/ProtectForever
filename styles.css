@@ -351,16 +351,18 @@ body {
 }
 
 .dot {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-radius: var(--radius-full);
-    background: rgba(255, 255, 255, 0.3);
-    transition: all var(--transition-normal);
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    transition: all 0.15s ease-out;
 }
 
 .dot.filled {
     background: var(--text-inverse);
-    transform: scale(1.2);
+    border-color: var(--text-inverse);
+    transform: scale(1);
 }
 
 .passcode-error {
@@ -547,38 +549,6 @@ body {
     transform: translateY(0);
 }
 
-.passcode-dots {
-    display: flex;
-    justify-content: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-6);
-}
-
-.dot {
-    width: 16px;
-    height: 16px;
-    border-radius: var(--radius-full);
-    background: rgba(255, 255, 255, 0.3);
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    opacity: 0;
-    transform: scale(0);
-}
-
-.passcode-screen.show .dot {
-    opacity: 1;
-    transform: scale(1);
-}
-
-.dot:nth-child(1) { transition-delay: 1.4s; }
-.dot:nth-child(2) { transition-delay: 1.5s; }
-.dot:nth-child(3) { transition-delay: 1.6s; }
-.dot:nth-child(4) { transition-delay: 1.7s; }
-
-.dot.filled {
-    background: var(--text-inverse);
-    transform: scale(1.2);
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-}
 
 .passcode-keypad {
     display: grid;
@@ -606,42 +576,22 @@ body {
     font-size: var(--font-size-xl);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: all 0.2s ease-out;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transform: scale(0) rotate(180deg);
 }
-
-.passcode-screen.show .keypad-key {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-}
-
-.keypad-key:nth-child(1) { transition-delay: 2.0s; }
-.keypad-key:nth-child(2) { transition-delay: 2.1s; }
-.keypad-key:nth-child(3) { transition-delay: 2.2s; }
-.keypad-key:nth-child(4) { transition-delay: 2.3s; }
-.keypad-key:nth-child(5) { transition-delay: 2.4s; }
-.keypad-key:nth-child(6) { transition-delay: 2.5s; }
-.keypad-key:nth-child(7) { transition-delay: 2.6s; }
-.keypad-key:nth-child(8) { transition-delay: 2.7s; }
-.keypad-key:nth-child(9) { transition-delay: 2.8s; }
-.keypad-key:nth-child(10) { transition-delay: 2.9s; }
-.keypad-key:nth-child(11) { transition-delay: 3.0s; }
-.keypad-key:nth-child(12) { transition-delay: 3.1s; }
 
 .keypad-key:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transform: scale(1.02);
 }
 
 .keypad-key:active {
-    transform: scale(0.95);
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .keypad-clear,
@@ -701,13 +651,9 @@ body {
 
 /* Keypad Key Press Animation */
 .keypad-key.pressed {
-    animation: keyPress 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-@keyframes keyPress {
-    0% { transform: scale(1); }
-    50% { transform: scale(0.9); }
-    100% { transform: scale(1); }
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.1s ease-out;
 }
 
 /* Passcode Error Animation */
@@ -715,20 +661,13 @@ body {
     color: #FFB3BA;
     font-size: var(--font-size-sm);
     opacity: 0;
-    transform: translateY(-10px) scale(0.8);
-    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform: translateY(-10px);
+    transition: all 0.2s ease-out;
 }
 
 .passcode-error.show {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    animation: shake 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+    transform: translateY(0);
 }
 
 /* Navigation Header */
@@ -1415,6 +1354,227 @@ body {
 
 .availability.unavailable {
     color: var(--error);
+}
+
+/* MDN Modal */
+.mdn-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    animation: fadeIn 0.2s ease-out;
+}
+
+.mdn-modal-content {
+    background: var(--bg-primary);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-2xl);
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+}
+
+.mdn-modal-header {
+    background: var(--primary);
+    color: var(--text-inverse);
+    padding: var(--space-6);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.mdn-modal-header > div {
+    flex: 1;
+}
+
+.mdn-modal-header h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin: 0 0 var(--space-2) 0;
+}
+
+.mdn-product-info {
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    margin: 0 0 var(--space-1) 0;
+    opacity: 0.95;
+}
+
+.mdn-upc-info {
+    font-size: var(--font-size-sm);
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    opacity: 0.85;
+}
+
+.close-mdn-modal {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-inverse);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-mdn-modal:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.mdn-modal-body {
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.mdn-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.mdn-item label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.mdn-item-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+}
+
+.mdn-item-value {
+    font-family: var(--font-family);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+}
+
+.upc-info-section {
+    margin-top: var(--space-3);
+}
+
+.upc-count {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.upc-count i {
+    color: var(--primary);
+}
+
+.upc-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.upc-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+}
+
+.upc-value {
+    font-family: 'Courier New', monospace;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+}
+
+.copy-button-small {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    padding: 0;
+}
+
+.copy-button-small:hover {
+    background: var(--primary);
+    color: var(--text-inverse);
+}
+
+.show-mdn-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border: none;
+    border-radius: var(--radius-lg);
+    background: var(--primary);
+    color: var(--text-inverse);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-top: var(--space-3);
+}
+
+.show-mdn-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.show-mdn-btn:active {
+    transform: translateY(0);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* MDN Section */
