@@ -906,7 +906,6 @@ class ProtectApp {
         );
         
         // Determine availability status
-        // Default to available unless explicitly marked as unavailable
         let isAvailable = true;
         
         if (device) {
@@ -917,16 +916,25 @@ class ProtectApp {
             if (availableValue) {
                 const normalizedValue = availableValue.toString().toLowerCase().trim();
                 
-                // Only mark as unavailable if explicitly negative
+                // Explicitly check for positive values
+                const positiveIndicators = ['yes', 'y', 'true', '1', 'available', 'in stock', '✅', '✓', '✔'];
                 const negativeIndicators = ['no', 'n', 'false', '0', 'unavailable', 'out of stock', 'discontinued', '❌', '✗', '×'];
-                isAvailable = !negativeIndicators.some(indicator => normalizedValue.includes(indicator));
+                
+                if (positiveIndicators.some(indicator => normalizedValue === indicator)) {
+                    isAvailable = true;
+                } else if (negativeIndicators.some(indicator => normalizedValue === indicator)) {
+                    isAvailable = false;
+                } else {
+                    // Default to available if unclear
+                    isAvailable = true;
+                }
                 
                 // Log for debugging the first few items
                 if (this.debugAvailabilityCount === undefined) {
                     this.debugAvailabilityCount = 0;
                 }
                 if (this.debugAvailabilityCount < 5) {
-                    console.log(`Model: ${model}, Brand: ${brand}, Available: "${availableValue}" → isAvailable: ${isAvailable}`);
+                    console.log(`Model: ${model}, Brand: ${brand}, Available: "${availableValue}" (normalized: "${normalizedValue}") → isAvailable: ${isAvailable}`);
                     this.debugAvailabilityCount++;
                 }
             }
