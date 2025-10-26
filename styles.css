@@ -928,31 +928,9 @@ body {
     font-size: var(--font-size-lg);
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: var(--space-2);
     position: relative;
     z-index: 1;
-}
-
-.model-count {
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-}
-
-.model-count.available {
-    color: var(--success);
-}
-
-.model-count.unavailable {
-    color: var(--error);
-}
-
-.model-count i {
-    font-size: var(--font-size-xs);
+    text-align: center;
 }
 
 /* Bottom Navigation */
@@ -1121,6 +1099,34 @@ body {
 .device-details p {
     font-size: var(--font-size-sm);
     opacity: 0.8;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.availability-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    margin-left: var(--space-2);
+}
+
+.availability-badge.available {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10B981;
+}
+
+.availability-badge.unavailable {
+    background: rgba(239, 68, 68, 0.2);
+    color: #EF4444;
+}
+
+.availability-badge i {
+    font-size: var(--font-size-xs);
 }
 
 .close-button {

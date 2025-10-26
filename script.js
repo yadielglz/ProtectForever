@@ -944,11 +944,10 @@ class ProtectApp {
         card.className = 'model-card';
         card.innerHTML = `
             <div class="model-name">${model}</div>
-            <div class="model-count ${isAvailable ? 'available' : 'unavailable'}">
-                <i class="fas fa-circle"></i>
-                <span>${isAvailable ? 'Available' : 'Unavailable'}</span>
-            </div>
         `;
+        
+        // Store availability data on the card for later use in modal
+        card.dataset.isAvailable = isAvailable ? 'true' : 'false';
         
         card.addEventListener('click', () => this.selectModel(model, brand));
         
@@ -1025,9 +1024,33 @@ class ProtectApp {
         const deviceBrand = getField(device, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
         const deviceModel = getField(device, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
         
-        // Device info
+        // Get availability status
+        const getAvailable = (d) => getField(d, ['Available', 'AVAILABLE', 'available', 'Availability', 'In Stock', 'in_stock', 'Status', 'status']);
+        const availableValue = getAvailable(device);
+        
+        let isAvailable = true;
+        if (availableValue) {
+            const normalizedValue = availableValue.toString().toLowerCase().trim();
+            const positiveIndicators = ['yes', 'y', 'true', '1', 'available', 'in stock', '✅', '✓', '✔'];
+            const negativeIndicators = ['no', 'n', 'false', '0', 'unavailable', 'out of stock', 'discontinued', '❌', '✗', '×'];
+            
+            if (positiveIndicators.some(indicator => normalizedValue === indicator)) {
+                isAvailable = true;
+            } else if (negativeIndicators.some(indicator => normalizedValue === indicator)) {
+                isAvailable = false;
+            }
+        }
+        
+        // Device info with availability status
         this.elements.deviceName.textContent = `${deviceBrand} ${deviceModel}`;
-        this.elements.deviceModel.textContent = `${deviceBrand} ${deviceModel}`;
+        
+        // Create availability badge HTML
+        const availabilityBadge = isAvailable 
+            ? '<span class="availability-badge available"><i class="fas fa-check-circle"></i> Available</span>'
+            : '<span class="availability-badge unavailable"><i class="fas fa-times-circle"></i> Unavailable</span>';
+        
+        // Update device model line to include availability
+        this.elements.deviceModel.innerHTML = `${deviceModel} ${availabilityBadge}`;
         
         // Get all options for this device
         const options = this.deviceData.filter(d => {
