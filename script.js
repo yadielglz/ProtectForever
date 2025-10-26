@@ -1198,15 +1198,7 @@ class ProtectApp {
             return;
         }
         
-        // Helper to get field with fallback column names
-        const getField = (item, possibleNames) => {
-            for (const name of possibleNames) {
-                if (item[name]) return item[name];
-            }
-            return '';
-        };
-        
-        // Get all UPCs for this group
+        // Get all UPCs for this group (getField is already declared above)
         const upcs = [...new Set(matchingDevices.map(d => {
             return getField(d, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
         }).filter(Boolean))];
