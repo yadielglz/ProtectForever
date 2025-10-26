@@ -905,11 +905,32 @@ class ProtectApp {
             getBrand(d) === brand && getModel(d) === model
         );
         
-        // Check availability with multiple possible formats
-        const getAvailable = (d) => getField(d, ['Available', 'AVAILABLE', 'available', 'Availability']);
-        const isAvailable = device && (getAvailable(device) === '✅' || 
-                                       getAvailable(device).toLowerCase() === 'yes' ||
-                                       getAvailable(device).toLowerCase() === 'available');
+        // Determine availability status
+        // Default to available unless explicitly marked as unavailable
+        let isAvailable = true;
+        
+        if (device) {
+            // Try multiple possible column names for availability
+            const getAvailable = (d) => getField(d, ['Available', 'AVAILABLE', 'available', 'Availability', 'In Stock', 'in_stock', 'Status', 'status']);
+            const availableValue = getAvailable(device);
+            
+            if (availableValue) {
+                const normalizedValue = availableValue.toString().toLowerCase().trim();
+                
+                // Only mark as unavailable if explicitly negative
+                const negativeIndicators = ['no', 'n', 'false', '0', 'unavailable', 'out of stock', 'discontinued', '❌', '✗', '×'];
+                isAvailable = !negativeIndicators.some(indicator => normalizedValue.includes(indicator));
+                
+                // Log for debugging the first few items
+                if (this.debugAvailabilityCount === undefined) {
+                    this.debugAvailabilityCount = 0;
+                }
+                if (this.debugAvailabilityCount < 5) {
+                    console.log(`Model: ${model}, Brand: ${brand}, Available: "${availableValue}" → isAvailable: ${isAvailable}`);
+                    this.debugAvailabilityCount++;
+                }
+            }
+        }
         
         const card = document.createElement('div');
         card.className = 'model-card';
