@@ -221,15 +221,17 @@
                 <!-- Modal Header -->
                 <div class="modal-header">
                     <div class="device-info">
-                        <div class="device-icon" id="deviceIcon">
-                            <i class="fas fa-mobile-alt"></i>
+                        <div class="device-icon-wrapper">
+                            <div class="device-icon" id="deviceIcon">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
                         </div>
                         <div class="device-details">
                             <h3 id="deviceName">Device Name</h3>
-                            <p id="deviceModel">Model Information</p>
+                            <div id="deviceModel" class="device-model-info">Model Information</div>
                         </div>
                     </div>
-                    <button id="closeModal" class="close-button">
+                    <button id="closeModal" class="close-button" aria-label="Close modal">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -237,8 +239,13 @@
                 <!-- Protection Options -->
                 <div class="protection-options">
                     <div class="options-header">
-                        <h4>Protection Options</h4>
-                        <span id="optionsCount" class="options-count">0 options</span>
+                        <div class="options-title-section">
+                            <h4 class="options-title">
+                                <i class="fas fa-shield-alt"></i>
+                                Protection Options
+                            </h4>
+                            <span id="optionsCount" class="options-count">0 options</span>
+                        </div>
                     </div>
                     <div id="optionsList" class="options-list">
                         <!-- Protection options will be populated here -->

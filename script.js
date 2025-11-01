@@ -12,29 +12,48 @@ class ProtectApp {
         // DOM Elements
         this.elements = {};
         
-        // Device model sorting order (oldest to newest)
+        // Device model sorting order (numbers represent release order: 1=oldest, higher=newer)
         this.deviceModelOrder = {
             'Apple': {
-                'iPhone 12': 1,
-                'iPhone 12 mini': 2,
-                'iPhone 12 Pro': 3,
-                'iPhone 12 Pro Max': 4,
-                'iPhone 13': 5,
-                'iPhone 13 mini': 6,
-                'iPhone 13 Pro': 7,
-                'iPhone 13 Pro Max': 8,
-                'iPhone 14': 9,
-                'iPhone 14 Plus': 10,
-                'iPhone 14 Pro': 11,
-                'iPhone 14 Pro Max': 12,
-                'iPhone 15': 13,
-                'iPhone 15 Plus': 14,
-                'iPhone 15 Pro': 15,
-                'iPhone 15 Pro Max': 16,
-                'iPhone 16': 17,
-                'iPhone 16 Plus': 18,
-                'iPhone 16 Pro': 19,
-                'iPhone 16 Pro Max': 20
+                'iPhone 7': 1,
+                'iPhone 7 Plus': 2,
+                'iPhone 8': 3,
+                'iPhone 8 Plus': 4,
+                'iPhone X': 5,
+                'iPhone XR': 6,
+                'iPhone XS': 7,
+                'iPhone XS Max': 8,
+                'iPhone 11': 9,
+                'iPhone 11 Pro': 10,
+                'iPhone 11 Pro Max': 11,
+                'iPhone SE (2nd generation)': 12,
+                'iPhone SE (2020)': 12,
+                'iPhone SE 2nd gen': 12,
+                'iPhone 12': 13,
+                'iPhone 12 mini': 14,
+                'iPhone 12 Pro': 15,
+                'iPhone 12 Pro Max': 16,
+                'iPhone 13': 17,
+                'iPhone 13 mini': 18,
+                'iPhone 13 Pro': 19,
+                'iPhone 13 Pro Max': 20,
+                'iPhone 14': 21,
+                'iPhone 14 Plus': 22,
+                'iPhone 14 Pro': 23,
+                'iPhone 14 Pro Max': 24,
+                'iPhone 15': 25,
+                'iPhone 15 Plus': 26,
+                'iPhone 15 Pro': 27,
+                'iPhone 15 Pro Max': 28,
+                'iPhone 16': 29,
+                'iPhone 16 Plus': 30,
+                'iPhone 16 Pro': 31,
+                'iPhone 16 Pro Max': 32,
+                'iPhone 16e': 33,
+                'iPhone 17': 34,
+                'iPhone 17 Plus': 35,
+                'iPhone 17 Pro': 36,
+                'iPhone 17 Pro Max': 37
             },
             'Samsung': {
                 'Galaxy S21': 1,
@@ -49,6 +68,9 @@ class ProtectApp {
                 'Galaxy S24': 10,
                 'Galaxy S24+': 11,
                 'Galaxy S24 Ultra': 12,
+                'Galaxy S25': 13,
+                'Galaxy S25+': 14,
+                'Galaxy S25 Ultra': 15,
                 'Galaxy Note 20': 1,
                 'Galaxy Note 20 Ultra': 2,
                 'Galaxy Z Fold 3': 1,
@@ -762,17 +784,61 @@ class ProtectApp {
     }
     
     getModelSortOrder(brand, model) {
-        if (this.deviceModelOrder[brand] && this.deviceModelOrder[brand][model]) {
-            return this.deviceModelOrder[brand][model];
+        // Normalize model name for matching (trim and normalize spacing)
+        const normalizedModel = model.trim().replace(/\s+/g, ' ');
+        
+        // Check explicit order first with exact match
+        if (this.deviceModelOrder[brand] && this.deviceModelOrder[brand][normalizedModel]) {
+            return this.deviceModelOrder[brand][normalizedModel];
         }
         
+        // Check with case-insensitive match
+        if (this.deviceModelOrder[brand]) {
+            const lowerModel = normalizedModel.toLowerCase();
+            for (const [key, value] of Object.entries(this.deviceModelOrder[brand])) {
+                if (key.toLowerCase() === lowerModel) {
+                    return value;
+                }
+            }
+        }
+        
+        // For iPhone models, extract the number (e.g., iPhone 17 -> 17)
+        if (brand === 'Apple' && model.toLowerCase().includes('iphone')) {
+            const iphoneMatch = model.match(/iphone\s*(\d+)/i);
+            if (iphoneMatch) {
+                const num = parseInt(iphoneMatch[1]);
+                // Give higher priority for newer models (multiply by 100 to ensure they sort after known models)
+                // Then use variant suffix for sub-ordering
+                let baseOrder = num * 100;
+                if (model.toLowerCase().includes('pro max')) baseOrder += 3;
+                else if (model.toLowerCase().includes('pro')) baseOrder += 2;
+                else if (model.toLowerCase().includes('plus')) baseOrder += 1;
+                else if (model.toLowerCase().includes('mini')) baseOrder -= 1;
+                return baseOrder;
+            }
+        }
+        
+        // For Samsung Galaxy S models, extract the number (e.g., Galaxy S25 -> 25)
+        if (brand === 'Samsung' && model.toLowerCase().includes('galaxy s')) {
+            const galaxyMatch = model.match(/galaxy\s*s(\d+)/i);
+            if (galaxyMatch) {
+                const num = parseInt(galaxyMatch[1]);
+                let baseOrder = num * 100;
+                if (model.toLowerCase().includes('ultra')) baseOrder += 2;
+                else if (model.toLowerCase().includes('+') || model.toLowerCase().includes('plus')) baseOrder += 1;
+                return baseOrder;
+            }
+        }
+        
+        // For other models, try to extract year or number
         const yearMatch = model.match(/(\d{4})/);
         if (yearMatch) return parseInt(yearMatch[1]);
         
         const numberMatch = model.match(/(\d+)/);
         if (numberMatch) return parseInt(numberMatch[1]);
         
-        return 9999;
+        // Default to very low priority for unknown devices
+        return 0;
     }
     
     populateModels(brand) {
@@ -785,7 +851,7 @@ class ProtectApp {
             .filter(Boolean);
         
         const sortedModels = [...new Set(models)].sort((a, b) => {
-            return this.getModelSortOrder(brand, a) - this.getModelSortOrder(brand, b);
+            return this.getModelSortOrder(brand, b) - this.getModelSortOrder(brand, a);
         });
         
         this.allModels = sortedModels;
@@ -1009,7 +1075,10 @@ class ProtectApp {
             ? '<span class="availability-badge available"><i class="fas fa-check-circle"></i> Available</span>'
             : '<span class="availability-badge unavailable"><i class="fas fa-times-circle"></i> Unavailable</span>';
         
-        this.elements.deviceModel.innerHTML = `${deviceModel} ${availabilityBadge}`;
+        this.elements.deviceModel.innerHTML = `
+            <span class="model-text">${deviceModel}</span>
+            ${availabilityBadge}
+        `;
         
         const options = this.deviceData.filter(d => {
             const dBrand = this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
@@ -1069,23 +1138,35 @@ class ProtectApp {
         const showMdnButton = upcs.length > 0 && mdns.length > 0;
         
         card.innerHTML = `
-            <div class="card-header">
-                <div class="brand-info">
-                    <div class="brand-logo">${group.brand.charAt(0)}</div>
-                    <div class="brand-name">${group.brand}</div>
+            <div class="card-header-modern">
+                <div class="brand-info-modern">
+                    <div class="brand-logo-modern">
+                        <span class="brand-initial">${group.brand.charAt(0)}</span>
+                    </div>
+                    <div class="brand-details">
+                        <div class="brand-name-modern">${group.brand}</div>
+                        <div class="protection-type-modern">
+                            <i class="fas fa-tag"></i>
+                            <span>${group.type}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="protection-type">${group.type}</div>
             </div>
-            <div class="upc-info-section">
-                <div class="upc-count">
-                    <i class="fas fa-barcode"></i>
-                    <span>${upcs.length} UPC${upcs.length !== 1 ? 's' : ''}</span>
+            <div class="upc-section-modern">
+                <div class="upc-header-modern">
+                    <div class="upc-label-group">
+                        <i class="fas fa-barcode"></i>
+                        <span class="upc-label-text">UPC Codes</span>
+                    </div>
+                    <div class="upc-badge">${upcs.length}</div>
                 </div>
-                <div class="upc-list">
+                <div class="upc-grid-modern">
                     ${upcs.map(upc => `
-                        <div class="upc-item">
-                            <span class="upc-value">${upc}</span>
-                            <button class="copy-button-small" onclick="app.copyUPC('${upc}')">
+                        <div class="upc-card-modern">
+                            <div class="upc-value-modern" onclick="app.copyUPC('${upc}')" title="Click to copy">
+                                ${upc}
+                            </div>
+                            <button class="copy-btn-modern" onclick="app.copyUPC('${upc}')" aria-label="Copy UPC ${upc}">
                                 <i class="fas fa-copy"></i>
                             </button>
                         </div>
@@ -1093,9 +1174,10 @@ class ProtectApp {
                 </div>
             </div>
             ${showMdnButton ? `
-            <button class="show-mdn-btn" onclick="app.showMdnForGroup('${group.brand}', '${group.type}', '${deviceModel}')">
-                <i class="fas fa-eye"></i>
-                <span>Show MDN${mdns.length > 1 ? 's' : ''} (${mdns.length})</span>
+            <button class="show-mdn-btn-modern" onclick="app.showMdnForGroup('${group.brand}', '${group.type}', '${deviceModel}')">
+                <i class="fas fa-phone-alt"></i>
+                <span>View MDN${mdns.length > 1 ? 's' : ''}</span>
+                <span class="mdn-count-badge">${mdns.length}</span>
             </button>
             ` : ''}
         `;
