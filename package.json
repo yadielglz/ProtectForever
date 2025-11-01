@@ -1,0 +1,22 @@
+{
+  "name": "protectforever",
+  "version": "2.0.0",
+  "description": "Modern mobile-first device protection management PWA",
+  "main": "index.html",
+  "scripts": {
+    "dev": "live-server --port=3000 --open=/index.html --wait=100",
+    "start": "live-server --port=3000 --open=/index.html",
+    "serve": "http-server -p 3000 -o"
+  },
+  "keywords": [
+    "pwa",
+    "device-protection",
+    "mobile-app"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
+
