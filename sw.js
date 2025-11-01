@@ -1,5 +1,5 @@
 // Modern Service Worker for Protect PWA
-const CACHE_NAME = 'protect-v2';
+const CACHE_NAME = 'protect-v3';
 const STATIC_CACHE_URLS = [
     '/',
     '/index.html',
@@ -8,15 +8,19 @@ const STATIC_CACHE_URLS = [
     '/config.js',
     '/manifest.json',
     '/sw.js',
+    'https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+];
+
+// Icons that should NOT be cached aggressively (cache bust on update)
+const ICON_FILES = [
     '/app-icon.png',
     '/icon-192x192.png',
     '/icon-512x512.png',
     '/favicon-16x16.png',
     '/favicon-32x32.png',
     '/favicon.ico',
-    '/favicon.png',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+    '/favicon.png'
 ];
 
 // Install event - cache static assets
@@ -58,12 +62,26 @@ self.addEventListener('activate', event => {
                 );
             })
             .then(() => {
+                // Clear icon cache specifically to force refresh
+                return caches.open(CACHE_NAME).then(cache => {
+                    return Promise.all(
+                        ICON_FILES.map(iconPath => {
+                            return cache.delete(iconPath).catch(() => {});
+                        })
+                    );
+                });
+            })
+            .then(() => {
                 console.log('Service Worker activated successfully');
-                return self.clients.claim();
+                // Force all clients to reload to get fresh icons
+                return self.clients.matchAll().then(clients => {
+                    clients.forEach(client => {
+                        client.postMessage({ type: 'SW_UPDATED', cacheVersion: 'v3' });
+                    });
+                }).then(() => self.clients.claim());
             })
             .catch(error => {
                 console.error('Service Worker activation failed:', error);
-                // Still try to claim clients
                 return self.clients.claim();
             })
     );
@@ -88,6 +106,32 @@ self.addEventListener('fetch', event => {
         return;
     }
     
+    const requestUrl = new URL(event.request.url);
+    const isIconFile = ICON_FILES.some(icon => requestUrl.pathname.includes(icon.split('/').pop()));
+    
+    // For icons and favicons: Always try network first, then cache (allows updates)
+    if (isIconFile) {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => {
+                    // Cache the updated icon
+                    if (response && response.status === 200 && response.type === 'basic') {
+                        const responseToCache = response.clone();
+                        caches.open(CACHE_NAME).then(cache => {
+                            cache.put(event.request, responseToCache);
+                        }).catch(() => {});
+                    }
+                    return response;
+                })
+                .catch(() => {
+                    // If network fails, try cache as fallback
+                    return caches.match(event.request);
+                })
+        );
+        return;
+    }
+    
+    // For other files: Cache-first strategy
     event.respondWith(
         caches.match(event.request)
             .then(response => {
@@ -232,6 +276,16 @@ self.addEventListener('message', event => {
             caches.keys().then(cacheNames => {
                 return Promise.all(
                     cacheNames.map(cacheName => caches.delete(cacheName))
+                );
+            })
+        );
+    }
+    
+    if (event.data && event.data.type === 'CLEAR_ICON_CACHE') {
+        event.waitUntil(
+            caches.open(CACHE_NAME).then(cache => {
+                return Promise.all(
+                    ICON_FILES.map(iconPath => cache.delete(iconPath))
                 );
             })
         );

@@ -1326,15 +1326,75 @@ document.addEventListener('DOMContentLoaded', () => {
     window.app = new ProtectApp();
 });
 
-// Service Worker Registration
+// Service Worker Registration with Update Checking
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
             .then(registration => {
                 console.log('SW registered: ', registration);
+                
+                // Check for updates every time the page loads
+                registration.update();
+                
+                // Force update check on focus
+                window.addEventListener('focus', () => {
+                    registration.update();
+                });
+                
+                // Listen for service worker updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New service worker available, prompt user to reload
+                                if (window.app) {
+                                    window.app.showToast('App update available. Reloading...', 'info');
+                                    setTimeout(() => {
+                                        window.location.reload();
+                                    }, 1000);
+                                }
+                            }
+                        });
+                    }
+                });
             })
             .catch(registrationError => {
                 console.log('SW registration failed: ', registrationError);
             });
+        
+        // Also unregister old service workers on update
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            registrations.forEach(registration => {
+                if (registration.scope === window.location.origin + '/' && 
+                    registration.active?.scriptURL && 
+                    registration.active.scriptURL.includes('sw.js')) {
+                    // Check if there's an update
+                    registration.update();
+                }
+            });
+        });
+        
+        // Listen for messages from service worker
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data && event.data.type === 'SW_UPDATED') {
+                // Force refresh icons and manifest
+                const icons = document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]');
+                icons.forEach(icon => {
+                    const href = icon.getAttribute('href');
+                    if (href && !href.includes('?')) {
+                        icon.setAttribute('href', href + '?v=' + Date.now());
+                    } else if (href && href.includes('?')) {
+                        icon.setAttribute('href', href.split('?')[0] + '?v=' + Date.now());
+                    }
+                });
+                
+                // Reload manifest
+                const manifestLink = document.querySelector('link[rel="manifest"]');
+                if (manifestLink) {
+                    manifestLink.setAttribute('href', 'manifest.json?v=' + Date.now());
+                }
+            }
+        });
     });
 }
