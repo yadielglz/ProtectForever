@@ -134,8 +134,24 @@
                             <span class="step-label">Choose Brand</span>
                         </div>
                     </div>
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="brandSearch" class="search-input" placeholder="Search brands..." aria-label="Search brands">
+                            <button id="clearBrandSearch" class="search-clear" aria-label="Clear search" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
                     <div id="brandGrid" class="brand-grid">
                         <!-- Brand cards will be populated here -->
+                    </div>
+                    <div id="brandEmptyState" class="empty-state" style="display: none;">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="empty-state-title">No brands found</div>
+                        <div class="empty-state-message">Try adjusting your search</div>
                     </div>
                 </div>
 
@@ -146,13 +162,29 @@
                             <span class="step-number">2</span>
                             <span class="step-label">Choose Model</span>
                         </div>
-                        <button id="backToBrands" class="back-button">
+                        <button id="backToBrands" class="back-button" aria-label="Back to brand selection">
                             <i class="fas fa-arrow-left"></i>
                             <span>Back</span>
                         </button>
                     </div>
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="modelSearch" class="search-input" placeholder="Search models..." aria-label="Search models">
+                            <button id="clearModelSearch" class="search-clear" aria-label="Clear search" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
                     <div id="modelGrid" class="model-grid">
                         <!-- Model cards will be populated here -->
+                    </div>
+                    <div id="modelEmptyState" class="empty-state" style="display: none;">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="empty-state-title">No models found</div>
+                        <div class="empty-state-message">Try adjusting your search</div>
                     </div>
                 </div>
             </section>

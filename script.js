@@ -173,6 +173,16 @@ class ProtectApp {
         this.elements.brandGrid = document.getElementById('brandGrid');
         this.elements.modelGrid = document.getElementById('modelGrid');
         this.elements.backToBrands = document.getElementById('backToBrands');
+        this.elements.brandSearch = document.getElementById('brandSearch');
+        this.elements.modelSearch = document.getElementById('modelSearch');
+        this.elements.clearBrandSearch = document.getElementById('clearBrandSearch');
+        this.elements.clearModelSearch = document.getElementById('clearModelSearch');
+        this.elements.brandEmptyState = document.getElementById('brandEmptyState');
+        this.elements.modelEmptyState = document.getElementById('modelEmptyState');
+        
+        // Store original brand and model lists for filtering
+        this.allBrands = [];
+        this.allModels = [];
         
         // Device modal
         this.elements.deviceModal = document.getElementById('deviceModal');
@@ -223,6 +233,21 @@ class ProtectApp {
         
         // Device flow
         this.elements.backToBrands.addEventListener('click', () => this.showBrandStep());
+        
+        // Search functionality
+        this.elements.brandSearch.addEventListener('input', (e) => this.filterBrands(e.target.value));
+        this.elements.modelSearch.addEventListener('input', (e) => this.filterModels(e.target.value));
+        this.elements.clearBrandSearch.addEventListener('click', () => {
+            this.elements.brandSearch.value = '';
+            this.filterBrands('');
+        });
+        this.elements.clearModelSearch.addEventListener('click', () => {
+            this.elements.modelSearch.value = '';
+            this.filterModels('');
+        });
+        
+        // Keyboard navigation
+        this.setupKeyboardNavigation();
         
         // Device modal
         this.elements.closeModal.addEventListener('click', () => this.closeDeviceModal());
@@ -650,16 +675,31 @@ class ProtectApp {
             console.log('Extracted brands:', brands);
         }
         
+        this.allBrands = brands.length === 0 ? ['Samsung', 'Apple', 'Google', 'OnePlus'] : brands;
+        this.filterBrands(this.elements.brandSearch?.value || '');
+    }
+    
+    filterBrands(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        const filtered = term === '' 
+            ? this.allBrands 
+            : this.allBrands.filter(brand => brand.toLowerCase().includes(term));
+        
         this.elements.brandGrid.innerHTML = '';
         
-        if (brands.length === 0) {
-            this.showFallbackBrands();
-            return;
+        if (filtered.length === 0) {
+            this.elements.brandEmptyState.style.display = 'block';
+            this.elements.brandGrid.style.display = 'none';
+        } else {
+            this.elements.brandEmptyState.style.display = 'none';
+            this.elements.brandGrid.style.display = 'grid';
+            filtered.forEach(brand => {
+                this.elements.brandGrid.appendChild(this.createBrandCard(brand));
+            });
         }
         
-        brands.forEach(brand => {
-            this.elements.brandGrid.appendChild(this.createBrandCard(brand));
-        });
+        // Show/hide clear button
+        this.elements.clearBrandSearch.style.display = term ? 'flex' : 'none';
     }
     
     showFallbackBrands() {
@@ -671,6 +711,9 @@ class ProtectApp {
     createBrandCard(brand) {
         const card = document.createElement('div');
         card.className = 'brand-card';
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', `Select ${brand} brand`);
         const logoPath = this.getBrandLogo(brand);
         
         card.innerHTML = `
@@ -682,6 +725,12 @@ class ProtectApp {
         `;
         
         card.addEventListener('click', () => this.selectBrand(brand));
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.selectBrand(brand);
+            }
+        });
         return card;
     }
 
@@ -739,10 +788,31 @@ class ProtectApp {
             return this.getModelSortOrder(brand, a) - this.getModelSortOrder(brand, b);
         });
         
+        this.allModels = sortedModels;
+        this.filterModels(this.elements.modelSearch?.value || '');
+    }
+    
+    filterModels(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        const filtered = term === '' 
+            ? this.allModels 
+            : this.allModels.filter(model => model.toLowerCase().includes(term));
+        
         this.elements.modelGrid.innerHTML = '';
-        sortedModels.forEach(model => {
-            this.elements.modelGrid.appendChild(this.createModelCard(model, brand));
-        });
+        
+        if (filtered.length === 0) {
+            this.elements.modelEmptyState.style.display = 'block';
+            this.elements.modelGrid.style.display = 'none';
+        } else {
+            this.elements.modelEmptyState.style.display = 'none';
+            this.elements.modelGrid.style.display = 'grid';
+            filtered.forEach(model => {
+                this.elements.modelGrid.appendChild(this.createModelCard(model, this.selectedBrand));
+            });
+        }
+        
+        // Show/hide clear button
+        this.elements.clearModelSearch.style.display = term ? 'flex' : 'none';
     }
     
     createModelCard(model, brand) {
@@ -785,9 +855,18 @@ class ProtectApp {
         
         const card = document.createElement('div');
         card.className = 'model-card';
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', `Select ${model} model`);
         card.innerHTML = `<div class="model-name">${model}</div>`;
         
         card.addEventListener('click', () => this.selectModel(model, brand));
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.selectModel(model, brand);
+            }
+        });
         
         return card;
     }
@@ -811,11 +890,78 @@ class ProtectApp {
         this.elements.modelStep.classList.remove('active');
         this.selectedBrand = null;
         this.selectedModel = null;
+        
+        // Clear model search when going back
+        if (this.elements.modelSearch) {
+            this.elements.modelSearch.value = '';
+            this.elements.clearModelSearch.style.display = 'none';
+        }
+        
+        // Focus brand search if present
+        if (this.elements.brandSearch) {
+            setTimeout(() => this.elements.brandSearch.focus(), 100);
+        }
     }
     
     showModelStep() {
         this.elements.brandStep.classList.remove('active');
         this.elements.modelStep.classList.add('active');
+        
+        // Focus model search
+        if (this.elements.modelSearch) {
+            setTimeout(() => this.elements.modelSearch.focus(), 100);
+        }
+    }
+    
+    setupKeyboardNavigation() {
+        // ESC key to go back or close modals
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (this.elements.deviceModal?.classList.contains('show')) {
+                    this.closeDeviceModal();
+                } else if (this.elements.settingsMenu?.classList.contains('show')) {
+                    this.closeSettings();
+                } else if (this.elements.modelStep?.classList.contains('active')) {
+                    this.showBrandStep();
+                }
+            }
+        });
+        
+        // Keyboard navigation for brand/model cards
+        this.elements.brandGrid?.addEventListener('keydown', (e) => {
+            this.handleCardNavigation(e, '.brand-card');
+        });
+        
+        this.elements.modelGrid?.addEventListener('keydown', (e) => {
+            this.handleCardNavigation(e, '.model-card');
+        });
+    }
+    
+    handleCardNavigation(e, cardSelector) {
+        const cards = Array.from(document.querySelectorAll(cardSelector));
+        const currentIndex = cards.indexOf(e.target);
+        
+        switch(e.key) {
+            case 'ArrowRight':
+            case 'ArrowDown':
+                e.preventDefault();
+                const nextIndex = (currentIndex + 1) % cards.length;
+                cards[nextIndex]?.focus();
+                break;
+            case 'ArrowLeft':
+            case 'ArrowUp':
+                e.preventDefault();
+                const prevIndex = (currentIndex - 1 + cards.length) % cards.length;
+                cards[prevIndex]?.focus();
+                break;
+            case 'Enter':
+            case ' ':
+                if (e.target.tagName !== 'INPUT') {
+                    e.preventDefault();
+                    e.target.click();
+                }
+                break;
+        }
     }
     
     showDeviceModal() {
