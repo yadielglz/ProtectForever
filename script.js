@@ -7,7 +7,6 @@ class ProtectApp {
         this.selectedBrand = null;
         this.selectedModel = null;
         this.inactivityTimer = null;
-        this.timeoutTimer = null;
         this.isAuthenticated = false;
         
         // DOM Elements
@@ -100,6 +99,14 @@ class ProtectApp {
         this.init();
     }
     
+    // Helper method to get field value with fallback column names
+    getField(item, possibleNames) {
+        for (const name of possibleNames) {
+            if (item[name]) return item[name];
+        }
+        return '';
+    }
+    
     async init() {
         try {
             this.cacheDOM();
@@ -110,34 +117,20 @@ class ProtectApp {
             const isFirstLoad = !localStorage.getItem('appHasLoaded');
             
             if (isFirstLoad) {
-                // Show splash screen on first load
-                this.showSplashScreen();
-                
-                // Wait for splash screen animation (3 seconds)
-                await new Promise(resolve => setTimeout(resolve, 3000));
-                
-                // Hide splash screen
-                this.hideSplashScreen();
-                
-                // Wait for splash screen hide animation
-                await new Promise(resolve => setTimeout(resolve, 600));
-                
-                // Mark app as loaded
-                localStorage.setItem('appHasLoaded', 'true');
-            }
+            this.showSplashScreen();
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            this.hideSplashScreen();
+            await new Promise(resolve => setTimeout(resolve, 600));
+            localStorage.setItem('appHasLoaded', 'true');
+        }
+        
+        this.showLoading('Initializing Protect...');
             
-            // Show loading animation
-            this.showLoading('Initializing Protect...');
-            
-            // Clear cache to force fresh data load
-            console.log('Clearing cache to force fresh data load...');
             localStorage.removeItem(this.config.CACHE_KEY);
             localStorage.removeItem('lastDataUpdate');
             
             await this.loadData();
             this.hideLoading();
-            
-            // Small delay before showing passcode screen for smooth transition
             setTimeout(() => {
                 this.startTimeDateDisplay();
                 this.showPasscodeScreen();
@@ -207,17 +200,12 @@ class ProtectApp {
         this.elements.keypadKeys.forEach(key => {
             key.addEventListener('click', (e) => {
                 e.preventDefault();
-                const keyValue = e.currentTarget.dataset.key;
-                console.log('Keypad clicked:', keyValue); // Debug log
-                this.handleKeypadInput(keyValue, e.currentTarget);
+                this.handleKeypadInput(e.currentTarget.dataset.key, e.currentTarget);
             });
             
-            // Add touch events for mobile
             key.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                const keyValue = e.currentTarget.dataset.key;
-                console.log('Keypad touched:', keyValue); // Debug log
-                this.handleKeypadInput(keyValue, e.currentTarget);
+                this.handleKeypadInput(e.currentTarget.dataset.key, e.currentTarget);
             });
         });
         
@@ -360,63 +348,41 @@ class ProtectApp {
     
     async loadData() {
         try {
-            console.log('Starting data load...');
+            if (this.config.DEBUG_MODE) console.log('Starting data load...');
             this.showLoading('Loading device data...');
             
-            // Try to load from cache first
             const cachedData = this.getCachedData();
-            console.log('Cached data:', cachedData);
             
             if (cachedData && this.isCacheValid()) {
-                console.log('Using cached data');
                 this.deviceData = cachedData;
                 this.hideLoading();
                 return;
             }
             
-            console.log('Loading from Google Sheets...');
-            // Load from Google Sheets
             await this.loadFromGoogleSheets();
             this.hideLoading();
-            
         } catch (error) {
             console.error('Failed to load data:', error);
             this.hideLoading();
-            
-            // Fallback to cached data or default data
-            const fallbackData = this.getCachedData() || this.getFallbackData();
-            console.log('Using fallback data:', fallbackData);
-            this.deviceData = fallbackData;
-            
+            this.deviceData = this.getCachedData() || this.getFallbackData();
             this.showToast('Using offline data', 'warning');
         }
     }
     
     async loadFromGoogleSheets() {
         try {
-            console.log('Fetching from Google Sheets URL:', this.config.GOOGLE_SHEETS_URL);
-            
-            // Try direct fetch first
             let response;
             try {
                 response = await fetch(this.config.GOOGLE_SHEETS_URL);
-                console.log('Direct fetch response status:', response.status);
             } catch (directError) {
-                console.log('Direct fetch failed, trying CORS proxies...');
+                if (this.config.DEBUG_MODE) console.log('Direct fetch failed, trying CORS proxies...');
                 
-                // Try CORS proxies
                 for (const proxy of this.config.CORS_PROXIES) {
                     try {
-                        const proxyUrl = proxy + encodeURIComponent(this.config.GOOGLE_SHEETS_URL);
-                        console.log('Trying proxy:', proxy);
-                        response = await fetch(proxyUrl);
-                        console.log('Proxy response status:', response.status);
-                        
-                        if (response.ok) {
-                            break;
-                        }
+                        response = await fetch(proxy + encodeURIComponent(this.config.GOOGLE_SHEETS_URL));
+                        if (response && response.ok) break;
                     } catch (proxyError) {
-                        console.log('Proxy failed:', proxy, proxyError);
+                        if (this.config.DEBUG_MODE) console.log('Proxy failed:', proxy);
                         continue;
                     }
                 }
@@ -427,13 +393,8 @@ class ProtectApp {
             }
             
             const csvText = await response.text();
-            console.log('CSV text received:', csvText.substring(0, 200) + '...');
-            
             this.deviceData = this.parseCSVData(csvText);
-            console.log('Parsed device data:', this.deviceData);
-            
             this.cacheData(this.deviceData);
-            
         } catch (error) {
             console.error('Failed to load from Google Sheets:', error);
             throw error;
@@ -441,46 +402,29 @@ class ProtectApp {
     }
     
     parseCSVData(csvText) {
-        console.log('Parsing CSV data...');
-        
-        // Split by lines and filter empty lines
         const lines = csvText.split(/\r?\n/).filter(line => line.trim());
-        console.log('CSV lines:', lines.length);
         
         if (lines.length === 0) {
             console.error('No data in CSV');
             return [];
         }
         
-        // Parse headers using proper CSV parsing
         const headers = this.parseCSVLine(lines[0]);
-        console.log('Parsed headers:', headers);
-        console.log('Number of columns:', headers.length);
-        
-        // Parse data rows
-        const parsedData = lines.slice(1).map((line, index) => {
+        const parsedData = lines.slice(1).map((line) => {
             const values = this.parseCSVLine(line);
             const device = {};
             
-            // Map each header to its corresponding value
             headers.forEach((header, colIndex) => {
-                const value = values[colIndex] || '';
-                device[header] = value.trim();
+                device[header] = (values[colIndex] || '').trim();
             });
             
-            // Log sample row for debugging
-            if (index === 0) {
-                console.log('Sample parsed row:', device);
-            }
-            
             return device;
-        }).filter(row => {
-            // Filter out completely empty rows
-            return Object.values(row).some(val => val && val.trim());
-        });
+        }).filter(row => Object.values(row).some(val => val && val.trim()));
         
-        console.log('Total valid rows parsed:', parsedData.length);
-        console.log('Sample parsed data:', parsedData.slice(0, 2));
+        if (this.config.DEBUG_MODE) {
+            console.log('Parsed CSV:', parsedData.length, 'rows, columns:', headers);
+            if (parsedData.length > 0) console.log('Sample row:', parsedData[0]);
+        }
         
         return parsedData;
     }
@@ -492,12 +436,9 @@ class ProtectApp {
         
         for (let i = 0; i < line.length; i++) {
             const char = line[i];
-            
             if (char === '"') {
-                // Toggle quote state
                 insideQuotes = !insideQuotes;
             } else if (char === ',' && !insideQuotes) {
-                // End of field
                 values.push(current.trim());
                 current = '';
             } else {
@@ -505,9 +446,7 @@ class ProtectApp {
             }
         }
         
-        // Push the last field
         values.push(current.trim());
-        
         return values;
     }
     
@@ -585,7 +524,6 @@ class ProtectApp {
     }
     
     showPasscodeScreen() {
-        // Clear any running timers
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
             this.timerInterval = null;
@@ -595,18 +533,13 @@ class ProtectApp {
         this.elements.mainApp.style.display = 'none';
         this.isAuthenticated = false;
         
-        // Trigger passcode screen animation
-        setTimeout(() => {
-            this.elements.passcodeScreen.classList.add('show');
-        }, 50);
+        setTimeout(() => this.elements.passcodeScreen.classList.add('show'), 50);
     }
     
     showMainApp() {
-        // Hide passcode screen with animation
         this.elements.passcodeScreen.classList.remove('show');
         this.elements.passcodeScreen.classList.add('hide');
         
-        // Show main app after passcode animation completes
         setTimeout(() => {
             this.elements.passcodeScreen.style.display = 'none';
             this.elements.passcodeScreen.classList.remove('hide');
@@ -620,43 +553,29 @@ class ProtectApp {
     
     startTimeDateDisplay() {
         this.updateTimeDate();
-        // Update every second
-        this.timeDateInterval = setInterval(() => {
-            this.updateTimeDate();
-        }, 1000);
+        this.timeDateInterval = setInterval(() => this.updateTimeDate(), 1000);
     }
     
     updateTimeDate() {
         if (!this.elements.currentTime || !this.elements.currentDate) return;
         
-    const now = new Date();
-    
-        // Format time (12-hour format with AM/PM)
-    const timeOptions = {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    };
-        this.elements.currentTime.textContent = now.toLocaleTimeString('en-US', timeOptions);
-    
-        // Format date
-        const dateOptions = { 
-        month: 'short',
-            day: 'numeric', 
-            year: 'numeric' 
-        };
-        this.elements.currentDate.textContent = now.toLocaleDateString('en-US', dateOptions);
+        const now = new Date();
+        this.elements.currentTime.textContent = now.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+        this.elements.currentDate.textContent = now.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
     }
     
     handleKeypadInput(key, keyElement) {
-        console.log('handleKeypadInput called with:', key); // Debug log
-        
-        // Add immediate press animation to the key
         if (keyElement) {
             keyElement.classList.add('pressed');
-            setTimeout(() => {
-                keyElement.classList.remove('pressed');
-            }, 100);
+            setTimeout(() => keyElement.classList.remove('pressed'), 100);
         }
         
         if (key === 'clear') {
@@ -668,8 +587,6 @@ class ProtectApp {
             this.currentPasscode += key;
             this.updatePasscodeDisplay();
         }
-        
-        console.log('Current passcode:', this.currentPasscode); // Debug log
     }
     
     updatePasscodeDisplay() {
@@ -706,7 +623,6 @@ class ProtectApp {
     }
     
     lockApp() {
-        // Clear any running timers
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
             this.timerInterval = null;
@@ -718,83 +634,56 @@ class ProtectApp {
     }
     
     initializeDeviceFlow() {
-        console.log('Initializing device flow...');
-        console.log('Device data:', this.deviceData);
-        console.log('Device data length:', this.deviceData.length);
-        
+        if (this.config.DEBUG_MODE) {
+            console.log('Initializing device flow, data length:', this.deviceData.length);
+        }
         this.populateBrands();
         this.showBrandStep();
     }
     
     populateBrands() {
-        console.log('Populating brands...');
+        const getBrand = (device) => this.getField(device, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
+        const brands = [...new Set(this.deviceData.map(getBrand))].filter(Boolean);
         
-        // Show available columns for debugging
-        if (this.deviceData.length > 0) {
+        if (this.config.DEBUG_MODE && this.deviceData.length > 0) {
             console.log('Available columns:', Object.keys(this.deviceData[0]));
+            console.log('Extracted brands:', brands);
         }
-        
-        // Try multiple possible column names for brand
-        const getBrand = (device) => {
-            return device['Device Brand'] || 
-                   device['Brand'] || 
-                   device['DeviceBrand'] || 
-                   device['BRAND'] ||
-                   device['brand'] || '';
-        };
-        
-        const brands = [...new Set(this.deviceData.map(device => getBrand(device)))].filter(Boolean);
-        console.log('Extracted brands:', brands);
-        console.log('Brand count:', brands.length);
         
         this.elements.brandGrid.innerHTML = '';
         
         if (brands.length === 0) {
-            console.log('No brands found, showing fallback data');
             this.showFallbackBrands();
             return;
         }
         
-        brands.forEach((brand, index) => {
-            console.log(`Creating brand card ${index + 1}:`, brand);
-            const brandCard = this.createBrandCard(brand);
-            this.elements.brandGrid.appendChild(brandCard);
+        brands.forEach(brand => {
+            this.elements.brandGrid.appendChild(this.createBrandCard(brand));
         });
-        
-        console.log('Brand grid populated with', brands.length, 'brands');
     }
     
     showFallbackBrands() {
-        console.log('Showing fallback brands');
-        const fallbackBrands = ['Samsung', 'Apple', 'Google', 'OnePlus'];
-        
-        fallbackBrands.forEach(brand => {
-            const brandCard = this.createBrandCard(brand);
-            this.elements.brandGrid.appendChild(brandCard);
+        ['Samsung', 'Apple', 'Google', 'OnePlus'].forEach(brand => {
+            this.elements.brandGrid.appendChild(this.createBrandCard(brand));
         });
     }
     
     createBrandCard(brand) {
-    const card = document.createElement('div');
-    card.className = 'brand-card';
-        
-        // Get the appropriate logo for each brand
+        const card = document.createElement('div');
+        card.className = 'brand-card';
         const logoPath = this.getBrandLogo(brand);
-    
-    card.innerHTML = `
+        
+        card.innerHTML = `
             <div class="brand-icon">
                 <img src="${logoPath}" alt="${brand}" class="brand-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="brand-logo-fallback" style="display: none;">
-                    <i class="fas fa-mobile-alt"></i>
-        </div>
-        </div>
+                <div class="brand-logo-fallback" style="display: none;"><i class="fas fa-mobile-alt"></i></div>
+            </div>
             <div class="brand-name">${brand}</div>
         `;
         
         card.addEventListener('click', () => this.selectBrand(brand));
-    
-    return card;
-}
+        return card;
+    }
 
     getBrandLogo(brand) {
         const logoMap = {
@@ -814,103 +703,60 @@ class ProtectApp {
         this.populateModels(brand);
         this.showModelStep();
         
-        // Add animation
         const brandCards = document.querySelectorAll('.brand-card');
         brandCards.forEach(card => {
             if (card.querySelector('.brand-name').textContent === brand) {
                 card.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-                    card.style.transform = '';
-                }, 150);
+                setTimeout(() => card.style.transform = '', 150);
             }
         });
     }
     
     getModelSortOrder(brand, model) {
-        // Get the sort order for a specific model within a brand
         if (this.deviceModelOrder[brand] && this.deviceModelOrder[brand][model]) {
             return this.deviceModelOrder[brand][model];
         }
         
-        // If model not found in our mapping, try to extract year from model name
         const yearMatch = model.match(/(\d{4})/);
-        if (yearMatch) {
-            const year = parseInt(yearMatch[1]);
-            return year; // Use year as sort order
-        }
+        if (yearMatch) return parseInt(yearMatch[1]);
         
-        // If no year found, try to extract number from model name
         const numberMatch = model.match(/(\d+)/);
-        if (numberMatch) {
-            return parseInt(numberMatch[1]);
-        }
+        if (numberMatch) return parseInt(numberMatch[1]);
         
-        // Default fallback - put unknown models at the end
         return 9999;
     }
     
     populateModels(brand) {
-        // Get brand and model with fallback column names
-        const getBrand = (device) => {
-            return device['Device Brand'] || 
-                   device['Brand'] || 
-                   device['DeviceBrand'] || 
-                   device['BRAND'] ||
-                   device['brand'] || '';
-        };
-        
-        const getModel = (device) => {
-            return device['Device Model'] || 
-                   device['Model'] || 
-                   device['DeviceModel'] || 
-                   device['MODEL'] ||
-                   device['model'] || '';
-        };
+        const getBrand = (d) => this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
+        const getModel = (d) => this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
         
         const models = this.deviceData
-            .filter(device => getBrand(device) === brand)
-            .map(device => getModel(device))
+            .filter(d => getBrand(d) === brand)
+            .map(getModel)
             .filter(Boolean);
         
-        // Remove duplicates and sort by release order (oldest to newest)
-        const uniqueModels = [...new Set(models)];
-        const sortedModels = uniqueModels.sort((a, b) => {
-            const orderA = this.getModelSortOrder(brand, a);
-            const orderB = this.getModelSortOrder(brand, b);
-            return orderA - orderB;
+        const sortedModels = [...new Set(models)].sort((a, b) => {
+            return this.getModelSortOrder(brand, a) - this.getModelSortOrder(brand, b);
         });
         
         this.elements.modelGrid.innerHTML = '';
-        
         sortedModels.forEach(model => {
-            const modelCard = this.createModelCard(model, brand);
-            this.elements.modelGrid.appendChild(modelCard);
+            this.elements.modelGrid.appendChild(this.createModelCard(model, brand));
         });
     }
     
     createModelCard(model, brand) {
-        // Helper to get field with fallback column names
-        const getField = (device, possibleNames) => {
-            for (const name of possibleNames) {
-                if (device[name]) return device[name];
-            }
-            return '';
-        };
-        
-        // Get availability for this model
-        const getBrand = (d) => getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
-        const getModel = (d) => getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
+        const getBrand = (d) => this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
+        const getModel = (d) => this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
         
         const device = this.deviceData.find(d => 
             getBrand(d) === brand && getModel(d) === model
         );
         
-        // Determine availability status
         let isAvailable = true;
         
         if (device) {
-            // Try multiple possible column names for availability
-            const getAvailable = (d) => getField(d, ['Available', 'AVAILABLE', 'available', 'Availability', 'In Stock', 'in_stock', 'Status', 'status']);
+            const getAvailable = (d) => this.getField(d, ['Available', 'AVAILABLE', 'available', 'Availability', 'In Stock', 'in_stock', 'Status', 'status']);
             const availableValue = getAvailable(device);
             
             if (availableValue) {
@@ -929,12 +775,9 @@ class ProtectApp {
                     isAvailable = true;
                 }
                 
-                // Log for debugging the first few items
-                if (this.debugAvailabilityCount === undefined) {
-                    this.debugAvailabilityCount = 0;
-                }
-                if (this.debugAvailabilityCount < 5) {
-                    console.log(`Model: ${model}, Brand: ${brand}, Available: "${availableValue}" (normalized: "${normalizedValue}") → isAvailable: ${isAvailable}`);
+                if (this.config.DEBUG_MODE && this.debugAvailabilityCount < 5) {
+                    if (!this.debugAvailabilityCount) this.debugAvailabilityCount = 0;
+                    console.log(`Model: ${model}, Brand: ${brand}, Available: "${availableValue}" → ${isAvailable}`);
                     this.debugAvailabilityCount++;
                 }
             }
@@ -942,12 +785,7 @@ class ProtectApp {
         
         const card = document.createElement('div');
         card.className = 'model-card';
-        card.innerHTML = `
-            <div class="model-name">${model}</div>
-        `;
-        
-        // Store availability data on the card for later use in modal
-        card.dataset.isAvailable = isAvailable ? 'true' : 'false';
+        card.innerHTML = `<div class="model-name">${model}</div>`;
         
         card.addEventListener('click', () => this.selectModel(model, brand));
         
@@ -956,20 +794,17 @@ class ProtectApp {
 
     selectModel(model, brand) {
         this.selectedModel = model;
-        this.selectedBrand = brand; // Store the brand for the modal
+        this.selectedBrand = brand;
         this.showDeviceModal();
         
-        // Add animation
         const modelCards = document.querySelectorAll('.model-card');
         modelCards.forEach(card => {
             if (card.querySelector('.model-name').textContent === model) {
                 card.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-                    card.style.transform = '';
-        }, 150);
-        }
-    });
-}
+                setTimeout(() => card.style.transform = '', 150);
+            }
+        });
+    }
 
     showBrandStep() {
         this.elements.brandStep.classList.add('active');
@@ -984,17 +819,9 @@ class ProtectApp {
     }
     
     showDeviceModal() {
-        // Helper to get field with fallback column names
-        const getField = (device, possibleNames) => {
-            for (const name of possibleNames) {
-                if (device[name]) return device[name];
-            }
-            return '';
-        };
-        
         const device = this.deviceData.find(d => {
-            const brand = getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
-            const model = getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
+            const brand = this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
+            const model = this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
             return brand === this.selectedBrand && model === this.selectedModel;
         });
         
@@ -1005,27 +832,16 @@ class ProtectApp {
     
         this.populateDeviceModal(device);
         this.elements.deviceModal.classList.add('show');
-        
-        // Add entrance animation
         setTimeout(() => {
             this.elements.deviceModal.querySelector('.modal-container').style.transform = 'scale(1)';
         }, 10);
     }
     
     populateDeviceModal(device) {
-        // Helper to get field with fallback column names
-        const getField = (item, possibleNames) => {
-            for (const name of possibleNames) {
-                if (item[name]) return item[name];
-            }
-            return '';
-        };
+        const deviceBrand = this.getField(device, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
+        const deviceModel = this.getField(device, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
         
-        const deviceBrand = getField(device, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
-        const deviceModel = getField(device, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
-        
-        // Get availability status
-        const getAvailable = (d) => getField(d, ['Available', 'AVAILABLE', 'available', 'Availability', 'In Stock', 'in_stock', 'Status', 'status']);
+        const getAvailable = (d) => this.getField(d, ['Available', 'AVAILABLE', 'available', 'Availability', 'In Stock', 'in_stock', 'Status', 'status']);
         const availableValue = getAvailable(device);
         
         let isAvailable = true;
@@ -1041,25 +857,20 @@ class ProtectApp {
             }
         }
         
-        // Device info with availability status
         this.elements.deviceName.textContent = `${deviceBrand} ${deviceModel}`;
         
-        // Create availability badge HTML
         const availabilityBadge = isAvailable 
             ? '<span class="availability-badge available"><i class="fas fa-check-circle"></i> Available</span>'
             : '<span class="availability-badge unavailable"><i class="fas fa-times-circle"></i> Unavailable</span>';
         
-        // Update device model line to include availability
         this.elements.deviceModel.innerHTML = `${deviceModel} ${availabilityBadge}`;
         
-        // Get all options for this device
         const options = this.deviceData.filter(d => {
-            const dBrand = getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
-            const dModel = getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
+            const dBrand = this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
+            const dModel = this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
             return dBrand === deviceBrand && dModel === deviceModel;
         });
         
-        // Group by protection type and brand
         const groupedOptions = this.groupByProtectionType(options);
         
         this.elements.optionsCount.textContent = `${options.length} UPC option${options.length !== 1 ? 's' : ''}`;
@@ -1074,17 +885,9 @@ class ProtectApp {
     groupByProtectionType(options) {
         const groups = {};
         
-        // Helper to get field with fallback column names
-        const getField = (item, possibleNames) => {
-            for (const name of possibleNames) {
-                if (item[name]) return item[name];
-            }
-            return 'Unknown';
-        };
-        
         options.forEach(option => {
-            const brand = getField(option, ['Brand', 'Device Brand', 'DeviceBrand', 'BRAND', 'brand']);
-            const type = getField(option, ['Type', 'Protection Type', 'ProtectionType', 'TYPE', 'Protection']);
+            const brand = this.getField(option, ['Brand', 'Device Brand', 'DeviceBrand', 'BRAND', 'brand']) || 'Unknown';
+            const type = this.getField(option, ['Type', 'Protection Type', 'ProtectionType', 'TYPE', 'Protection']) || 'Unknown';
             const key = `${brand}-${type}`;
             
             if (!groups[key]) {
@@ -1098,9 +901,7 @@ class ProtectApp {
             
             groups[key].entries.push(option);
             
-            // Try multiple possible MDN column names
-            const getMDN = (item) => getField(item, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
-            const mdn = getMDN(option);
+            const mdn = this.getField(option, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
             if (mdn) {
                 groups[key].mdns.add(mdn);
             }
@@ -1113,23 +914,11 @@ class ProtectApp {
         const card = document.createElement('div');
         card.className = 'protection-card';
         const mdns = Array.from(group.mdns);
-        const upcCount = group.entries.length;
         
-        // Helper to safely get field values
-        const getField = (item, possibleNames) => {
-            for (const name of possibleNames) {
-                if (item[name]) return item[name];
-            }
-            return '';
-        };
-        
-        // Get UPCs from multiple possible column names
         const upcs = [...new Set(group.entries.map(e => {
-            const upc = getField(e, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
-            return upc;
+            return this.getField(e, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
         }).filter(Boolean))];
         
-        // Updated HTML with filtered UPCs
         card.innerHTML = `
             <div class="card-header">
                 <div class="brand-info">
@@ -1168,29 +957,18 @@ class ProtectApp {
     }
     
     showMdnForGroup(brand, type, deviceModel) {
-        // Helper to get field with fallback column names
-        const getField = (item, possibleNames) => {
-            for (const name of possibleNames) {
-                if (item[name]) return item[name];
-            }
-            return '';
-        };
-        
-        // Find all devices with matching brand, type, AND device model
         const matchingDevices = this.deviceData.filter(d => {
-            const deviceBrand = getField(d, ['Brand', 'Device Brand', 'DeviceBrand', 'BRAND', 'brand']);
-            const deviceType = getField(d, ['Type', 'Protection Type', 'ProtectionType', 'TYPE', 'Protection']);
-            const deviceModelName = getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
+            const deviceBrand = this.getField(d, ['Brand', 'Device Brand', 'DeviceBrand', 'BRAND', 'brand']);
+            const deviceType = this.getField(d, ['Type', 'Protection Type', 'ProtectionType', 'TYPE', 'Protection']);
+            const deviceModelName = this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
             
-            // Match Brand, Type, AND Device Model
             return deviceBrand === brand && 
                    deviceType === type && 
                    deviceModelName === deviceModel;
         });
         
-        // Get unique MDNs for this specific product
         const mdns = [...new Set(matchingDevices.map(d => {
-            return getField(d, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
+            return this.getField(d, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
         }).filter(Boolean))];
         
         if (mdns.length === 0) {
@@ -1198,9 +976,8 @@ class ProtectApp {
             return;
         }
         
-        // Get all UPCs for this group (getField is already declared above)
         const upcs = [...new Set(matchingDevices.map(d => {
-            return getField(d, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
+            return this.getField(d, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
         }).filter(Boolean))];
         
         // Create product label
@@ -1259,15 +1036,10 @@ class ProtectApp {
     }
     
     formatPhoneNumber(phoneNumber) {
-        // Remove all non-digit characters
         const cleaned = phoneNumber.replace(/\D/g, '');
-        
-        // Format as (XXX) XXX-XXXX for 10 digits
         if (cleaned.length === 10) {
             return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
         }
-        
-        // Return original if not 10 digits
         return phoneNumber;
     }
     
@@ -1319,18 +1091,11 @@ class ProtectApp {
     async refreshData() {
         try {
             this.showLoading('Refreshing data...');
-            
-            // Clear cache
             localStorage.removeItem(this.config.CACHE_KEY);
             localStorage.removeItem('lastDataUpdate');
-            
-            // Force reload from Google Sheets
             await this.loadFromGoogleSheets();
             this.hideLoading();
-            
-            // Reinitialize device flow with fresh data
             this.initializeDeviceFlow();
-            
             this.showToast('Data refreshed successfully', 'success');
             this.closeSettings();
         } catch (error) {
@@ -1341,33 +1106,21 @@ class ProtectApp {
     
     async clearCache() {
         try {
-            // Clear ALL localStorage
             localStorage.clear();
             
-            // Clear service worker cache
             if ('caches' in window) {
                 const cacheNames = await caches.keys();
-                await Promise.all(
-                    cacheNames.map(cacheName => caches.delete(cacheName))
-                );
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
             }
             
-            // Unregister service worker
             if ('serviceWorker' in navigator) {
                 const registrations = await navigator.serviceWorker.getRegistrations();
-                await Promise.all(
-                    registrations.map(registration => registration.unregister())
-                );
+                await Promise.all(registrations.map(reg => reg.unregister()));
             }
             
             this.showToast('All cache cleared successfully', 'success');
             this.closeSettings();
-            
-            // Force reload with cache bypass
-            setTimeout(() => {
-                window.location.reload(true);
-            }, 1000);
-        
+            setTimeout(() => window.location.reload(true), 1000);
         } catch (error) {
             console.error('Failed to clear cache:', error);
             this.showToast('Failed to clear cache', 'error');
@@ -1375,7 +1128,6 @@ class ProtectApp {
     }
     
     reloadApp() {
-        // Force reload with cache bypass
         window.location.reload(true);
     }
     
@@ -1401,18 +1153,10 @@ class ProtectApp {
     `;
     
         this.elements.toastContainer.appendChild(toast);
-        
-        // Show toast
-        setTimeout(() => {
-            toast.classList.add('show');
-        }, 10);
-        
-        // Hide toast
+        setTimeout(() => toast.classList.add('show'), 10);
         setTimeout(() => {
             toast.classList.remove('show');
-            setTimeout(() => {
-                toast.remove();
-            }, 300);
+            setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
     
