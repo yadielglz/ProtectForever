@@ -50,42 +50,69 @@
 
     <!-- Passcode Screen -->
     <div id="passcodeScreen" class="passcode-screen">
+        <div class="passcode-background"></div>
         <div class="passcode-container">
-            <div class="passcode-header">
-                <div class="app-logo">
-                    <div class="logo-icon">
+            <!-- Header Section -->
+            <div class="passcode-header-modern">
+                <div class="app-logo-modern">
+                    <div class="logo-icon-modern">
                         <i class="fas fa-shield-alt"></i>
                     </div>
-                    <h1>Protect</h1>
+                    <h1 class="app-title-modern">Protect</h1>
                 </div>
-                <p class="passcode-subtitle">Enter your access code</p>
+                <p class="passcode-subtitle-modern">Enter your access code</p>
+                
+                <!-- Passcode Display -->
+                <div class="passcode-display-modern">
+                    <div class="passcode-dots-modern">
+                        <div class="dot-modern"></div>
+                        <div class="dot-modern"></div>
+                        <div class="dot-modern"></div>
+                        <div class="dot-modern"></div>
+                    </div>
+                    <div id="passcodeError" class="passcode-error-modern">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Invalid code</span>
+                    </div>
+                </div>
             </div>
             
-            <div class="passcode-display">
-                <div class="passcode-dots">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                </div>
-                <div id="passcodeError" class="passcode-error">Invalid code</div>
-            </div>
-            
-            <div class="passcode-keypad">
-                <button class="keypad-key" data-key="1">1</button>
-                <button class="keypad-key" data-key="2">2</button>
-                <button class="keypad-key" data-key="3">3</button>
-                <button class="keypad-key" data-key="4">4</button>
-                <button class="keypad-key" data-key="5">5</button>
-                <button class="keypad-key" data-key="6">6</button>
-                <button class="keypad-key" data-key="7">7</button>
-                <button class="keypad-key" data-key="8">8</button>
-                <button class="keypad-key" data-key="9">9</button>
-                <button class="keypad-key keypad-clear" data-key="clear">
+            <!-- Keypad -->
+            <div class="passcode-keypad-modern">
+                <button class="keypad-key-modern" data-key="1">
+                    <span class="key-number">1</span>
+                </button>
+                <button class="keypad-key-modern" data-key="2">
+                    <span class="key-number">2</span>
+                </button>
+                <button class="keypad-key-modern" data-key="3">
+                    <span class="key-number">3</span>
+                </button>
+                <button class="keypad-key-modern" data-key="4">
+                    <span class="key-number">4</span>
+                </button>
+                <button class="keypad-key-modern" data-key="5">
+                    <span class="key-number">5</span>
+                </button>
+                <button class="keypad-key-modern" data-key="6">
+                    <span class="key-number">6</span>
+                </button>
+                <button class="keypad-key-modern" data-key="7">
+                    <span class="key-number">7</span>
+                </button>
+                <button class="keypad-key-modern" data-key="8">
+                    <span class="key-number">8</span>
+                </button>
+                <button class="keypad-key-modern" data-key="9">
+                    <span class="key-number">9</span>
+                </button>
+                <button class="keypad-key-modern keypad-clear-modern" data-key="clear">
                     <i class="fas fa-backspace"></i>
                 </button>
-                <button class="keypad-key" data-key="0">0</button>
-                <button class="keypad-key keypad-enter" data-key="enter">
+                <button class="keypad-key-modern" data-key="0">
+                    <span class="key-number">0</span>
+                </button>
+                <button class="keypad-key-modern keypad-enter-modern" data-key="enter">
                     <i class="fas fa-check"></i>
                 </button>
             </div>
@@ -289,6 +316,23 @@
                     <i class="fas fa-redo"></i>
                     <span>Reload App</span>
                 </button>
+            </div>
+            <div class="settings-footer">
+                <div class="version-info">
+                    <div class="version-text">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Version 1.11.01.RC3</span>
+                    </div>
+                    <div class="copyright-text">
+                        Copyright © Glz Technical Services
+                    </div>
+                    <div class="contact-text">
+                        <a href="mailto:glz.hqz@pm.me" class="contact-link">
+                            <i class="fas fa-envelope"></i>
+                            <span>glz.hqz@pm.me</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

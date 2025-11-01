@@ -170,9 +170,9 @@ class ProtectApp {
         
         // Passcode screen
         this.elements.passcodeScreen = document.getElementById('passcodeScreen');
-        this.elements.passcodeDots = document.querySelectorAll('.dot');
+        this.elements.passcodeDots = document.querySelectorAll('.dot-modern');
         this.elements.passcodeError = document.getElementById('passcodeError');
-        this.elements.keypadKeys = document.querySelectorAll('.keypad-key');
+        this.elements.keypadKeys = document.querySelectorAll('.keypad-key-modern');
         
         // Main app
         this.elements.mainApp = document.getElementById('mainApp');
@@ -659,10 +659,12 @@ class ProtectApp {
     }
     
     showPasscodeError() {
-        this.elements.passcodeError.classList.add('show');
-    setTimeout(() => {
-            this.hidePasscodeError();
-        }, 2000);
+        if (this.elements.passcodeError) {
+            this.elements.passcodeError.classList.add('show');
+            setTimeout(() => {
+                this.hidePasscodeError();
+            }, 2000);
+        }
     }
     
     hidePasscodeError() {
