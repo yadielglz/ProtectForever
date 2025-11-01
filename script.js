@@ -1065,6 +1065,9 @@ class ProtectApp {
             return this.getField(e, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
         }).filter(Boolean))];
         
+        // Only show MDN button if there are UPCs
+        const showMdnButton = upcs.length > 0 && mdns.length > 0;
+        
         card.innerHTML = `
             <div class="card-header">
                 <div class="brand-info">
@@ -1089,10 +1092,12 @@ class ProtectApp {
                     `).join('')}
                 </div>
             </div>
+            ${showMdnButton ? `
             <button class="show-mdn-btn" onclick="app.showMdnForGroup('${group.brand}', '${group.type}', '${deviceModel}')">
                 <i class="fas fa-eye"></i>
                 <span>Show MDN${mdns.length > 1 ? 's' : ''} (${mdns.length})</span>
             </button>
+            ` : ''}
         `;
     
         return card;
