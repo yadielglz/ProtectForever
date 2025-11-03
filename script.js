@@ -238,6 +238,7 @@ class ProtectApp {
         
         // Settings
         this.elements.refreshDataBtn = document.getElementById('refreshDataBtn');
+        this.elements.updateAppBtn = document.getElementById('updateAppBtn');
         this.elements.clearCacheBtn = document.getElementById('clearCacheBtn');
         this.elements.reloadAppBtn = document.getElementById('reloadAppBtn');
         
@@ -270,6 +271,7 @@ class ProtectApp {
         
         // Settings options
         this.elements.refreshDataBtn.addEventListener('click', () => this.refreshData());
+        this.elements.updateAppBtn.addEventListener('click', () => this.updateApp());
         this.elements.clearCacheBtn.addEventListener('click', () => this.clearCache());
         this.elements.reloadAppBtn.addEventListener('click', () => this.reloadApp());
         
@@ -870,22 +872,30 @@ class ProtectApp {
         // Get all devices for this brand
         const brandDevices = this.deviceData.filter(d => getBrand(d) === brand);
         
-        // Filter to only include models that have at least one verified MDN
-        const modelsWithVerifiedMdns = new Set();
+        // Filter to only include models that have:
+        // 1. A UPC code
+        // 2. At least one verified MDN
+        const modelsWithUpcAndVerifiedMdns = new Set();
         
         brandDevices.forEach(device => {
             const model = getModel(device);
             if (model) {
+                // Check if this device entry has a UPC
+                const hasUpc = this.getField(device, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
+                
                 // Check if this device entry has a verified MDN
                 const hasMdn = this.getField(device, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
-                if (hasMdn && this.isMdnVerified(device)) {
-                    modelsWithVerifiedMdns.add(model);
+                const isVerified = hasMdn && this.isMdnVerified(device);
+                
+                // Only include models that have UPC AND verified MDN
+                if (hasUpc && isVerified) {
+                    modelsWithUpcAndVerifiedMdns.add(model);
                 }
             }
         });
         
-        // Only show models that have at least one verified MDN
-        const models = Array.from(modelsWithVerifiedMdns);
+        // Only show models that have both UPC and verified MDN
+        const models = Array.from(modelsWithUpcAndVerifiedMdns);
         
         const sortedModels = models.sort((a, b) => {
             return this.getModelSortOrder(brand, b) - this.getModelSortOrder(brand, a);
@@ -1108,10 +1118,14 @@ class ProtectApp {
         
         this.elements.deviceName.textContent = `${deviceBrand} ${deviceModel}`;
         
+        // Filter options to only include entries that have a UPC
         const options = this.deviceData.filter(d => {
             const dBrand = this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
             const dModel = this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
-            return dBrand === deviceBrand && dModel === deviceModel;
+            const hasUpc = this.getField(d, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
+            
+            // Only include if brand/model matches AND has a UPC
+            return dBrand === deviceBrand && dModel === deviceModel && hasUpc;
         });
         
         // Check if any entries have verified MDNs
@@ -1455,6 +1469,45 @@ class ProtectApp {
         } catch (error) {
             this.hideLoading();
             this.showToast('Failed to refresh data', 'error');
+        }
+    }
+    
+    async updateApp() {
+        try {
+            this.showLoading('Updating app to latest version...');
+            
+            // Clear all localStorage
+            localStorage.clear();
+            
+            // Clear all caches
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+            }
+            
+            // Unregister all service workers
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(reg => reg.unregister()));
+            }
+            
+            this.hideLoading();
+            this.showToast('App updated. Reloading...', 'success');
+            this.closeSettings();
+            
+            // Force hard reload with cache bypass to get latest version
+            setTimeout(() => {
+                // Use location.reload with forced reload or navigate to force refresh
+                window.location.href = window.location.href.split('?')[0] + '?v=' + Date.now();
+                // Fallback if above doesn't work
+                setTimeout(() => {
+                    window.location.reload(true);
+                }, 500);
+            }, 1000);
+        } catch (error) {
+            console.error('Failed to update app:', error);
+            this.hideLoading();
+            this.showToast('Failed to update app', 'error');
         }
     }
     
