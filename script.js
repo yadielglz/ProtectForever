@@ -203,6 +203,7 @@ class ProtectApp {
         this.elements.currentDate = document.getElementById('currentDate');
         
         // Bottom navigation
+        this.elements.homeNavBtn = document.getElementById('homeNavBtn');
         this.elements.settingsNavBtn = document.getElementById('settingsNavBtn');
         this.elements.timerNavBtn = document.getElementById('timerNavBtn');
         this.elements.timerNavLabel = document.getElementById('timerNavLabel');
@@ -263,6 +264,7 @@ class ProtectApp {
         this.elements.closeSettings.addEventListener('click', () => this.closeSettings());
         
         // Bottom navigation
+        this.elements.homeNavBtn.addEventListener('click', () => this.goToHome());
         this.elements.settingsNavBtn.addEventListener('click', () => this.toggleSettings());
         this.elements.timerNavBtn.addEventListener('click', () => this.showTimerInfo());
         
@@ -865,12 +867,27 @@ class ProtectApp {
         const getBrand = (d) => this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
         const getModel = (d) => this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
         
-        const models = this.deviceData
-            .filter(d => getBrand(d) === brand)
-            .map(getModel)
-            .filter(Boolean);
+        // Get all devices for this brand
+        const brandDevices = this.deviceData.filter(d => getBrand(d) === brand);
         
-        const sortedModels = [...new Set(models)].sort((a, b) => {
+        // Filter to only include models that have at least one verified MDN
+        const modelsWithVerifiedMdns = new Set();
+        
+        brandDevices.forEach(device => {
+            const model = getModel(device);
+            if (model) {
+                // Check if this device entry has a verified MDN
+                const hasMdn = this.getField(device, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
+                if (hasMdn && this.isMdnVerified(device)) {
+                    modelsWithVerifiedMdns.add(model);
+                }
+            }
+        });
+        
+        // Only show models that have at least one verified MDN
+        const models = Array.from(modelsWithVerifiedMdns);
+        
+        const sortedModels = models.sort((a, b) => {
             return this.getModelSortOrder(brand, b) - this.getModelSortOrder(brand, a);
         });
         
@@ -1410,6 +1427,19 @@ class ProtectApp {
         const seconds = Math.floor(remainingTime / 1000);
         
         this.showToast(`Inactivity timer: ${seconds}s remaining`, 'info');
+    }
+    
+    goToHome() {
+        // Close any open modals
+        if (this.elements.deviceModal.classList.contains('show')) {
+            this.closeDeviceModal();
+        }
+        if (this.elements.settingsMenu.classList.contains('show')) {
+            this.closeSettings();
+        }
+        
+        // Return to brand selection (home/start)
+        this.showBrandStep();
     }
     
     async refreshData() {
