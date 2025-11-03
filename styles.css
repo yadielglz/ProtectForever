@@ -1710,10 +1710,31 @@ body {
     overflow: hidden;
 }
 
+.upc-card-modern.upc-verified {
+    border-color: var(--success);
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, var(--bg-primary) 100%);
+}
+
+.upc-card-modern.upc-unverified {
+    border-color: var(--warning);
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.05) 0%, var(--bg-primary) 100%);
+    opacity: 0.85;
+}
+
 .upc-card-modern:hover {
     border-color: var(--primary);
     box-shadow: 0 4px 12px rgba(226, 0, 116, 0.15);
     transform: translateY(-1px);
+}
+
+.upc-card-modern.upc-verified:hover {
+    border-color: var(--success);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+.upc-card-modern.upc-unverified:hover {
+    border-color: var(--warning);
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.2);
 }
 
 .upc-value-modern {
@@ -1755,6 +1776,48 @@ body {
 
 .copy-btn-modern:active {
     transform: scale(0.95);
+}
+
+/* UPC Verification Badges */
+.upc-verified-badge {
+    position: absolute;
+    top: 8px;
+    right: 40px;
+    color: var(--success);
+    font-size: 14px;
+    z-index: 1;
+}
+
+.upc-unverified-badge {
+    position: absolute;
+    top: 8px;
+    right: 40px;
+    color: var(--warning);
+    font-size: 14px;
+    z-index: 1;
+}
+
+/* UPC Legend */
+.upc-legend {
+    display: flex;
+    gap: var(--space-4);
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--gray-200);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.legend-item i {
+    font-size: 12px;
 }
 
 .show-mdn-btn-modern {
