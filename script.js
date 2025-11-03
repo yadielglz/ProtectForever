@@ -1118,14 +1118,16 @@ class ProtectApp {
         
         this.elements.deviceName.textContent = `${deviceBrand} ${deviceModel}`;
         
-        // Filter options to only include entries that have a UPC
+        // Filter options to only include entries that have a UPC AND a verified MDN
         const options = this.deviceData.filter(d => {
             const dBrand = this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
             const dModel = this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
             const hasUpc = this.getField(d, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
+            const hasMdn = this.getField(d, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
+            const isVerified = hasMdn && this.isMdnVerified(d);
             
-            // Only include if brand/model matches AND has a UPC
-            return dBrand === deviceBrand && dModel === deviceModel && hasUpc;
+            // Only include if brand/model matches AND has a UPC AND verified MDN
+            return dBrand === deviceBrand && dModel === deviceModel && hasUpc && isVerified;
         });
         
         // Check if any entries have verified MDNs
@@ -1188,39 +1190,10 @@ class ProtectApp {
         card.className = 'protection-card';
         const verifiedMdns = Array.from(group.verifiedMdns);
         
-        // Get all UPCs (regardless of MDN verification status)
-        const allUpcs = [...new Set(group.entries.map(e => {
+        // Entries in group are pre-filtered to have UPC and verified MDN, so just list unique UPCs
+        const verifiedUpcs = [...new Set(group.entries.map(e => {
             return this.getField(e, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
         }).filter(Boolean))];
-        
-        // Create a map of UPC -> verification status
-        // A UPC is verified if ANY entry for it has a verified MDN
-        const upcVerificationMap = new Map();
-        group.entries.forEach(entry => {
-            const upc = this.getField(entry, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
-            if (upc) {
-                const isVerified = this.isMdnVerified(entry);
-                // If UPC already exists, keep it verified if it was already marked, or mark as verified if this entry is verified
-                if (!upcVerificationMap.has(upc)) {
-                    upcVerificationMap.set(upc, isVerified);
-                } else if (isVerified) {
-                    // If this entry is verified, mark the UPC as verified (even if previously unverified)
-                    upcVerificationMap.set(upc, true);
-                }
-                // If already verified or this entry is not verified, keep current state
-            }
-        });
-        
-        // Separate UPCs by verification status
-        const verifiedUpcs = [];
-        const unverifiedUpcs = [];
-        allUpcs.forEach(upc => {
-            if (upcVerificationMap.get(upc)) {
-                verifiedUpcs.push(upc);
-            } else {
-                unverifiedUpcs.push(upc);
-            }
-        });
         
         // Only show MDN button if there are verified MDNs
         const showMdnButton = verifiedUpcs.length > 0 && verifiedMdns.length > 0;
@@ -1246,7 +1219,7 @@ class ProtectApp {
                         <i class="fas fa-barcode"></i>
                         <span class="upc-label-text">UPC Codes</span>
                     </div>
-                    <div class="upc-badge">${allUpcs.length}</div>
+                    <div class="upc-badge">${verifiedUpcs.length}</div>
                 </div>
                 <div class="upc-grid-modern">
                     ${verifiedUpcs.map(upc => `
@@ -1262,32 +1235,7 @@ class ProtectApp {
                             </button>
                         </div>
                     `).join('')}
-                    ${unverifiedUpcs.map(upc => `
-                        <div class="upc-card-modern upc-unverified">
-                            <div class="upc-value-modern" onclick="app.copyUPC('${upc}')" title="Click to copy - MDN Not Verified">
-                                ${upc}
-                            </div>
-                            <div class="upc-unverified-badge" title="MDN Not Verified">
-                                <i class="fas fa-exclamation-circle"></i>
-                            </div>
-                            <button class="copy-btn-modern" onclick="app.copyUPC('${upc}')" aria-label="Copy UPC ${upc}">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>
-                    `).join('')}
                 </div>
-                ${verifiedUpcs.length > 0 && unverifiedUpcs.length > 0 ? `
-                <div class="upc-legend">
-                    <div class="legend-item">
-                        <i class="fas fa-check-circle" style="color: var(--success);"></i>
-                        <span>MDN Verified (${verifiedUpcs.length})</span>
-                    </div>
-                    <div class="legend-item">
-                        <i class="fas fa-exclamation-circle" style="color: var(--warning);"></i>
-                        <span>MDN Not Verified (${unverifiedUpcs.length})</span>
-                    </div>
-                </div>
-                ` : ''}
             </div>
             ${showMdnButton ? `
             <button class="show-mdn-btn-modern" onclick="app.showMdnForGroup('${group.brand}', '${group.type}', '${deviceModel}')">
