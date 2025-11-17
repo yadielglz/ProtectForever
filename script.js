@@ -12,29 +12,48 @@ class ProtectApp {
         // DOM Elements
         this.elements = {};
         
-        // Device model sorting order (oldest to newest)
+        // Device model sorting order (numbers represent release order: 1=oldest, higher=newer)
         this.deviceModelOrder = {
             'Apple': {
-                'iPhone 12': 1,
-                'iPhone 12 mini': 2,
-                'iPhone 12 Pro': 3,
-                'iPhone 12 Pro Max': 4,
-                'iPhone 13': 5,
-                'iPhone 13 mini': 6,
-                'iPhone 13 Pro': 7,
-                'iPhone 13 Pro Max': 8,
-                'iPhone 14': 9,
-                'iPhone 14 Plus': 10,
-                'iPhone 14 Pro': 11,
-                'iPhone 14 Pro Max': 12,
-                'iPhone 15': 13,
-                'iPhone 15 Plus': 14,
-                'iPhone 15 Pro': 15,
-                'iPhone 15 Pro Max': 16,
-                'iPhone 16': 17,
-                'iPhone 16 Plus': 18,
-                'iPhone 16 Pro': 19,
-                'iPhone 16 Pro Max': 20
+                'iPhone 7': 1,
+                'iPhone 7 Plus': 2,
+                'iPhone 8': 3,
+                'iPhone 8 Plus': 4,
+                'iPhone X': 5,
+                'iPhone XR': 6,
+                'iPhone XS': 7,
+                'iPhone XS Max': 8,
+                'iPhone 11': 9,
+                'iPhone 11 Pro': 10,
+                'iPhone 11 Pro Max': 11,
+                'iPhone SE (2nd generation)': 12,
+                'iPhone SE (2020)': 12,
+                'iPhone SE 2nd gen': 12,
+                'iPhone 12': 13,
+                'iPhone 12 mini': 14,
+                'iPhone 12 Pro': 15,
+                'iPhone 12 Pro Max': 16,
+                'iPhone 13': 17,
+                'iPhone 13 mini': 18,
+                'iPhone 13 Pro': 19,
+                'iPhone 13 Pro Max': 20,
+                'iPhone 14': 21,
+                'iPhone 14 Plus': 22,
+                'iPhone 14 Pro': 23,
+                'iPhone 14 Pro Max': 24,
+                'iPhone 15': 25,
+                'iPhone 15 Plus': 26,
+                'iPhone 15 Pro': 27,
+                'iPhone 15 Pro Max': 28,
+                'iPhone 16': 29,
+                'iPhone 16 Plus': 30,
+                'iPhone 16 Pro': 31,
+                'iPhone 16 Pro Max': 32,
+                'iPhone 16e': 33,
+                'iPhone 17': 34,
+                'iPhone 17 Plus': 35,
+                'iPhone 17 Pro': 36,
+                'iPhone 17 Pro Max': 37
             },
             'Samsung': {
                 'Galaxy S21': 1,
@@ -49,6 +68,9 @@ class ProtectApp {
                 'Galaxy S24': 10,
                 'Galaxy S24+': 11,
                 'Galaxy S24 Ultra': 12,
+                'Galaxy S25': 13,
+                'Galaxy S25+': 14,
+                'Galaxy S25 Ultra': 15,
                 'Galaxy Note 20': 1,
                 'Galaxy Note 20 Ultra': 2,
                 'Galaxy Z Fold 3': 1,
@@ -107,6 +129,24 @@ class ProtectApp {
         return '';
     }
     
+    // Helper method to check if MDN is verified for UPC (Availability = verified)
+    isMdnVerified(entry) {
+        const availableValue = this.getField(entry, ['Available', 'AVAILABLE', 'available', 'Availability', 'In Stock', 'in_stock', 'Status', 'status']);
+        if (!availableValue) return false; // Default to not verified if unclear
+        
+        const normalized = availableValue.toString().toLowerCase().trim();
+        const positiveIndicators = ['yes', 'y', 'true', '1', 'available', 'in stock', 'verified', 'verify', '✅', '✓', '✔'];
+        const negativeIndicators = ['no', 'n', 'false', '0', 'unavailable', 'out of stock', 'discontinued', 'unverified', 'not verified', '❌', '✗', '×'];
+        
+        if (positiveIndicators.some(indicator => normalized === indicator || normalized.includes(indicator))) {
+            return true; // MDN is verified
+        } else if (negativeIndicators.some(indicator => normalized === indicator || normalized.includes(indicator))) {
+            return false; // MDN is not verified
+        }
+        
+        return false; // Default to not verified if unclear
+    }
+    
     async init() {
         try {
             this.cacheDOM();
@@ -148,9 +188,9 @@ class ProtectApp {
         
         // Passcode screen
         this.elements.passcodeScreen = document.getElementById('passcodeScreen');
-        this.elements.passcodeDots = document.querySelectorAll('.dot');
+        this.elements.passcodeDots = document.querySelectorAll('.dot-modern');
         this.elements.passcodeError = document.getElementById('passcodeError');
-        this.elements.keypadKeys = document.querySelectorAll('.keypad-key');
+        this.elements.keypadKeys = document.querySelectorAll('.keypad-key-modern');
         
         // Main app
         this.elements.mainApp = document.getElementById('mainApp');
@@ -163,6 +203,7 @@ class ProtectApp {
         this.elements.currentDate = document.getElementById('currentDate');
         
         // Bottom navigation
+        this.elements.homeNavBtn = document.getElementById('homeNavBtn');
         this.elements.settingsNavBtn = document.getElementById('settingsNavBtn');
         this.elements.timerNavBtn = document.getElementById('timerNavBtn');
         this.elements.timerNavLabel = document.getElementById('timerNavLabel');
@@ -197,6 +238,7 @@ class ProtectApp {
         
         // Settings
         this.elements.refreshDataBtn = document.getElementById('refreshDataBtn');
+        this.elements.updateAppBtn = document.getElementById('updateAppBtn');
         this.elements.clearCacheBtn = document.getElementById('clearCacheBtn');
         this.elements.reloadAppBtn = document.getElementById('reloadAppBtn');
         
@@ -223,11 +265,13 @@ class ProtectApp {
         this.elements.closeSettings.addEventListener('click', () => this.closeSettings());
         
         // Bottom navigation
+        this.elements.homeNavBtn.addEventListener('click', () => this.goToHome());
         this.elements.settingsNavBtn.addEventListener('click', () => this.toggleSettings());
         this.elements.timerNavBtn.addEventListener('click', () => this.showTimerInfo());
         
         // Settings options
         this.elements.refreshDataBtn.addEventListener('click', () => this.refreshData());
+        this.elements.updateAppBtn.addEventListener('click', () => this.updateApp());
         this.elements.clearCacheBtn.addEventListener('click', () => this.clearCache());
         this.elements.reloadAppBtn.addEventListener('click', () => this.reloadApp());
         
@@ -637,10 +681,12 @@ class ProtectApp {
     }
     
     showPasscodeError() {
-        this.elements.passcodeError.classList.add('show');
-    setTimeout(() => {
-            this.hidePasscodeError();
-        }, 2000);
+        if (this.elements.passcodeError) {
+            this.elements.passcodeError.classList.add('show');
+            setTimeout(() => {
+                this.hidePasscodeError();
+            }, 2000);
+        }
     }
     
     hidePasscodeError() {
@@ -762,30 +808,97 @@ class ProtectApp {
     }
     
     getModelSortOrder(brand, model) {
-        if (this.deviceModelOrder[brand] && this.deviceModelOrder[brand][model]) {
-            return this.deviceModelOrder[brand][model];
+        // Normalize model name for matching (trim and normalize spacing)
+        const normalizedModel = model.trim().replace(/\s+/g, ' ');
+        
+        // Check explicit order first with exact match
+        if (this.deviceModelOrder[brand] && this.deviceModelOrder[brand][normalizedModel]) {
+            return this.deviceModelOrder[brand][normalizedModel];
         }
         
+        // Check with case-insensitive match
+        if (this.deviceModelOrder[brand]) {
+            const lowerModel = normalizedModel.toLowerCase();
+            for (const [key, value] of Object.entries(this.deviceModelOrder[brand])) {
+                if (key.toLowerCase() === lowerModel) {
+                    return value;
+                }
+            }
+        }
+        
+        // For iPhone models, extract the number (e.g., iPhone 17 -> 17)
+        if (brand === 'Apple' && model.toLowerCase().includes('iphone')) {
+            const iphoneMatch = model.match(/iphone\s*(\d+)/i);
+            if (iphoneMatch) {
+                const num = parseInt(iphoneMatch[1]);
+                // Give higher priority for newer models (multiply by 100 to ensure they sort after known models)
+                // Then use variant suffix for sub-ordering
+                let baseOrder = num * 100;
+                if (model.toLowerCase().includes('pro max')) baseOrder += 3;
+                else if (model.toLowerCase().includes('pro')) baseOrder += 2;
+                else if (model.toLowerCase().includes('plus')) baseOrder += 1;
+                else if (model.toLowerCase().includes('mini')) baseOrder -= 1;
+                return baseOrder;
+            }
+        }
+        
+        // For Samsung Galaxy S models, extract the number (e.g., Galaxy S25 -> 25)
+        if (brand === 'Samsung' && model.toLowerCase().includes('galaxy s')) {
+            const galaxyMatch = model.match(/galaxy\s*s(\d+)/i);
+            if (galaxyMatch) {
+                const num = parseInt(galaxyMatch[1]);
+                let baseOrder = num * 100;
+                if (model.toLowerCase().includes('ultra')) baseOrder += 2;
+                else if (model.toLowerCase().includes('+') || model.toLowerCase().includes('plus')) baseOrder += 1;
+                return baseOrder;
+            }
+        }
+        
+        // For other models, try to extract year or number
         const yearMatch = model.match(/(\d{4})/);
         if (yearMatch) return parseInt(yearMatch[1]);
         
         const numberMatch = model.match(/(\d+)/);
         if (numberMatch) return parseInt(numberMatch[1]);
         
-        return 9999;
+        // Default to very low priority for unknown devices
+        return 0;
     }
     
     populateModels(brand) {
         const getBrand = (d) => this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
         const getModel = (d) => this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
         
-        const models = this.deviceData
-            .filter(d => getBrand(d) === brand)
-            .map(getModel)
-            .filter(Boolean);
+        // Get all devices for this brand
+        const brandDevices = this.deviceData.filter(d => getBrand(d) === brand);
         
-        const sortedModels = [...new Set(models)].sort((a, b) => {
-            return this.getModelSortOrder(brand, a) - this.getModelSortOrder(brand, b);
+        // Filter to only include models that have:
+        // 1. A UPC code
+        // 2. At least one verified MDN
+        const modelsWithUpcAndVerifiedMdns = new Set();
+        
+        brandDevices.forEach(device => {
+            const model = getModel(device);
+            if (model) {
+                // Check if this device entry has a UPC
+                const hasUpc = this.getField(device, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
+                
+                // Check if this device entry has a verified MDN
+                const hasMdn = this.getField(device, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
+                const isVerified = hasMdn && this.isMdnVerified(device);
+                
+                // Only include models that have UPC AND verified MDN
+                if (hasUpc && isVerified) {
+                    modelsWithUpcAndVerifiedMdns.add(model);
+                }
+            }
+        });
+        
+        // Only show models that have both UPC and verified MDN
+        const models = Array.from(modelsWithUpcAndVerifiedMdns);
+        
+        const sortedModels = models.sort((a, b) => {
+            return this.getModelSortOrder(brand, b) - this.getModelSortOrder(brand, a);
         });
         
         this.allModels = sortedModels;
@@ -1005,17 +1118,32 @@ class ProtectApp {
         
         this.elements.deviceName.textContent = `${deviceBrand} ${deviceModel}`;
         
-        const availabilityBadge = isAvailable 
-            ? '<span class="availability-badge available"><i class="fas fa-check-circle"></i> Available</span>'
-            : '<span class="availability-badge unavailable"><i class="fas fa-times-circle"></i> Unavailable</span>';
-        
-        this.elements.deviceModel.innerHTML = `${deviceModel} ${availabilityBadge}`;
-        
+        // Filter options to only include entries that have a UPC AND a verified MDN
         const options = this.deviceData.filter(d => {
             const dBrand = this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
             const dModel = this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
-            return dBrand === deviceBrand && dModel === deviceModel;
+            const hasUpc = this.getField(d, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
+            const hasMdn = this.getField(d, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
+            const isVerified = hasMdn && this.isMdnVerified(d);
+            
+            // Only include if brand/model matches AND has a UPC AND verified MDN
+            return dBrand === deviceBrand && dModel === deviceModel && hasUpc && isVerified;
         });
+        
+        // Check if any entries have verified MDNs
+        const hasVerifiedMdns = options.some(opt => {
+            const hasMdn = this.getField(opt, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
+            return hasMdn && this.isMdnVerified(opt);
+        });
+        
+        const availabilityBadge = hasVerifiedMdns 
+            ? '<span class="availability-badge available"><i class="fas fa-check-circle"></i> MDN Verified Available</span>'
+            : '<span class="availability-badge unavailable"><i class="fas fa-exclamation-circle"></i> MDN Not Verified</span>';
+        
+        this.elements.deviceModel.innerHTML = `
+            <span class="model-text">${deviceModel}</span>
+            ${availabilityBadge}
+        `;
         
         const groupedOptions = this.groupByProtectionType(options);
         
@@ -1041,15 +1169,16 @@ class ProtectApp {
                     brand: brand,
                     type: type,
                     entries: [],
-                    mdns: new Set()
+                    verifiedMdns: new Set() // Only store verified MDNs
                 };
             }
             
             groups[key].entries.push(option);
             
+            // Only add MDN if it's verified (Availability = verified)
             const mdn = this.getField(option, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
-            if (mdn) {
-                groups[key].mdns.add(mdn);
+            if (mdn && this.isMdnVerified(option)) {
+                groups[key].verifiedMdns.add(mdn);
             }
         });
         
@@ -1059,33 +1188,49 @@ class ProtectApp {
     createProtectionTypeCard(group, deviceModel) {
         const card = document.createElement('div');
         card.className = 'protection-card';
-        const mdns = Array.from(group.mdns);
+        const verifiedMdns = Array.from(group.verifiedMdns);
         
-        const upcs = [...new Set(group.entries.map(e => {
+        // Entries in group are pre-filtered to have UPC and verified MDN, so just list unique UPCs
+        const verifiedUpcs = [...new Set(group.entries.map(e => {
             return this.getField(e, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
         }).filter(Boolean))];
         
-        // Only show MDN button if there are UPCs
-        const showMdnButton = upcs.length > 0 && mdns.length > 0;
+        // Only show MDN button if there are verified MDNs
+        const showMdnButton = verifiedUpcs.length > 0 && verifiedMdns.length > 0;
         
         card.innerHTML = `
-            <div class="card-header">
-                <div class="brand-info">
-                    <div class="brand-logo">${group.brand.charAt(0)}</div>
-                    <div class="brand-name">${group.brand}</div>
+            <div class="card-header-modern">
+                <div class="brand-info-modern">
+                    <div class="brand-logo-modern">
+                        <span class="brand-initial">${group.brand.charAt(0)}</span>
+                    </div>
+                    <div class="brand-details">
+                        <div class="brand-name-modern">${group.brand}</div>
+                        <div class="protection-type-modern">
+                            <i class="fas fa-tag"></i>
+                            <span>${group.type}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="protection-type">${group.type}</div>
             </div>
-            <div class="upc-info-section">
-                <div class="upc-count">
-                    <i class="fas fa-barcode"></i>
-                    <span>${upcs.length} UPC${upcs.length !== 1 ? 's' : ''}</span>
+            <div class="upc-section-modern">
+                <div class="upc-header-modern">
+                    <div class="upc-label-group">
+                        <i class="fas fa-barcode"></i>
+                        <span class="upc-label-text">UPC Codes</span>
+                    </div>
+                    <div class="upc-badge">${verifiedUpcs.length}</div>
                 </div>
-                <div class="upc-list">
-                    ${upcs.map(upc => `
-                        <div class="upc-item">
-                            <span class="upc-value">${upc}</span>
-                            <button class="copy-button-small" onclick="app.copyUPC('${upc}')">
+                <div class="upc-grid-modern">
+                    ${verifiedUpcs.map(upc => `
+                        <div class="upc-card-modern upc-verified">
+                            <div class="upc-value-modern" onclick="app.copyUPC('${upc}')" title="Click to copy - MDN Verified">
+                                ${upc}
+                            </div>
+                            <div class="upc-verified-badge" title="MDN Verified">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <button class="copy-btn-modern" onclick="app.copyUPC('${upc}')" aria-label="Copy UPC ${upc}">
                                 <i class="fas fa-copy"></i>
                             </button>
                         </div>
@@ -1093,9 +1238,10 @@ class ProtectApp {
                 </div>
             </div>
             ${showMdnButton ? `
-            <button class="show-mdn-btn" onclick="app.showMdnForGroup('${group.brand}', '${group.type}', '${deviceModel}')">
-                <i class="fas fa-eye"></i>
-                <span>Show MDN${mdns.length > 1 ? 's' : ''} (${mdns.length})</span>
+            <button class="show-mdn-btn-modern" onclick="app.showMdnForGroup('${group.brand}', '${group.type}', '${deviceModel}')">
+                <i class="fas fa-phone-alt"></i>
+                <span>View Verified MDN${verifiedMdns.length > 1 ? 's' : ''}</span>
+                <span class="mdn-count-badge">${verifiedMdns.length}</span>
             </button>
             ` : ''}
         `;
@@ -1118,24 +1264,27 @@ class ProtectApp {
                    deviceModelName === deviceModel;
         });
         
-        const mdns = [...new Set(matchingDevices.map(d => {
+        // Only get verified MDNs (where Availability = verified)
+        const verifiedDevices = matchingDevices.filter(d => this.isMdnVerified(d));
+        const verifiedMdns = [...new Set(verifiedDevices.map(d => {
             return this.getField(d, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
         }).filter(Boolean))];
         
-        if (mdns.length === 0) {
-            this.showToast('No MDN found for this product', 'warning');
+        if (verifiedMdns.length === 0) {
+            this.showToast('No verified MDN found for this product', 'warning');
             return;
         }
         
-        const upcs = [...new Set(matchingDevices.map(d => {
+        // Get UPCs from verified entries only
+        const verifiedUpcs = [...new Set(verifiedDevices.map(d => {
             return this.getField(d, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
         }).filter(Boolean))];
         
         // Create product label
         const productLabel = `${deviceModel} - ${brand} ${type}`.trim();
         
-        // Show MDN(s) in a simplified modal
-        this.showMdnModal(upcs, mdns, productLabel);
+        // Show verified MDN(s) in a simplified modal
+        this.showMdnModal(verifiedUpcs, verifiedMdns, productLabel);
     }
     
     showMdnModal(upcs, mdns, productLabel) {
@@ -1149,9 +1298,12 @@ class ProtectApp {
             <div class="mdn-modal-content">
                 <div class="mdn-modal-header">
                     <div>
-                        <h3>MDN(s) for Product</h3>
+                        <h3>Verified MDN${mdns.length > 1 ? 's' : ''} for Product</h3>
                         <p class="mdn-product-info">${productLabel}</p>
                         <p class="mdn-upc-info">UPC${upcArray.length > 1 ? 's' : ''}: ${upcDisplay}</p>
+                        <p class="mdn-verified-note" style="margin-top: 8px; font-size: 12px; color: var(--success);">
+                            <i class="fas fa-check-circle"></i> All MDNs shown are verified
+                        </p>
                     </div>
                     <button class="close-mdn-modal" onclick="this.closest('.mdn-modal-overlay').remove()">
                         <i class="fas fa-times"></i>
@@ -1162,7 +1314,7 @@ class ProtectApp {
                         const formattedMdn = this.formatPhoneNumber(mdn);
                         return `
                         <div class="mdn-item">
-                            <label>MDN ${mdns.length > 1 ? index + 1 : ''}:</label>
+                            <label>Verified MDN ${mdns.length > 1 ? index + 1 : ''}:</label>
                             <div class="mdn-item-content">
                                 <span class="mdn-item-value">${formattedMdn}</span>
                                 <button class="copy-button" onclick="app.copyMdn('${mdn}')">
@@ -1239,6 +1391,19 @@ class ProtectApp {
         this.showToast(`Inactivity timer: ${seconds}s remaining`, 'info');
     }
     
+    goToHome() {
+        // Close any open modals
+        if (this.elements.deviceModal.classList.contains('show')) {
+            this.closeDeviceModal();
+        }
+        if (this.elements.settingsMenu.classList.contains('show')) {
+            this.closeSettings();
+        }
+        
+        // Return to brand selection (home/start)
+        this.showBrandStep();
+    }
+    
     async refreshData() {
         try {
             this.showLoading('Refreshing data...');
@@ -1252,6 +1417,45 @@ class ProtectApp {
         } catch (error) {
             this.hideLoading();
             this.showToast('Failed to refresh data', 'error');
+        }
+    }
+    
+    async updateApp() {
+        try {
+            this.showLoading('Updating app to latest version...');
+            
+            // Clear all localStorage
+            localStorage.clear();
+            
+            // Clear all caches
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+            }
+            
+            // Unregister all service workers
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(reg => reg.unregister()));
+            }
+            
+            this.hideLoading();
+            this.showToast('App updated. Reloading...', 'success');
+            this.closeSettings();
+            
+            // Force hard reload with cache bypass to get latest version
+            setTimeout(() => {
+                // Use location.reload with forced reload or navigate to force refresh
+                window.location.href = window.location.href.split('?')[0] + '?v=' + Date.now();
+                // Fallback if above doesn't work
+                setTimeout(() => {
+                    window.location.reload(true);
+                }, 500);
+            }, 1000);
+        } catch (error) {
+            console.error('Failed to update app:', error);
+            this.hideLoading();
+            this.showToast('Failed to update app', 'error');
         }
     }
     
