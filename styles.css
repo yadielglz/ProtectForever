@@ -341,10 +341,12 @@ body {
     z-index: 1;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    height: 100vh;
-    padding: env(safe-area-inset-top, var(--space-8)) var(--space-5) env(safe-area-inset-bottom, var(--space-6));
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: env(safe-area-inset-top, var(--space-6)) var(--space-5) env(safe-area-inset-bottom, var(--space-6));
     box-sizing: border-box;
+    gap: var(--space-6);
 }
 
 /* Header Section - Centered */
@@ -361,21 +363,21 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-8);
+    gap: var(--space-3);
+    margin-bottom: 0;
 }
 
 .logo-icon-modern {
-    width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
     background: rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-radius: 20px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
+    font-size: 1.75rem;
     color: var(--text-inverse);
     border: 2px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
@@ -383,7 +385,7 @@ body {
 }
 
 .app-title-modern {
-    font-size: 2rem;
+    font-size: 1.75rem;
     font-weight: 800;
     color: var(--text-inverse);
     letter-spacing: -0.02em;
@@ -401,7 +403,7 @@ body {
 
 /* Passcode Display - Integrated with Header */
 .passcode-display-modern {
-    margin-top: var(--space-8);
+    margin-top: var(--space-4);
     width: 100%;
 }
 
@@ -463,19 +465,19 @@ body {
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-3);
     width: 100%;
-    max-width: 320px;
+    max-width: 300px;
     margin: 0 auto;
 }
 
 .keypad-key-modern {
     aspect-ratio: 1;
     border: none;
-    border-radius: 16px;
+    border-radius: 14px;
     background: rgba(255, 255, 255, 0.14);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     color: var(--text-inverse);
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -488,7 +490,7 @@ body {
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
     position: relative;
     overflow: hidden;
-    min-height: 60px;
+    min-height: 56px;
 }
 
 .keypad-key-modern::before {
@@ -2398,15 +2400,57 @@ body {
 @media (max-width: 480px) {
     .passcode-container {
         padding: env(safe-area-inset-top, var(--space-4)) var(--space-4) env(safe-area-inset-bottom, var(--space-4));
-        gap: var(--space-5);
+        gap: var(--space-4);
+        max-width: 100%;
+    }
+    
+    .app-logo-modern {
+        gap: var(--space-2);
+    }
+    
+    .logo-icon-modern {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+        border-radius: 16px;
+    }
+    
+    .app-title-modern {
+        font-size: 1.5rem;
+    }
+    
+    .passcode-subtitle-modern {
+        font-size: var(--font-size-xs);
+    }
+    
+    .passcode-display-modern {
+        margin-top: var(--space-3);
+    }
+    
+    .passcode-dots-modern {
+        gap: var(--space-3);
+        margin-bottom: var(--space-3);
+    }
+    
+    .dot-modern {
+        width: 16px;
+        height: 16px;
     }
     
     .passcode-keypad-modern {
-        gap: var(--space-3);
+        gap: var(--space-2);
+        max-width: 280px;
     }
     
     .keypad-key-modern {
-        font-size: var(--font-size-lg);
+        font-size: var(--font-size-base);
+        min-height: 52px;
+        border-radius: 12px;
+    }
+    
+    .keypad-clear-modern,
+    .keypad-enter-modern {
+        font-size: var(--font-size-sm);
     }
     
     .brand-grid {
