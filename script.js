@@ -1236,6 +1236,13 @@ class ProtectApp {
                         </div>
                     `).join('')}
                 </div>
+                ${verifiedUpcs.length > 1 ? `
+                <button class="copy-all-upcs-btn" data-upcs="${verifiedUpcs.join(',')}" onclick="app.copyAllUPCsFromButton(this)" title="Copy all ${verifiedUpcs.length} UPCs">
+                    <i class="fas fa-copy"></i>
+                    <span>Copy All UPCs</span>
+                    <span class="copy-count-badge">${verifiedUpcs.length}</span>
+                </button>
+                ` : ''}
             </div>
             ${showMdnButton ? `
             <button class="show-mdn-btn-modern" onclick="app.showMdnForGroup('${group.brand}', '${group.type}', '${deviceModel}')">
@@ -1325,6 +1332,15 @@ class ProtectApp {
                     `;
                     }).join('')}
                 </div>
+                ${mdns.length > 1 ? `
+                <div class="mdn-modal-footer">
+                    <button class="copy-all-mdns-btn" data-mdns="${mdns.join(',')}" onclick="app.copyAllMDNsFromButton(this)">
+                        <i class="fas fa-copy"></i>
+                        <span>Copy All MDNs</span>
+                        <span class="copy-count-badge">${mdns.length}</span>
+                    </button>
+                </div>
+                ` : ''}
             </div>
         `;
         
@@ -1352,6 +1368,30 @@ class ProtectApp {
     
     copyUPC(upc) {
         this.copyToClipboard(upc, 'UPC copied to clipboard');
+    }
+    
+    copyAllUPCsFromButton(button) {
+        const upcs = button.getAttribute('data-upcs').split(',').map(u => u.trim()).filter(Boolean);
+        this.copyAllUPCs(upcs);
+    }
+    
+    copyAllMDNsFromButton(button) {
+        const mdns = button.getAttribute('data-mdns').split(',').map(m => m.trim()).filter(Boolean);
+        this.copyAllMDNs(mdns);
+    }
+    
+    copyAllUPCs(upcs) {
+        const upcList = Array.isArray(upcs) ? upcs : [upcs];
+        const upcString = upcList.join(', ');
+        const count = upcList.length;
+        this.copyToClipboard(upcString, `${count} UPC${count !== 1 ? 's' : ''} copied to clipboard`);
+    }
+    
+    copyAllMDNs(mdns) {
+        const mdnList = Array.isArray(mdns) ? mdns : [mdns];
+        const mdnString = mdnList.join(', ');
+        const count = mdnList.length;
+        this.copyToClipboard(mdnString, `${count} MDN${count !== 1 ? 's' : ''} copied to clipboard`);
     }
     
     async copyToClipboard(text, message) {
