@@ -14,6 +14,19 @@ class ProtectApp {
         this.currentScheduleView = 'daily';
         this.currentWeekIndex = 0; // Index into scheduleWeeks array
         this.currentSelectedDate = new Date(); // Selected date for daily view
+        this.storeHours = this.config.STORE_HOURS;
+        this.homeTimers = {
+            storeHours: null
+        };
+        this.weatherState = {
+            lastUpdate: null,
+            coords: null,
+            locationName: null,
+            reverseLookupPending: false
+        };
+        this.promos = [];
+        this.promosLoaded = false;
+        this.promoFilter = 'all';
         
         // DOM Elements
         this.elements = {};
@@ -200,7 +213,7 @@ class ProtectApp {
         this.elements.passcodeScreen = document.getElementById('passcodeScreen');
         this.elements.passcodeDots = document.querySelectorAll('.dot-modern');
         this.elements.passcodeError = document.getElementById('passcodeError');
-        this.elements.keypadKeys = document.querySelectorAll('.keypad-key-modern');
+        this.elements.passcodeInput = document.getElementById('passcodeInput');
         
         // Main app
         this.elements.mainApp = document.getElementById('mainApp');
@@ -216,18 +229,53 @@ class ProtectApp {
         this.elements.homeTabBtn = document.getElementById('homeTabBtn');
         this.elements.scheduleTabBtn = document.getElementById('scheduleTabBtn');
         this.elements.protectTabBtn = document.getElementById('protectTabBtn');
-        this.elements.headerSettingsBtn = document.getElementById('headerSettingsBtn');
+        this.elements.settingsTabBtn = document.getElementById('settingsTabBtn');
+        this.elements.promoTabBtn = document.getElementById('promoTabBtn');
         
         // Tab content
         this.elements.homeTab = document.getElementById('homeTab');
         this.elements.scheduleTab = document.getElementById('scheduleTab');
         this.elements.protectTab = document.getElementById('protectTab');
+        this.elements.promoTab = document.getElementById('promoTab');
+        this.elements.promoList = document.getElementById('promoList');
+        this.elements.promoStatus = document.getElementById('promoStatus');
+        this.elements.promoEmpty = document.getElementById('promoEmpty');
+        this.elements.promoRefreshBtn = document.getElementById('promoRefreshBtn');
+        this.elements.promoFilters = document.querySelector('.promo-filters');
+        this.elements.maintenanceToggle = document.getElementById('maintenanceToggle');
+        this.elements.maintenanceBody = document.getElementById('maintenanceBody');
+        this.elements.networkStatus = document.getElementById('networkStatus');
+        this.elements.networkLabel = document.getElementById('networkLabel');
+        this.elements.networkSub = document.getElementById('networkSub');
         
         // Home tab elements
         this.elements.homeClock = document.getElementById('homeClock');
         this.elements.clockTime = document.getElementById('clockTime');
         this.elements.clockPeriod = document.getElementById('clockPeriod');
         this.elements.homeDate = document.getElementById('homeDate');
+        this.elements.weatherWidget = document.getElementById('weatherWidget');
+        this.elements.weatherTemp = document.getElementById('weatherTemp');
+        this.elements.weatherDesc = document.getElementById('weatherDesc');
+        this.elements.weatherUpdated = document.getElementById('weatherUpdated');
+        this.elements.weatherLocation = document.getElementById('weatherLocation');
+        this.elements.weatherForecast = document.getElementById('weatherForecast');
+        this.elements.weatherForecastHours = document.getElementById('weatherForecastHours');
+        this.elements.weatherForecastDays = document.getElementById('weatherForecastDays');
+        this.elements.storeHoursRange = document.getElementById('storeHoursRange');
+        this.elements.storeProgressBar = document.getElementById('storeProgressBar');
+        this.elements.storeStatus = document.getElementById('storeStatus');
+        this.elements.storeProgressLabel = document.getElementById('storeProgressLabel');
+        this.elements.weatherZipInput = document.getElementById('weatherZipInput');
+        this.elements.weatherZipSave = document.getElementById('weatherZipSave');
+        this.elements.weatherUnitF = document.getElementById('weatherUnitF');
+        this.elements.weatherUnitC = document.getElementById('weatherUnitC');
+        this.elements.themeLight = document.getElementById('themeLight');
+        this.elements.themeDark = document.getElementById('themeDark');
+        this.elements.weatherToggle = document.getElementById('weatherToggle');
+        this.elements.weatherBody = document.getElementById('weatherBody');
+        this.elements.weatherRefreshBtn = document.getElementById('weatherRefreshBtn');
+        this.elements.themeToggle = document.getElementById('themeToggle');
+        this.elements.themeBody = document.getElementById('themeBody');
         
         // Schedule tab elements
         this.elements.dailyViewBtn = document.getElementById('dailyViewBtn');
@@ -272,7 +320,7 @@ class ProtectApp {
         this.elements.newSearchBtn = document.getElementById('newSearchBtn');
         
         // Settings
-        this.elements.settingsNavBtn = this.elements.headerSettingsBtn; // Use header button
+        this.elements.settingsNavBtn = this.elements.settingsTabBtn;
         this.elements.refreshDataBtn = document.getElementById('refreshDataBtn');
         this.elements.updateAppBtn = document.getElementById('updateAppBtn');
         this.elements.clearCacheBtn = document.getElementById('clearCacheBtn');
@@ -284,18 +332,23 @@ class ProtectApp {
     }
     
     setupEventListeners() {
-        // Passcode keypad
-        this.elements.keypadKeys.forEach(key => {
-            key.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.handleKeypadInput(e.currentTarget.dataset.key, e.currentTarget);
+        // Passcode input
+        if (this.elements.passcodeInput) {
+            this.elements.passcodeInput.addEventListener('input', (e) => {
+                const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+                this.currentPasscode = raw;
+                e.target.value = raw;
+                this.updatePasscodeDisplay();
+                if (raw.length === 4) {
+                    this.verifyPasscode();
+                }
             });
-            
-            key.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                this.handleKeypadInput(e.currentTarget.dataset.key, e.currentTarget);
+            this.elements.passcodeInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    this.verifyPasscode();
+                }
             });
-        });
+        }
         
         // Settings
         this.elements.closeSettings.addEventListener('click', () => this.closeSettings());
@@ -304,10 +357,11 @@ class ProtectApp {
         this.elements.homeTabBtn.addEventListener('click', () => this.switchTab('home'));
         this.elements.scheduleTabBtn.addEventListener('click', () => this.switchTab('schedule'));
         this.elements.protectTabBtn.addEventListener('click', () => this.switchTab('protect'));
-        
-        // Header settings button
-        if (this.elements.headerSettingsBtn) {
-            this.elements.headerSettingsBtn.addEventListener('click', () => this.toggleSettings());
+        if (this.elements.promoTabBtn) {
+            this.elements.promoTabBtn.addEventListener('click', () => this.switchTab('promo'));
+        }
+        if (this.elements.settingsTabBtn) {
+            this.elements.settingsTabBtn.addEventListener('click', () => this.toggleSettings());
         }
         
         // Schedule view toggles
@@ -343,6 +397,53 @@ class ProtectApp {
         this.elements.updateAppBtn.addEventListener('click', () => this.updateApp());
         this.elements.clearCacheBtn.addEventListener('click', () => this.clearCache());
         this.elements.reloadAppBtn.addEventListener('click', () => this.reloadApp());
+        if (this.elements.weatherZipSave) {
+            this.elements.weatherZipSave.addEventListener('click', () => this.saveWeatherZip());
+        }
+        if (this.elements.weatherZipInput) {
+            this.elements.weatherZipInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.saveWeatherZip();
+                }
+            });
+        }
+        if (this.elements.weatherRefreshBtn) {
+            this.elements.weatherRefreshBtn.addEventListener('click', () => this.requestWeather());
+        }
+        if (this.elements.weatherToggle) {
+            this.elements.weatherToggle.addEventListener('click', () => this.toggleWeatherSettings());
+        }
+        if (this.elements.weatherUnitF) {
+            this.elements.weatherUnitF.addEventListener('click', () => this.setWeatherUnit('fahrenheit'));
+        }
+        if (this.elements.weatherUnitC) {
+            this.elements.weatherUnitC.addEventListener('click', () => this.setWeatherUnit('celsius'));
+        }
+        if (this.elements.themeToggle) {
+            this.elements.themeToggle.addEventListener('click', () => this.toggleThemeSettings());
+        }
+        if (this.elements.themeLight) {
+            this.elements.themeLight.addEventListener('click', () => this.setTheme('light'));
+        }
+        if (this.elements.themeDark) {
+            this.elements.themeDark.addEventListener('click', () => this.setTheme('dark'));
+        }
+        if (this.elements.promoRefreshBtn) {
+            this.elements.promoRefreshBtn.addEventListener('click', () => this.loadPromos(true));
+        }
+        if (this.elements.maintenanceToggle) {
+            this.elements.maintenanceToggle.addEventListener('click', () => this.toggleMaintenance());
+        }
+        window.addEventListener('online', () => this.updateNetworkStatus());
+        window.addEventListener('offline', () => this.updateNetworkStatus());
+        if (this.elements.promoFilters) {
+            this.elements.promoFilters.addEventListener('click', (e) => {
+                const btn = e.target.closest('.promo-filter-btn');
+                if (!btn) return;
+                const filter = btn.dataset.filter || 'all';
+                this.setPromoFilter(filter);
+            });
+        }
         
         // Device flow
         this.elements.backToBrands.addEventListener('click', () => this.showBrandStep());
@@ -1118,6 +1219,7 @@ class ProtectApp {
             this.startHomeClock();
             // Show Home tab by default
             this.switchTab('home');
+            this.initHomeWidgets();
         }, 400);
     }
     
@@ -1162,11 +1264,11 @@ class ProtectApp {
     updatePasscodeDisplay() {
         this.elements.passcodeDots.forEach((dot, index) => {
             if (index < this.currentPasscode.length) {
-            dot.classList.add('filled');
-        } else {
-            dot.classList.remove('filled');
-        }
-    });
+                dot.classList.add('filled');
+            } else {
+                dot.classList.remove('filled');
+            }
+        });
         
         this.hidePasscodeError();
     }
@@ -1203,6 +1305,9 @@ class ProtectApp {
         this.showPasscodeScreen();
         this.currentPasscode = '';
         this.updatePasscodeDisplay();
+        if (this.elements.passcodeInput) {
+            this.elements.passcodeInput.value = '';
+        }
     }
     
     initializeDeviceFlow() {
@@ -1746,14 +1851,28 @@ class ProtectApp {
                 ` : ''}
             </div>
             ${showMdnButton ? `
-            <button class="show-mdn-btn-modern" onclick="app.showMdnForGroup('${group.brand}', '${group.type}', '${deviceModel}')">
+            <button 
+                class="show-mdn-btn-modern mdn-hold-button" 
+                data-brand="${group.brand}" 
+                data-type="${group.type}" 
+                data-device="${deviceModel}"
+                aria-label="Press and hold to reveal verified MDNs"
+            >
                 <i class="fas fa-phone-alt"></i>
-                <span>View Verified MDN${verifiedMdns.length > 1 ? 's' : ''}</span>
+                <span>Hold to reveal MDN${verifiedMdns.length > 1 ? 's' : ''}</span>
                 <span class="mdn-count-badge">${verifiedMdns.length}</span>
             </button>
             ` : ''}
         `;
     
+        // Attach long-press handler for MDN reveal
+        if (showMdnButton) {
+            const mdnButton = card.querySelector('.mdn-hold-button');
+            if (mdnButton) {
+                this.attachMdnHoldHandlers(mdnButton, group.brand, group.type, deviceModel);
+            }
+        }
+
         return card;
     }
     
@@ -1761,6 +1880,41 @@ class ProtectApp {
         this.elements.deviceModal.classList.remove('show');
     }
     
+    attachMdnHoldHandlers(button, brand, type, deviceModel) {
+        const holdThreshold = 650;
+        let holdTimer = null;
+
+        const startHold = () => {
+            button.classList.add('mdn-hold-arming');
+            holdTimer = setTimeout(() => {
+                button.classList.remove('mdn-hold-arming');
+                button.classList.add('mdn-hold-success');
+                this.showMdnForGroup(brand, type, deviceModel);
+                setTimeout(() => button.classList.remove('mdn-hold-success'), 800);
+            }, holdThreshold);
+        };
+
+        const cancelHold = () => {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            button.classList.remove('mdn-hold-arming');
+        };
+
+        const preventClick = (e) => {
+            // Prevent accidental immediate click reveal; use hold only
+            e.preventDefault();
+            e.stopPropagation();
+        };
+
+        button.addEventListener('pointerdown', startHold);
+        button.addEventListener('pointerup', cancelHold);
+        button.addEventListener('pointerleave', cancelHold);
+        button.addEventListener('pointercancel', cancelHold);
+        button.addEventListener('click', preventClick);
+    }
+
     showMdnForGroup(brand, type, deviceModel) {
         const matchingDevices = this.deviceData.filter(d => {
             const deviceBrand = this.getField(d, ['Brand', 'Device Brand', 'DeviceBrand', 'BRAND', 'brand']);
@@ -1956,11 +2110,13 @@ class ProtectApp {
         if (this.elements.homeTab) this.elements.homeTab.classList.remove('active');
         if (this.elements.scheduleTab) this.elements.scheduleTab.classList.remove('active');
         if (this.elements.protectTab) this.elements.protectTab.classList.remove('active');
+        if (this.elements.promoTab) this.elements.promoTab.classList.remove('active');
         
         // Remove active class from all nav items
         if (this.elements.homeTabBtn) this.elements.homeTabBtn.classList.remove('active');
         if (this.elements.scheduleTabBtn) this.elements.scheduleTabBtn.classList.remove('active');
         if (this.elements.protectTabBtn) this.elements.protectTabBtn.classList.remove('active');
+        if (this.elements.promoTabBtn) this.elements.promoTabBtn.classList.remove('active');
         
         // Show selected tab and activate nav button
         switch(tabName) {
@@ -1973,6 +2129,9 @@ class ProtectApp {
             case 'protect':
                 this.showProtectTab();
                 break;
+            case 'promo':
+                this.showPromoTab();
+                break;
         }
     }
     
@@ -1984,6 +2143,7 @@ class ProtectApp {
             this.elements.homeTabBtn.classList.add('active');
         }
         this.updateHomeClock();
+        this.toggleHeaderStatus(true);
     }
     
     showScheduleTab() {
@@ -1993,7 +2153,7 @@ class ProtectApp {
         if (this.elements.scheduleTabBtn) {
             this.elements.scheduleTabBtn.classList.add('active');
         }
-        
+        this.toggleHeaderStatus(false);
         // Render schedule with current week
         this.renderSchedule();
     }
@@ -2005,10 +2165,24 @@ class ProtectApp {
         if (this.elements.protectTabBtn) {
             this.elements.protectTabBtn.classList.add('active');
         }
+        this.toggleHeaderStatus(false);
         
         // Initialize device flow if not already done
         if (!this.allBrands || this.allBrands.length === 0) {
             this.initializeDeviceFlow();
+        }
+    }
+
+    showPromoTab() {
+        if (this.elements.promoTab) {
+            this.elements.promoTab.classList.add('active');
+        }
+        if (this.elements.promoTabBtn) {
+            this.elements.promoTabBtn.classList.add('active');
+        }
+        this.toggleHeaderStatus(false);
+        if (!this.promosLoaded) {
+            this.loadPromos(false);
         }
     }
     
@@ -2037,6 +2211,665 @@ class ProtectApp {
         // Update date
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         this.elements.homeDate.textContent = now.toLocaleDateString('en-US', dateOptions);
+    }
+
+    // ========== HOME WIDGETS ==========
+    initHomeWidgets() {
+        this.updateStoreHours();
+        if (this.homeTimers.storeHours) clearInterval(this.homeTimers.storeHours);
+        this.homeTimers.storeHours = setInterval(() => this.updateStoreHours(), 60000);
+        this.applyStoredWeatherUnitToUI();
+        this.populateWeatherZipInput();
+        this.applyStoredTheme();
+        // Ensure collapsibles default closed
+        if (this.elements.weatherBody) {
+            this.elements.weatherBody.classList.remove('show');
+            this.elements.weatherBody.setAttribute('aria-hidden', 'true');
+            this.elements.weatherToggle?.setAttribute('aria-expanded', 'false');
+        }
+        if (this.elements.themeBody) {
+            this.elements.themeBody.classList.remove('show');
+            this.elements.themeBody.setAttribute('aria-hidden', 'true');
+            this.elements.themeToggle?.setAttribute('aria-expanded', 'false');
+        }
+        this.requestWeather();
+    }
+
+    updateStoreHours() {
+        if (!this.elements.storeHoursRange || !this.elements.storeProgressBar || !this.elements.storeStatus || !this.elements.storeProgressLabel) return;
+
+        const now = new Date();
+        const todayHours = this.getTodayHours(now);
+
+        if (todayHours.closed) {
+            this.elements.storeHoursRange.textContent = todayHours.label || 'Closed today';
+            this.elements.storeProgressBar.style.width = '0%';
+            this.elements.storeStatus.textContent = 'Closed';
+            this.elements.storeStatus.classList.remove('open');
+            this.elements.storeStatus.classList.add('closed');
+            this.elements.storeProgressLabel.textContent = '0%';
+            return;
+        }
+
+        const open = todayHours.open;
+        const close = todayHours.close;
+
+        const rangeLabel = `${this.formatTime(open)} - ${this.formatTime(close)}${todayHours.label ? ` (${todayHours.label})` : ''}`;
+        this.elements.storeHoursRange.textContent = rangeLabel;
+
+        let status = 'Closed';
+        let progress = 0;
+
+        if (now >= open && now <= close) {
+            status = 'Open';
+            const total = close.getTime() - open.getTime();
+            const elapsed = now.getTime() - open.getTime();
+            progress = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+        } else if (now < open) {
+            status = 'Closed';
+            progress = 0;
+        } else {
+            status = 'Closed';
+            progress = 100;
+        }
+
+        this.elements.storeProgressBar.style.width = `${progress}%`;
+        this.elements.storeStatus.textContent = status;
+        this.elements.storeStatus.classList.toggle('open', status === 'Open');
+        this.elements.storeStatus.classList.toggle('closed', status !== 'Open');
+        this.elements.storeProgressLabel.textContent = `${progress}%`;
+    }
+
+    formatTime(dateObj) {
+        return dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    getTodayHours(now = new Date()) {
+        const month = `${now.getMonth() + 1}`.padStart(2, '0');
+        const day = `${now.getDate()}`.padStart(2, '0');
+        const mmdd = `${month}-${day}`;
+
+        // Exceptions first
+        const exceptions = this.storeHours?.EXCEPTIONS || [];
+        const match = exceptions.find(e => (e.DATE || '').trim() === mmdd);
+        if (match) {
+            if (match.CLOSED) {
+                return { closed: true, label: match.LABEL || 'Closed' };
+            }
+            const openDate = new Date(now);
+            const closeDate = new Date(now);
+            const [oh, om] = (match.OPEN || '00:00').split(':').map(Number);
+            const [ch, cm] = (match.CLOSE || '00:00').split(':').map(Number);
+            openDate.setHours(oh || 0, om || 0, 0, 0);
+            closeDate.setHours(ch || 0, cm || 0, 0, 0);
+            return { open: openDate, close: closeDate, closed: false, label: match.LABEL || 'Special hours' };
+        }
+
+        // Defaults
+        const isSunday = now.getDay() === 0;
+        const defaults = this.storeHours?.DEFAULT || {};
+        const hoursObj = isSunday ? defaults.SUNDAY || {} : defaults.MON_SAT || {};
+        const [oh, om] = (hoursObj.OPEN || '10:00').split(':').map(Number);
+        const [ch, cm] = (hoursObj.CLOSE || '21:00').split(':').map(Number);
+        const openDate = new Date(now);
+        const closeDate = new Date(now);
+        openDate.setHours(oh || 0, om || 0, 0, 0);
+        closeDate.setHours(ch || 0, cm || 0, 0, 0);
+        return { open: openDate, close: closeDate, closed: false, label: '' };
+    }
+
+    requestWeather() {
+        if (!this.elements.weatherWidget) return;
+
+        // Always load default/saved zip first for immediate data
+        const zip = this.getStoredZip();
+        if (zip) {
+            this.requestWeatherByZip(zip, { silent: true });
+        }
+
+        if (!navigator.geolocation) {
+            if (!zip) {
+                this.renderWeatherError('Location unavailable');
+            }
+            return;
+        }
+
+        this.elements.weatherLocation.textContent = 'Requesting location...';
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                this.weatherState.coords = { latitude, longitude };
+                this.fetchWeather(latitude, longitude);
+            },
+            (err) => {
+                console.warn('Geo error', err);
+                if (!zip) {
+                    this.renderWeatherError('Location denied');
+                }
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 10 * 60 * 1000
+            }
+        );
+    }
+
+    async requestWeatherByZip(zip, options = {}) {
+        if (!zip) {
+            this.renderWeatherError('ZIP not set');
+            return;
+        }
+        try {
+            if (!options.silent) {
+                this.elements.weatherLocation.textContent = `ZIP ${zip}`;
+            }
+            const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(zip)}&count=1&language=en&format=json`;
+            const res = await fetch(geoUrl);
+            if (!res.ok) throw new Error('Geo lookup failed');
+            const data = await res.json();
+            const first = data?.results?.[0];
+            if (!first) throw new Error('ZIP not found');
+            const { latitude, longitude, name, country_code, admin1 } = first;
+            this.weatherState.coords = { latitude, longitude };
+            const locName = `${name || zip}${admin1 ? ', ' + admin1 : ''}${country_code ? ', ' + country_code : ''}`;
+            this.weatherState.locationName = locName;
+            this.elements.weatherLocation.textContent = locName;
+            await this.fetchWeather(latitude, longitude);
+        } catch (error) {
+            console.error(error);
+            this.renderWeatherError('ZIP lookup failed');
+        }
+    }
+
+    async fetchWeather(lat, lon) {
+        try {
+            this.elements.weatherLocation.textContent = 'Updating...';
+            const params = new URLSearchParams({
+                latitude: lat,
+                longitude: lon,
+                current: 'temperature_2m,apparent_temperature,weather_code,precipitation',
+                hourly: 'temperature_2m,weather_code,precipitation_probability',
+                daily: 'temperature_2m_max,temperature_2m_min,weather_code',
+                forecast_days: '7',
+                timezone: 'auto',
+                temperature_unit: this.getWeatherUnitParam()
+            });
+            const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Weather fetch failed: ${res.status}`);
+            const data = await res.json();
+            this.renderWeather(data);
+        } catch (error) {
+            console.error(error);
+            this.renderWeatherError('Weather unavailable');
+        }
+    }
+
+    renderWeather(data) {
+        const { current, hourly, daily } = data || {};
+        if (!current || !hourly) {
+            this.renderWeatherError('Weather unavailable');
+            return;
+        }
+
+        const temp = Math.round(current.temperature_2m);
+        const code = current.weather_code;
+        const desc = this.getWeatherLabel(code);
+        this.elements.weatherTemp.textContent = temp;
+        this.elements.weatherDesc.textContent = desc;
+        this.elements.weatherUpdated.textContent = 'Updated just now';
+        const coords = this.weatherState.coords;
+        if (this.weatherState.locationName) {
+            this.elements.weatherLocation.textContent = this.weatherState.locationName;
+        } else if (coords) {
+            this.elements.weatherLocation.textContent = 'Fetching location...';
+            this.fetchLocationName(coords);
+        } else {
+            this.elements.weatherLocation.textContent = 'Current location';
+        }
+
+        this.renderHourlyForecast(hourly);
+        this.renderDailyForecast(daily);
+    }
+
+    renderWeatherError(message) {
+        if (!this.elements.weatherWidget) return;
+        this.elements.weatherTemp.textContent = '--';
+        this.elements.weatherDesc.textContent = message || 'Weather unavailable';
+        this.elements.weatherUpdated.textContent = '—';
+        this.elements.weatherLocation.textContent = '—';
+        if (this.elements.weatherForecastHours) this.elements.weatherForecastHours.innerHTML = '';
+        if (this.elements.weatherForecastDays) this.elements.weatherForecastDays.innerHTML = '';
+    }
+
+    saveWeatherZip() {
+        if (!this.elements.weatherZipInput) return;
+        const zip = (this.elements.weatherZipInput.value || '').trim();
+        if (!zip) {
+            this.showToast('Please enter a ZIP', 'warning');
+            return;
+        }
+        localStorage.setItem('weatherZip', zip);
+        this.showToast('ZIP saved. Updating weather...', 'success');
+        this.requestWeatherByZip(zip);
+    }
+
+    getStoredZip() {
+        try {
+            const stored = localStorage.getItem('weatherZip');
+            if (stored && stored.trim()) return stored.trim();
+            if (this.config.WEATHER_DEFAULT_ZIP) return this.config.WEATHER_DEFAULT_ZIP;
+            return '';
+        } catch (e) {
+            return this.config.WEATHER_DEFAULT_ZIP || '';
+        }
+    }
+
+    setWeatherUnit(unit) {
+        const normalized = unit === 'celsius' ? 'celsius' : 'fahrenheit';
+        localStorage.setItem('weatherUnit', normalized);
+        this.applyStoredWeatherUnitToUI();
+        // Re-fetch with preferred unit
+        if (this.weatherState.coords) {
+            this.fetchWeather(this.weatherState.coords.latitude, this.weatherState.coords.longitude);
+        } else {
+            const zip = this.getStoredZip();
+            if (zip) {
+                this.requestWeatherByZip(zip);
+            } else {
+                this.requestWeather();
+            }
+        }
+    }
+
+    getStoredWeatherUnit() {
+        try {
+            return localStorage.getItem('weatherUnit') || 'fahrenheit';
+        } catch (e) {
+            return 'fahrenheit';
+        }
+    }
+
+    applyStoredWeatherUnitToUI() {
+        const unit = this.getStoredWeatherUnit();
+        const isF = unit === 'fahrenheit';
+        if (this.elements.weatherUnitF && this.elements.weatherUnitC) {
+            this.elements.weatherUnitF.classList.toggle('active', isF);
+            this.elements.weatherUnitC.classList.toggle('active', !isF);
+        }
+        // Update unit badge in UI (degree symbol stays, unit impacts fetched values)
+    }
+
+    populateWeatherZipInput() {
+        if (!this.elements.weatherZipInput) return;
+        const zip = this.getStoredZip();
+        this.elements.weatherZipInput.value = zip;
+    }
+
+    getWeatherUnitParam() {
+        const unit = this.getStoredWeatherUnit();
+        return unit === 'celsius' ? 'celsius' : 'fahrenheit';
+    }
+
+    // ========== THEME ==========
+    setTheme(theme) {
+        const mode = theme === 'dark' ? 'dark' : 'light';
+        localStorage.setItem('appTheme', mode);
+        this.applyStoredTheme();
+    }
+
+    getStoredTheme() {
+        try {
+            const stored = localStorage.getItem('appTheme');
+            if (stored === 'dark' || stored === 'light') return stored;
+        } catch (e) {}
+        // Fallback to system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+        return 'light';
+    }
+
+    applyStoredTheme() {
+        const theme = this.getStoredTheme();
+        const body = document.body;
+        if (theme === 'dark') {
+            body.classList.add('dark-mode');
+        } else {
+            body.classList.remove('dark-mode');
+        }
+        if (this.elements.themeLight && this.elements.themeDark) {
+            this.elements.themeLight.classList.toggle('active', theme === 'light');
+            this.elements.themeDark.classList.toggle('active', theme === 'dark');
+        }
+    }
+
+    toggleMaintenance() {
+        if (!this.elements.maintenanceToggle || !this.elements.maintenanceBody) return;
+        const expanded = this.elements.maintenanceToggle.getAttribute('aria-expanded') === 'true';
+        this.elements.maintenanceToggle.setAttribute('aria-expanded', (!expanded).toString());
+        this.elements.maintenanceBody.classList.toggle('show', !expanded);
+        this.elements.maintenanceBody.setAttribute('aria-hidden', expanded ? 'true' : 'false');
+    }
+
+    toggleHeaderStatus(isHome) {
+        if (!this.elements.networkStatus || !this.elements.timeDateDisplay) return;
+        if (isHome) {
+            this.elements.networkStatus.style.display = 'flex';
+            this.elements.timeDateDisplay.style.display = 'none';
+            this.updateNetworkStatus();
+        } else {
+            this.elements.networkStatus.style.display = 'none';
+            this.elements.timeDateDisplay.style.display = 'flex';
+        }
+    }
+
+    updateNetworkStatus() {
+        if (!this.elements.networkStatus || !this.elements.networkLabel || !this.elements.networkSub) return;
+        const online = navigator.onLine;
+        this.elements.networkStatus.classList.toggle('offline', !online);
+        this.elements.networkLabel.textContent = online ? 'T-Mobile US' : 'Offline';
+        this.elements.networkSub.textContent = online ? 'Connected' : 'Tap to retry';
+    }
+
+    toggleWeatherSettings() {
+        if (!this.elements.weatherToggle || !this.elements.weatherBody) return;
+        const expanded = this.elements.weatherToggle.getAttribute('aria-expanded') === 'true';
+        this.elements.weatherToggle.setAttribute('aria-expanded', (!expanded).toString());
+        this.elements.weatherBody.classList.toggle('show', !expanded);
+        this.elements.weatherBody.setAttribute('aria-hidden', expanded ? 'true' : 'false');
+    }
+
+    toggleThemeSettings() {
+        if (!this.elements.themeToggle || !this.elements.themeBody) return;
+        const expanded = this.elements.themeToggle.getAttribute('aria-expanded') === 'true';
+        this.elements.themeToggle.setAttribute('aria-expanded', (!expanded).toString());
+        this.elements.themeBody.classList.toggle('show', !expanded);
+        this.elements.themeBody.setAttribute('aria-hidden', expanded ? 'true' : 'false');
+    }
+
+    async fetchLocationName(coords) {
+        if (!coords || !coords.latitude || !coords.longitude) return;
+        if (this.weatherState.reverseLookupPending) return;
+        this.weatherState.reverseLookupPending = true;
+        try {
+            const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${coords.latitude}&longitude=${coords.longitude}&count=1&language=en&format=json`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Reverse geocode failed');
+            const data = await res.json();
+            const first = data?.results?.[0];
+            if (first) {
+                const locName = `${first.name || 'Current location'}${first.admin1 ? ', ' + first.admin1 : ''}${first.country_code ? ', ' + first.country_code : ''}`;
+                this.weatherState.locationName = locName;
+                if (this.elements.weatherLocation) {
+                    this.elements.weatherLocation.textContent = locName;
+                }
+            }
+        } catch (e) {
+            if (this.config.DEBUG_MODE) console.warn('Reverse geocode failed', e);
+        } finally {
+            this.weatherState.reverseLookupPending = false;
+        }
+    }
+
+    // ========== PROMOTIONS ==========
+    async loadPromos(forceRefresh = false) {
+        if (!this.elements.promoList || !this.elements.promoStatus) return;
+
+        if (this.promosLoaded && !forceRefresh) return;
+
+        this.elements.promoStatus.textContent = 'Loading promotions...';
+        this.elements.promoStatus.style.display = 'block';
+        this.elements.promoEmpty.style.display = 'none';
+        this.elements.promoList.innerHTML = '';
+
+        try {
+            const res = await fetch(this.config.PROMO_SHEET_URL, { cache: 'no-store' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const csvText = await res.text();
+            this.promos = this.parsePromoCSV(csvText);
+            this.promosLoaded = true;
+            this.renderPromos();
+        } catch (error) {
+            console.error('Failed to load promos:', error);
+            this.elements.promoStatus.textContent = 'Failed to load promotions';
+        }
+    }
+
+    parsePromoCSV(csvText) {
+        const lines = csvText.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length < 2) return [];
+        const headers = this.parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+        const promos = [];
+        for (let i = 1; i < lines.length; i++) {
+            const row = this.parseCSVLine(lines[i]);
+            if (!row.length) continue;
+            const obj = {};
+            headers.forEach((h, idx) => {
+                obj[h] = row[idx] || '';
+            });
+            // Basic required fields
+            if (obj['promo name'] || obj['offer id']) {
+                obj.__type = this.getPromoType(obj['requirements (lines / port / trade)'] || '');
+                promos.push(obj);
+            }
+        }
+        return promos;
+    }
+
+    renderPromos() {
+        const listEl = this.elements.promoList;
+        const statusEl = this.elements.promoStatus;
+        const emptyEl = this.elements.promoEmpty;
+        if (!listEl || !statusEl || !emptyEl) return;
+
+        const filtered = (this.promos || []).filter(p => {
+            if (this.promoFilter === 'all') return true;
+            return p.__type === this.promoFilter;
+        });
+
+        if (!filtered || filtered.length === 0) {
+            statusEl.style.display = 'none';
+            emptyEl.style.display = 'block';
+            listEl.innerHTML = '';
+            return;
+        }
+
+        statusEl.style.display = 'none';
+        emptyEl.style.display = 'none';
+
+        const cards = filtered.map(promo => {
+            const name = promo['promo name'] || 'Unnamed Promo';
+            const segment = promo['segment'] || promo['category'] || '—';
+            const devices = promo['devices'] || 'Devices vary';
+            const value = promo['promo value / tiers'] || 'See details';
+            const requirements = promo['requirements (lines / port / trade)'] || 'See details';
+            const plans = promo['eligible rate plans'] || '—';
+            const notes = promo['not stackable / notes'] || '';
+            const status = promo['status/start-end'] || '';
+            const offerId = promo['offer id'] || '';
+            const mpCode = promo['mp code'] || '';
+            const payout = promo['max payout'] || '';
+            const redemptions = promo['max redemptions per ban'] || '';
+            const typeLabel = this.getPromoTypeLabel(promo.__type);
+
+            return `
+                <div class="promo-card">
+                    <div class="promo-card-header">
+                        <div class="promo-name">${name}</div>
+                        <div class="promo-chip">${typeLabel}</div>
+                    </div>
+                    <div class="promo-meta">
+                        <div><strong>Status</strong>${status}</div>
+                        <div><strong>Offer ID</strong>${offerId}</div>
+                        <div><strong>MP Code</strong>${mpCode}</div>
+                        <div><strong>Devices</strong>${devices}</div>
+                        <div><strong>Value</strong>${value}</div>
+                        <div><strong>Requirements</strong>${requirements}</div>
+                        <div><strong>Eligible Plans</strong>${plans}</div>
+                        <div><strong>Max Payout</strong>${payout}</div>
+                        <div><strong>Max Redemptions</strong>${redemptions}</div>
+                    </div>
+                    ${notes ? `<div class="promo-notes">${notes}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        listEl.innerHTML = cards;
+        this.updatePromoFilterUI();
+    }
+
+    setPromoFilter(filter) {
+        this.promoFilter = filter || 'all';
+        this.renderPromos();
+    }
+
+    updatePromoFilterUI() {
+        if (!this.elements.promoFilters) return;
+        const buttons = this.elements.promoFilters.querySelectorAll('.promo-filter-btn');
+        buttons.forEach(btn => {
+            const f = btn.dataset.filter || 'all';
+            btn.classList.toggle('active', f === this.promoFilter);
+        });
+    }
+
+    getPromoType(reqText) {
+        const text = (reqText || '').toLowerCase();
+        const hasPort = text.includes('port');
+        const hasNew = text.includes('new line') || text.includes('new-line') || text.includes('(y)');
+        const hasUpgrade = text.includes('upgrade');
+
+        if (hasUpgrade) return 'upgrade';
+        if (hasNew && hasPort) return 'new-port';
+        if (hasNew) return 'new';
+        return 'other';
+    }
+
+    getPromoTypeLabel(type) {
+        if (type === 'upgrade') return 'Upgrade';
+        if (type === 'new-port') return 'New line + port';
+        if (type === 'new') return 'New line';
+        return 'Promo';
+    }
+
+    getWeatherLabel(code) {
+        const map = {
+            0: 'Clear sky',
+            1: 'Mainly clear',
+            2: 'Partly cloudy',
+            3: 'Overcast',
+            45: 'Fog',
+            48: 'Fog',
+            51: 'Light drizzle',
+            53: 'Drizzle',
+            55: 'Dense drizzle',
+            61: 'Light rain',
+            63: 'Rain',
+            65: 'Heavy rain',
+            71: 'Snow',
+            80: 'Showers',
+            95: 'Thunderstorms'
+        };
+        return map[code] || 'Weather';
+    }
+
+    getWeatherIcon(code) {
+        if (code === 0) return '<i class="fas fa-sun"></i>';
+        if ([1, 2].includes(code)) return '<i class="fas fa-cloud-sun"></i>';
+        if (code === 3) return '<i class="fas fa-cloud"></i>';
+        if ([45, 48].includes(code)) return '<i class="fas fa-smog"></i>';
+        if ([51, 53, 55, 61, 63, 65, 80].includes(code)) return '<i class="fas fa-cloud-rain"></i>';
+        if (code === 71) return '<i class="fas fa-snowflake"></i>';
+        if (code === 95) return '<i class="fas fa-bolt"></i>';
+        return '<i class="fas fa-cloud"></i>';
+    }
+
+    renderHourlyForecast(hourly) {
+        if (!this.elements.weatherForecastHours) return;
+        const now = new Date();
+        const hours = hourly?.time || [];
+        const temps = hourly?.temperature_2m || [];
+        const codes = hourly?.weather_code || [];
+        const items = [];
+        for (let i = 0; i < hours.length && items.length < 3; i++) {
+            const ts = new Date(hours[i]);
+            if (ts <= now) continue;
+            const hourLabel = ts.toLocaleTimeString('en-US', { hour: 'numeric' });
+            const fTemp = Math.round(temps[i]);
+            const fCode = codes[i];
+            const icon = this.getWeatherIcon(fCode);
+            items.push(`
+                <div class="forecast-pill">
+                    <div class="forecast-icon">${icon}</div>
+                    <div class="forecast-meta">
+                        <div class="forecast-hour">${hourLabel}</div>
+                        <div class="forecast-temp">${fTemp}°</div>
+                    </div>
+                </div>
+            `);
+        }
+        this.elements.weatherForecastHours.innerHTML = items.join('') || '<div class="forecast-pill"><div class="forecast-meta">No hourly data</div></div>';
+    }
+
+    renderDailyForecast(daily) {
+        if (!this.elements.weatherForecastDays) return;
+        const times = daily?.time || [];
+        const maxes = daily?.temperature_2m_max || [];
+        const mins = daily?.temperature_2m_min || [];
+        const codes = daily?.weather_code || [];
+        const items = [];
+        const now = new Date();
+        const seventyTwoHours = 72 * 60 * 60 * 1000;
+
+        // Collect daily forecasts within the next 72 hours (beyond now)
+        const future = [];
+        for (let i = 0; i < times.length; i++) {
+            const ts = new Date(times[i]);
+            const diff = ts.getTime() - now.getTime();
+            if (diff <= 0) continue; // skip past or current day
+            if (diff <= seventyTwoHours) {
+                future.push({
+                    ts,
+                    hi: Math.round(maxes[i]),
+                    lo: Math.round(mins[i]),
+                    code: codes[i]
+                });
+            }
+        }
+
+        // If fewer than 3 entries, fall back to the first future days even if beyond 72h
+        if (future.length < 3) {
+            for (let i = 0; i < times.length && future.length < 3; i++) {
+                const ts = new Date(times[i]);
+                if (ts.getTime() <= now.getTime()) continue;
+                // avoid duplicates
+                if (future.some(f => f.ts.getTime() === ts.getTime())) continue;
+                future.push({
+                    ts,
+                    hi: Math.round(maxes[i]),
+                    lo: Math.round(mins[i]),
+                    code: codes[i]
+                });
+            }
+        }
+
+        const selected = future.slice(0, 3);
+
+        selected.forEach(d => {
+            const dayLabel = d.ts.toLocaleDateString('en-US', { weekday: 'short' });
+            const icon = this.getWeatherIcon(d.code);
+            items.push(`
+                <div class="forecast-pill">
+                    <div class="forecast-icon">${icon}</div>
+                    <div class="forecast-meta">
+                        <div class="forecast-hour">${dayLabel}</div>
+                        <div class="forecast-temp">H ${d.hi}° / L ${d.lo}°</div>
+                    </div>
+                </div>
+            `);
+        });
+        this.elements.weatherForecastDays.innerHTML = items.join('') || '<div class="forecast-pill"><div class="forecast-meta">No daily data</div></div>';
     }
     
     // ========== SCHEDULE RENDERING ==========
@@ -2223,7 +3056,7 @@ class ProtectApp {
         });
         
         // Create table
-        let tableHTML = '<table class="schedule-table"><thead><tr><th>Employee</th>';
+        let tableHTML = '<table class="schedule-table responsive-table"><thead><tr><th>Employee</th>';
         days.forEach((day) => {
             const dayData = dayDateMap[day];
             const dateStr = dayData ? dayData.dateStr : '';
@@ -2235,13 +3068,15 @@ class ProtectApp {
         
         // Add employee rows
         Object.keys(employeeSchedule).sort().forEach(employee => {
-            tableHTML += `<tr><td class="employee-cell">${employee}</td>`;
+            tableHTML += `<tr><td class="employee-cell" data-employee="${employee}">${employee}</td>`;
             days.forEach(day => {
                 const shift = employeeSchedule[employee][day];
+                const dayData = dayDateMap[day];
+                const dateStr = dayData ? dayData.dateStr : '';
                 if (shift) {
-                    tableHTML += `<td class="schedule-cell"><div class="schedule-time">${shift.timeRange}</div></td>`;
+                    tableHTML += `<td class="schedule-cell" data-day="${day}" data-date="${dateStr}" data-employee="${employee}" data-time="${shift.timeRange}"><div class="schedule-time">${shift.timeRange}</div></td>`;
                 } else {
-                    tableHTML += '<td class="schedule-cell empty"></td>';
+                    tableHTML += `<td class="schedule-cell empty" data-day="${day}" data-date="${dateStr}" data-employee="${employee}" data-time="Off"><div class="schedule-time">Off</div></td>`;
                 }
             });
             tableHTML += '</tr>';

@@ -35,7 +35,28 @@ const CONFIG = {
     
     // App settings
     APP_NAME: 'StoreView',
-    APP_VERSION: '1.12.18',
+    APP_VERSION: '2.0.12.18.F2',
+
+    // Store hours (local time)
+    STORE_HOURS: {
+        DEFAULT: {
+            MON_SAT: { OPEN: '10:00', CLOSE: '21:00' },
+            SUNDAY: { OPEN: '12:00', CLOSE: '18:00' }
+        },
+        EXCEPTIONS: [
+            { DATE: '12-21', OPEN: '10:00', CLOSE: '21:00', LABEL: 'Extended Hours' },
+            { DATE: '12-24', OPEN: '10:00', CLOSE: '17:00', LABEL: 'Christmas Eve' },
+            { DATE: '12-25', CLOSED: true, LABEL: 'Christmas Day' },
+            { DATE: '12-31', OPEN: '10:00', CLOSE: '18:00', LABEL: 'New Year\'s Eve' },
+            { DATE: '01-01', OPEN: '12:00', CLOSE: '18:00', LABEL: 'New Year\'s Day' }
+        ]
+    },
+
+    // Weather defaults
+    WEATHER_DEFAULT_ZIP: '34759',
+
+    // Promotions Google Sheet (CSV export URL)
+    PROMO_SHEET_URL: 'https://docs.google.com/spreadsheets/d/1aHZ2p4KK3Kho75aT8wjOFMlvhrgFSITj9VG7te2Apyk/export?format=csv',
     
     // Security settings
     PASSCODE: '6974',

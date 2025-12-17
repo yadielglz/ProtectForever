@@ -52,69 +52,40 @@
     <div id="passcodeScreen" class="passcode-screen">
         <div class="passcode-background"></div>
         <div class="passcode-container">
-            <!-- Header Section -->
-            <div class="passcode-header-modern">
-                <div class="app-logo-modern">
-                    <div class="logo-icon-modern">
-                        <i class="fas fa-shield-alt"></i>
+            <div class="passcode-panel">
+                <!-- Header Section -->
+                <div class="passcode-header-modern">
+                    <div class="app-logo-modern">
+                        <div class="logo-icon-modern">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h1 class="app-title-modern">StoreView</h1>
                     </div>
-                    <h1 class="app-title-modern">StoreView</h1>
+                    <p class="passcode-subtitle-modern">Enter your access code</p>
+                    
+                    <!-- Passcode Display -->
+                    <div class="passcode-display-modern">
+                        <div class="passcode-dots-modern">
+                            <div class="dot-modern"></div>
+                            <div class="dot-modern"></div>
+                            <div class="dot-modern"></div>
+                            <div class="dot-modern"></div>
+                        </div>
+                        <div id="passcodeError" class="passcode-error-modern">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Invalid code</span>
+                        </div>
+                    </div>
                 </div>
-                <p class="passcode-subtitle-modern">Enter your access code</p>
-                
-                <!-- Passcode Display -->
-                <div class="passcode-display-modern">
-                    <div class="passcode-dots-modern">
-                        <div class="dot-modern"></div>
-                        <div class="dot-modern"></div>
-                        <div class="dot-modern"></div>
-                        <div class="dot-modern"></div>
-                    </div>
-                    <div id="passcodeError" class="passcode-error-modern">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span>Invalid code</span>
-                    </div>
+
+                <div class="passcode-input-row">
+                    <input id="passcodeInput" class="passcode-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" placeholder="••••" aria-label="Enter passcode" />
                 </div>
-            </div>
-            
-            <!-- Keypad -->
-            <div class="passcode-keypad-modern">
-                <button class="keypad-key-modern" data-key="1">
-                    <span class="key-number">1</span>
-                </button>
-                <button class="keypad-key-modern" data-key="2">
-                    <span class="key-number">2</span>
-                </button>
-                <button class="keypad-key-modern" data-key="3">
-                    <span class="key-number">3</span>
-                </button>
-                <button class="keypad-key-modern" data-key="4">
-                    <span class="key-number">4</span>
-                </button>
-                <button class="keypad-key-modern" data-key="5">
-                    <span class="key-number">5</span>
-                </button>
-                <button class="keypad-key-modern" data-key="6">
-                    <span class="key-number">6</span>
-                </button>
-                <button class="keypad-key-modern" data-key="7">
-                    <span class="key-number">7</span>
-                </button>
-                <button class="keypad-key-modern" data-key="8">
-                    <span class="key-number">8</span>
-                </button>
-                <button class="keypad-key-modern" data-key="9">
-                    <span class="key-number">9</span>
-                </button>
-                <button class="keypad-key-modern keypad-clear-modern" data-key="clear">
-                    <i class="fas fa-backspace"></i>
-                </button>
-                <button class="keypad-key-modern" data-key="0">
-                    <span class="key-number">0</span>
-                </button>
-                <button class="keypad-key-modern keypad-enter-modern" data-key="enter">
-                    <i class="fas fa-check"></i>
-                </button>
+
+                <p class="passcode-footnote">
+                    <i class="fas fa-lock"></i>
+                    Staff access only. Need help? Contact your developer.
+                </p>
             </div>
         </div>
     </div>
@@ -133,9 +104,13 @@
                     </div>
                 </div>
                 <div class="nav-right">
-                    <button id="headerSettingsBtn" class="header-settings-btn" aria-label="Settings">
-                        <i class="fas fa-cog"></i>
-                    </button>
+                    <div id="networkStatus" class="network-status">
+                        <i class="fas fa-signal"></i>
+                        <div class="network-text">
+                            <div id="networkLabel" class="network-label">Online</div>
+                            <div id="networkSub" class="network-sub">Connected</div>
+                        </div>
+                    </div>
                     <div id="timeDateDisplay" class="time-date-display">
                         <div id="currentTime" class="current-time">12:00 PM</div>
                         <div id="currentDate" class="current-date">Jan 1, 2024</div>
@@ -156,9 +131,79 @@
                         </div>
                         <div id="homeDate" class="home-date">Monday, January 1, 2024</div>
                     </div>
-                    <div class="home-welcome">
-                        <h2 class="welcome-title">Welcome to StoreView</h2>
-                        <p class="welcome-subtitle">Your employee dashboard and management solution</p>
+                    <div class="home-widgets">
+                        <section class="weather-card" id="weatherWidget">
+                            <div class="weather-header">
+                                <div class="weather-title">
+                                    <i class="fas fa-cloud-sun"></i>
+                                    <span>Local weather</span>
+                                </div>
+                                <div id="weatherLocation" class="weather-location">Locating...</div>
+                            </div>
+                            <div class="weather-current">
+                                <div class="weather-temp">
+                                    <span id="weatherTemp" class="temp-value">--</span>
+                                    <span class="temp-unit">°</span>
+                                </div>
+                                <div class="weather-meta">
+                                    <div id="weatherDesc" class="weather-desc">Awaiting data</div>
+                                    <div id="weatherUpdated" class="weather-updated">—</div>
+                                </div>
+                            </div>
+                    <div class="weather-forecast" id="weatherForecast">
+                        <div class="forecast-row">
+                            <div class="forecast-row-title">Next hours</div>
+                            <div class="forecast-grid" id="weatherForecastHours"></div>
+                        </div>
+                        <div class="forecast-row">
+                            <div class="forecast-row-title">Next days</div>
+                            <div class="forecast-grid" id="weatherForecastDays"></div>
+                        </div>
+                    </div>
+                        </section>
+
+                        <section class="store-hours-card" id="storeHoursWidget">
+                            <div class="store-hours-header">
+                                <div class="store-title">
+                                    <i class="fas fa-store"></i>
+                                    <span>Store hours</span>
+                                </div>
+                                <div id="storeHoursRange" class="store-range">--</div>
+                            </div>
+                            <div class="store-progress">
+                                <div id="storeProgressBar" class="store-progress-bar"></div>
+                            </div>
+                            <div class="store-status-row">
+                                <span id="storeStatus" class="store-status">Checking...</span>
+                                <span id="storeProgressLabel" class="store-progress-label">--%</span>
+                            </div>
+                        </section>
+
+                        <section class="contact-card" id="contactWidget">
+                            <div class="contact-header">
+                                <div class="contact-title">
+                                    <i class="fas fa-phone-alt"></i>
+                                    <span>Contacts</span>
+                                </div>
+                            </div>
+                            <div class="contact-list">
+                                <a class="contact-item" href="tel:8634963870">
+                                    <div class="contact-label">Store 697D</div>
+                                    <div class="contact-value">(863) 496-3870</div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                                <a class="contact-item" href="tel:8009378997">
+                                    <div class="contact-label">Customer Service</div>
+                                    <div class="contact-value">(800) 937-8997</div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                                <a class="contact-item" href="tel:8883108369">
+                                    <div class="contact-label">Retail Sales Support Line</div>
+                                    <div class="contact-value">(888) 310-8369</div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </div>
+                        </section>
                     </div>
                 </section>
             </div>
@@ -298,6 +343,39 @@
                     </section>
                 </section>
             </div>
+
+            <!-- Promotions Tab -->
+            <div id="promoTab" class="tab-content">
+                <section class="promo-section">
+                    <div class="promo-header">
+                        <div class="promo-title">
+                            <i class="fas fa-tags"></i>
+                            <div>
+                                <h3>Current Promotions</h3>
+                                <p>Live offers from the promo sheet</p>
+                            </div>
+                        </div>
+                        <button id="promoRefreshBtn" class="promo-refresh-btn" aria-label="Refresh promotions">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                <div class="promo-filters">
+                    <button class="promo-filter-btn active" data-filter="all">All</button>
+                    <button class="promo-filter-btn" data-filter="new">New line</button>
+                    <button class="promo-filter-btn" data-filter="new-port">New line + port</button>
+                    <button class="promo-filter-btn" data-filter="upgrade">Upgrade</button>
+                </div>
+                    <div id="promoStatus" class="promo-status">Loading...</div>
+                    <div id="promoList" class="promo-list"></div>
+                    <div id="promoEmpty" class="empty-state" style="display: none;">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                        <div class="empty-state-title">No promotions found</div>
+                        <div class="empty-state-message">Check back soon for new offers</div>
+                    </div>
+                </section>
+            </div>
         </main>
 
         <!-- Bottom Navigation -->
@@ -308,17 +386,29 @@
                 </div>
                 <span class="nav-label">Home</span>
             </div>
+            <div class="nav-item" id="protectTabBtn" data-tab="protect">
+                <div class="nav-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <span class="nav-label">Protect</span>
+            </div>
+            <div class="nav-item" id="promoTabBtn" data-tab="promo">
+                <div class="nav-icon">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <span class="nav-label">Promos</span>
+            </div>
             <div class="nav-item" id="scheduleTabBtn" data-tab="schedule">
                 <div class="nav-icon">
                     <i class="fas fa-calendar-alt"></i>
                 </div>
                 <span class="nav-label">Schedule</span>
             </div>
-            <div class="nav-item" id="protectTabBtn" data-tab="protect">
+            <div class="nav-item" id="settingsTabBtn">
                 <div class="nav-icon">
-                    <i class="fas fa-shield-alt"></i>
+                    <i class="fas fa-cog"></i>
                 </div>
-                <span class="nav-label">Protect</span>
+                <span class="nav-label">Settings</span>
             </div>
         </nav>
     </div>
@@ -381,34 +471,100 @@
     <div id="settingsMenu" class="settings-menu">
         <div class="settings-content">
             <div class="settings-header">
-                <h3>Settings</h3>
-                <button id="closeSettings" class="close-button">
-                    <i class="fas fa-times"></i>
+                <button id="closeSettings" class="close-button back-button-icon" aria-label="Close settings">
+                    <i class="fas fa-arrow-left"></i>
                 </button>
+                <h3>Settings</h3>
             </div>
             <div class="settings-options">
-                <button id="refreshDataBtn" class="settings-option">
-                    <i class="fas fa-sync-alt"></i>
-                    <span>Refresh Data</span>
-                </button>
-                <button id="updateAppBtn" class="settings-option">
-                    <i class="fas fa-download"></i>
-                    <span>Update App</span>
-                </button>
-                <button id="clearCacheBtn" class="settings-option">
-                    <i class="fas fa-trash-alt"></i>
-                    <span>Clear All Cache & Reload</span>
-                </button>
-                <button id="reloadAppBtn" class="settings-option">
-                    <i class="fas fa-redo"></i>
-                    <span>Reload App</span>
-                </button>
+                <div class="settings-collapsible">
+                    <button class="settings-collapsible-header" id="maintenanceToggle" aria-expanded="false">
+                        <span>
+                            <i class="fas fa-tools"></i>
+                            Maintenance
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="settings-collapsible-body" id="maintenanceBody" aria-hidden="true">
+                        <button id="refreshDataBtn" class="settings-option">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Refresh Data</span>
+                        </button>
+                        <button id="updateAppBtn" class="settings-option">
+                            <i class="fas fa-download"></i>
+                            <span>Update App</span>
+                        </button>
+                        <button id="clearCacheBtn" class="settings-option">
+                            <i class="fas fa-trash-alt"></i>
+                            <span>Clear All Cache & Reload</span>
+                        </button>
+                        <button id="reloadAppBtn" class="settings-option">
+                            <i class="fas fa-redo"></i>
+                            <span>Reload App</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="settings-collapsible">
+                    <button class="settings-collapsible-header" id="weatherToggle" aria-expanded="false">
+                        <span>
+                            <i class="fas fa-cloud-sun"></i>
+                            Weather
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="settings-collapsible-body" id="weatherBody" aria-hidden="true">
+                        <div class="settings-option settings-input">
+                            <div class="settings-input-label">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <div>
+                                    <div class="settings-input-title">ZIP fallback</div>
+                                    <div class="settings-input-subtitle">Used if location is blocked</div>
+                                </div>
+                            </div>
+                            <div class="settings-input-field">
+                                <input id="weatherZipInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="10" placeholder="e.g. 10001">
+                                <button id="weatherZipSave" class="settings-input-btn">Save</button>
+                                <button id="weatherRefreshBtn" class="settings-input-btn secondary-btn">Refresh</button>
+                            </div>
+                        </div>
+                        <div class="settings-option settings-toggle">
+                            <div class="settings-input-label">
+                                <i class="fas fa-thermometer-half"></i>
+                                <div>
+                                    <div class="settings-input-title">Units</div>
+                                    <div class="settings-input-subtitle">Choose °F or °C</div>
+                                </div>
+                            </div>
+                            <div class="settings-unit-toggle">
+                                <button class="unit-btn" id="weatherUnitF" data-unit="fahrenheit">°F</button>
+                                <button class="unit-btn" id="weatherUnitC" data-unit="celsius">°C</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-collapsible">
+                    <button class="settings-collapsible-header" id="themeToggle" aria-expanded="false">
+                        <span>
+                            <i class="fas fa-moon"></i>
+                            Theme
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="settings-collapsible-body" id="themeBody" aria-hidden="true">
+                        <div class="settings-option settings-toggle">
+                            <div class="settings-unit-toggle">
+                                <button class="unit-btn" id="themeLight">Light</button>
+                                <button class="unit-btn" id="themeDark">Dark</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="settings-footer">
                 <div class="version-info">
                     <div class="version-text">
                         <i class="fas fa-info-circle"></i>
-                        <span>Version 1.12.18</span>
+                        <span>Version 2.0.12.18.F2</span>
                     </div>
                     <div class="copyright-text">
                         Copyright © Glz Technical Services
