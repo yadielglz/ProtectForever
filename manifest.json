@@ -1,7 +1,7 @@
 {
-    "name": "Protect - Device Protection",
-    "short_name": "Protect",
-    "description": "Modern mobile-first device protection management app with gorgeous UI",
+    "name": "StoreView - Employee Dashboard",
+    "short_name": "StoreView",
+    "description": "Modern mobile-first employee dashboard and management app with gorgeous UI",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#FFFFFF",

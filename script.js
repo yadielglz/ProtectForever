@@ -3,11 +3,17 @@ class ProtectApp {
     constructor() {
         this.config = CONFIG;
         this.deviceData = [];
+        this.scheduleData = []; // All schedule shifts in one array
+        this.scheduleWeeks = []; // Organized by week (calculated from dates)
         this.currentPasscode = '';
         this.selectedBrand = null;
         this.selectedModel = null;
         this.inactivityTimer = null;
         this.isAuthenticated = false;
+        this.currentTab = 'home';
+        this.currentScheduleView = 'daily';
+        this.currentWeekIndex = 0; // Index into scheduleWeeks array
+        this.currentSelectedDate = new Date(); // Selected date for daily view
         
         // DOM Elements
         this.elements = {};
@@ -164,15 +170,19 @@ class ProtectApp {
             localStorage.setItem('appHasLoaded', 'true');
         }
         
-        this.showLoading('Initializing Protect...');
+        this.showLoading('Initializing StoreView...');
             
             localStorage.removeItem(this.config.CACHE_KEY);
             localStorage.removeItem('lastDataUpdate');
             
-            await this.loadData();
+            await Promise.all([
+                this.loadData(),
+                this.loadScheduleData()
+            ]);
             this.hideLoading();
             setTimeout(() => {
                 this.startTimeDateDisplay();
+                this.startHomeClock();
                 this.showPasscodeScreen();
             }, 300);
         } catch (error) {
@@ -203,10 +213,35 @@ class ProtectApp {
         this.elements.currentDate = document.getElementById('currentDate');
         
         // Bottom navigation
-        this.elements.homeNavBtn = document.getElementById('homeNavBtn');
-        this.elements.settingsNavBtn = document.getElementById('settingsNavBtn');
-        this.elements.timerNavBtn = document.getElementById('timerNavBtn');
-        this.elements.timerNavLabel = document.getElementById('timerNavLabel');
+        this.elements.homeTabBtn = document.getElementById('homeTabBtn');
+        this.elements.scheduleTabBtn = document.getElementById('scheduleTabBtn');
+        this.elements.protectTabBtn = document.getElementById('protectTabBtn');
+        this.elements.headerSettingsBtn = document.getElementById('headerSettingsBtn');
+        
+        // Tab content
+        this.elements.homeTab = document.getElementById('homeTab');
+        this.elements.scheduleTab = document.getElementById('scheduleTab');
+        this.elements.protectTab = document.getElementById('protectTab');
+        
+        // Home tab elements
+        this.elements.homeClock = document.getElementById('homeClock');
+        this.elements.clockTime = document.getElementById('clockTime');
+        this.elements.clockPeriod = document.getElementById('clockPeriod');
+        this.elements.homeDate = document.getElementById('homeDate');
+        
+        // Schedule tab elements
+        this.elements.dailyViewBtn = document.getElementById('dailyViewBtn');
+        this.elements.weeklyViewBtn = document.getElementById('weeklyViewBtn');
+        this.elements.dailyScheduleView = document.getElementById('dailyScheduleView');
+        this.elements.weeklyScheduleView = document.getElementById('weeklyScheduleView');
+        this.elements.dailyScheduleList = document.getElementById('dailyScheduleList');
+        this.elements.weeklyScheduleTable = document.getElementById('weeklyScheduleTable');
+        this.elements.dailyDate = document.getElementById('dailyDate');
+        this.elements.weekLabel = document.getElementById('weekLabel');
+        this.elements.prevWeekBtn = document.getElementById('prevWeekBtn');
+        this.elements.nextWeekBtn = document.getElementById('nextWeekBtn');
+        this.elements.dailyEmptyState = document.getElementById('dailyEmptyState');
+        this.elements.weeklyEmptyState = document.getElementById('weeklyEmptyState');
         
         // Device flow
         this.elements.brandStep = document.getElementById('brandStep');
@@ -237,6 +272,7 @@ class ProtectApp {
         this.elements.newSearchBtn = document.getElementById('newSearchBtn');
         
         // Settings
+        this.elements.settingsNavBtn = this.elements.headerSettingsBtn; // Use header button
         this.elements.refreshDataBtn = document.getElementById('refreshDataBtn');
         this.elements.updateAppBtn = document.getElementById('updateAppBtn');
         this.elements.clearCacheBtn = document.getElementById('clearCacheBtn');
@@ -264,10 +300,43 @@ class ProtectApp {
         // Settings
         this.elements.closeSettings.addEventListener('click', () => this.closeSettings());
         
-        // Bottom navigation
-        this.elements.homeNavBtn.addEventListener('click', () => this.goToHome());
-        this.elements.settingsNavBtn.addEventListener('click', () => this.toggleSettings());
-        this.elements.timerNavBtn.addEventListener('click', () => this.showTimerInfo());
+        // Bottom navigation - Tab switching
+        this.elements.homeTabBtn.addEventListener('click', () => this.switchTab('home'));
+        this.elements.scheduleTabBtn.addEventListener('click', () => this.switchTab('schedule'));
+        this.elements.protectTabBtn.addEventListener('click', () => this.switchTab('protect'));
+        
+        // Header settings button
+        if (this.elements.headerSettingsBtn) {
+            this.elements.headerSettingsBtn.addEventListener('click', () => this.toggleSettings());
+        }
+        
+        // Schedule view toggles
+        if (this.elements.dailyViewBtn) {
+            this.elements.dailyViewBtn.addEventListener('click', () => this.switchScheduleView('daily'));
+        }
+        if (this.elements.weeklyViewBtn) {
+            this.elements.weeklyViewBtn.addEventListener('click', () => this.switchScheduleView('weekly'));
+        }
+        
+        // Week/Day navigation
+        if (this.elements.prevWeekBtn) {
+            this.elements.prevWeekBtn.addEventListener('click', () => {
+                if (this.currentScheduleView === 'daily') {
+                    this.changeDay(-1);
+                } else {
+                    this.changeWeek(-1);
+                }
+            });
+        }
+        if (this.elements.nextWeekBtn) {
+            this.elements.nextWeekBtn.addEventListener('click', () => {
+                if (this.currentScheduleView === 'daily') {
+                    this.changeDay(1);
+                } else {
+                    this.changeWeek(1);
+                }
+            });
+        }
         
         // Settings options
         this.elements.refreshDataBtn.addEventListener('click', () => this.refreshData());
@@ -571,6 +640,436 @@ class ProtectApp {
         ];
     }
     
+    // ========== SCHEDULE DATA LOADING ==========
+    
+    async loadScheduleData() {
+        try {
+            if (this.config.DEBUG_MODE) console.log('Starting schedule data load...');
+            
+            // Clear old cache format to avoid conflicts
+            const cachedData = this.getCachedScheduleData();
+            
+            if (cachedData && this.isScheduleCacheValid()) {
+                // Handle both old format (object) and new format (array)
+                if (Array.isArray(cachedData)) {
+                    this.scheduleData = cachedData;
+                } else if (cachedData && typeof cachedData === 'object' && (cachedData.currentWeek || cachedData.nextWeek || cachedData.weekAfterNext)) {
+                    // Old format - convert to array and clear cache
+                    this.scheduleData = [
+                        ...(cachedData.currentWeek || []),
+                        ...(cachedData.nextWeek || []),
+                        ...(cachedData.weekAfterNext || [])
+                    ];
+                    // Clear old cache format
+                    localStorage.removeItem(this.config.SCHEDULE_CACHE_KEY);
+                } else {
+                    this.scheduleData = [];
+                }
+                
+                if (Array.isArray(this.scheduleData) && this.scheduleData.length > 0) {
+                    this.organizeScheduleByWeeks();
+                    if (this.config.DEBUG_MODE) console.log('Using cached schedule data');
+                    return;
+                }
+            }
+            
+            // Load fresh data
+            await this.loadScheduleFromGoogleSheets();
+            this.organizeScheduleByWeeks();
+        } catch (error) {
+            console.error('Failed to load schedule data:', error);
+            this.scheduleData = [];
+            this.scheduleWeeks = [];
+            this.showToast('Using offline schedule data', 'warning');
+        }
+    }
+    
+    async loadScheduleFromGoogleSheets() {
+        try {
+            // Remove any gid parameter from URL (we load single sheet now)
+            let url = this.config.SCHEDULE_SHEETS_URL;
+            url = url.split('&gid=')[0].split('?gid=')[0];
+            if (!url.includes('?')) {
+                url += '?format=csv';
+            } else if (!url.includes('format=csv')) {
+                url += '&format=csv';
+            }
+            
+            let response = null;
+            let csvText = null;
+            
+            // Try direct fetch first
+            try {
+                response = await fetch(url);
+                if (response && response.ok) {
+                    csvText = await response.text();
+                    // Check if we got actual CSV data (not an error page)
+                    if (csvText && csvText.length > 0 && !csvText.includes('<html') && !csvText.includes('<!DOCTYPE')) {
+                        if (this.config.DEBUG_MODE) {
+                            console.log('Successfully loaded schedule sheet directly');
+                        }
+                    } else {
+                        csvText = null;
+                    }
+                }
+            } catch (directError) {
+                if (this.config.DEBUG_MODE) console.log('Direct fetch failed, trying CORS proxies...');
+            }
+            
+            // Try CORS proxies if direct fetch failed
+            if (!csvText) {
+                for (const proxy of this.config.CORS_PROXIES) {
+                    try {
+                        const proxyUrl = proxy + encodeURIComponent(url);
+                        response = await fetch(proxyUrl);
+                        if (response && response.ok) {
+                            csvText = await response.text();
+                            // Check if we got actual CSV data (not an error page)
+                            if (csvText && csvText.length > 0 && !csvText.includes('<html') && !csvText.includes('<!DOCTYPE')) {
+                                if (this.config.DEBUG_MODE) {
+                                    console.log(`Successfully loaded schedule sheet using proxy: ${proxy.substring(0, 30)}...`);
+                                }
+                                break;
+                            } else {
+                                csvText = null;
+                            }
+                        }
+                    } catch (proxyError) {
+                        if (this.config.DEBUG_MODE) console.log(`Proxy ${proxy} failed`);
+                        continue;
+                    }
+                }
+            }
+            
+            if (!csvText) {
+                throw new Error('Failed to load schedule data from all sources');
+            }
+            
+            // Parse the single CSV - get all schedule data
+            this.scheduleData = this.parseScheduleCSV(csvText);
+            
+            this.cacheScheduleData(this.scheduleData);
+            
+            if (this.config.DEBUG_MODE) {
+                console.log('Schedule data loaded:', this.scheduleData.length, 'shifts');
+            }
+            
+            // Show warning if no schedule data was loaded
+            if (this.scheduleData.length === 0) {
+                this.showToast('Schedule data could not be parsed. Check console for details.', 'warning');
+            }
+        } catch (error) {
+            console.error('Failed to load from Google Sheets:', error);
+            // Don't throw - allow app to continue with empty schedule data
+            this.showToast('Schedule data loading failed. Using cached data if available.', 'warning');
+        }
+    }
+    
+    organizeScheduleByWeeks() {
+        // Ensure scheduleData is an array
+        if (!Array.isArray(this.scheduleData)) {
+            console.error('scheduleData is not an array:', this.scheduleData);
+            this.scheduleData = [];
+            this.scheduleWeeks = [];
+            return;
+        }
+        
+        // Group all shifts by week (Thursday to Wednesday)
+        const weekMap = new Map();
+        
+        this.scheduleData.forEach(shift => {
+            const date = new Date(shift.date);
+            // Get the Thursday of the week (week starts on Thursday)
+            // Day 0 = Sunday, Day 4 = Thursday
+            const dayOfWeek = date.getDay();
+            const daysFromThursday = dayOfWeek >= 4 ? dayOfWeek - 4 : dayOfWeek + 3;
+            const thursday = new Date(date);
+            thursday.setDate(date.getDate() - daysFromThursday);
+            thursday.setHours(0, 0, 0, 0);
+            
+            const weekKey = thursday.getTime();
+            if (!weekMap.has(weekKey)) {
+                weekMap.set(weekKey, {
+                    startDate: new Date(thursday),
+                    shifts: []
+                });
+            }
+            weekMap.get(weekKey).shifts.push(shift);
+        });
+        
+        // Convert to array and sort by date
+        this.scheduleWeeks = Array.from(weekMap.values())
+            .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
+            .map((week, index) => ({
+                ...week,
+                index,
+                label: this.getWeekLabel(week.startDate)
+            }));
+        
+        // Set current week to the one containing today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dayOfWeek = today.getDay();
+        const daysFromThursday = dayOfWeek >= 4 ? dayOfWeek - 4 : dayOfWeek + 3;
+        const todayThursday = new Date(today);
+        todayThursday.setDate(today.getDate() - daysFromThursday);
+        todayThursday.setHours(0, 0, 0, 0);
+        
+        const currentWeekIndex = this.scheduleWeeks.findIndex(week => 
+            week.startDate.getTime() === todayThursday.getTime()
+        );
+        
+        this.currentWeekIndex = currentWeekIndex >= 0 ? currentWeekIndex : 0;
+        
+        if (this.config.DEBUG_MODE) {
+            console.log('Organized schedule into', this.scheduleWeeks.length, 'weeks (Thu-Wed)');
+            this.scheduleWeeks.forEach((week, i) => {
+                const endDate = new Date(week.startDate);
+                endDate.setDate(week.startDate.getDate() + 6);
+                console.log(`Week ${i}: ${week.startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()} (${week.shifts.length} shifts)`);
+            });
+        }
+    }
+    
+    getWeekLabel(startDate) {
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6); // Thursday + 6 days = Wednesday
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Check if this week contains today (Thursday to Wednesday)
+        if (startDate.getTime() <= today.getTime() && today.getTime() <= endDate.getTime()) {
+            return 'This Week';
+        }
+        
+        // Check if it's next week (next Thursday)
+        const dayOfWeek = today.getDay();
+        const daysFromThursday = dayOfWeek >= 4 ? dayOfWeek - 4 : dayOfWeek + 3;
+        const nextWeekStart = new Date(today);
+        nextWeekStart.setDate(today.getDate() + (7 - daysFromThursday));
+        nextWeekStart.setHours(0, 0, 0, 0);
+        
+        if (startDate.getTime() === nextWeekStart.getTime()) {
+            return 'Next Week';
+        }
+        
+        // Otherwise show date range (Thu - Wed)
+        const startStr = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const endStr = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return `${startStr} - ${endStr}`;
+    }
+    
+    parseScheduleCSV(csvText) {
+        const lines = csvText.split(/\r?\n/).filter(line => line.trim());
+        
+        if (lines.length < 3) {
+            console.error('Invalid schedule CSV format');
+            return [];
+        }
+        
+        const parsedData = [];
+        
+        // Parse header row (day names)
+        const headerLine = this.parseCSVLine(lines[0]);
+        const dayHeaders = headerLine.slice(1); // Skip "Employee" column
+        
+        // Parse date row (skip first cell which is empty or label)
+        const dateLine = this.parseCSVLine(lines[1]);
+        const dates = dateLine.length > 1 ? dateLine.slice(1) : dateLine; // Skip first cell if present
+        
+        // Parse employee rows (every 2 rows: name + end times)
+        for (let i = 2; i < lines.length; i += 2) {
+            const nameLine = this.parseCSVLine(lines[i]);
+            const employeeName = nameLine[0]?.trim();
+            
+            if (!employeeName) continue; // Skip empty rows
+            
+            // Get end times from next line if it exists
+            const endTimeLine = i + 1 < lines.length ? this.parseCSVLine(lines[i + 1]) : [];
+            
+            // Process each day
+            dayHeaders.forEach((dayHeader, dayIndex) => {
+                const startTime = nameLine[dayIndex + 1]?.trim();
+                const endTime = endTimeLine[dayIndex + 1]?.trim();
+                const dateStr = dates[dayIndex]?.trim();
+                
+                if (startTime && endTime && dateStr) {
+                    try {
+                        // Parse date (MM/DD format)
+                        const dateParts = dateStr.split('/');
+                        if (dateParts.length === 2) {
+                            const month = parseInt(dateParts[0], 10);
+                            const day = parseInt(dateParts[1], 10);
+                            const currentYear = new Date().getFullYear();
+                            const scheduleDate = new Date(currentYear, month - 1, day);
+                            
+                            // Validate date
+                            if (!isNaN(scheduleDate.getTime())) {
+                                parsedData.push({
+                                    employee: employeeName,
+                                    date: scheduleDate,
+                                    dateStr: dateStr,
+                                    day: dayHeader,
+                                    startTime: startTime,
+                                    endTime: endTime,
+                                    timeRange: `${startTime} - ${endTime}`
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        if (this.config.DEBUG_MODE) {
+                            console.warn(`Failed to parse date ${dateStr} for ${employeeName}:`, error);
+                        }
+                    }
+                }
+            });
+        }
+        
+        return parsedData;
+    }
+    
+    getCachedScheduleData() {
+        try {
+            const cached = localStorage.getItem(this.config.SCHEDULE_CACHE_KEY);
+            return cached ? JSON.parse(cached) : null;
+        } catch (error) {
+            console.error('Failed to parse cached schedule data:', error);
+            return null;
+        }
+    }
+    
+    cacheScheduleData(data) {
+        try {
+            localStorage.setItem(this.config.SCHEDULE_CACHE_KEY, JSON.stringify(data));
+            localStorage.setItem('lastScheduleUpdate', Date.now().toString());
+        } catch (error) {
+            console.error('Failed to cache schedule data:', error);
+        }
+    }
+    
+    parseScheduleCSV(csvText) {
+        const lines = csvText.split(/\r?\n/).filter(line => line.trim());
+        
+        if (lines.length < 3) {
+            console.error('Invalid schedule CSV format');
+            return [];
+        }
+        
+        const parsedData = [];
+        let currentTableStart = -1;
+        
+        // Find all schedule tables in the CSV
+        for (let i = 0; i < lines.length; i++) {
+            const parsedLine = this.parseCSVLine(lines[i]);
+            const firstCell = parsedLine[0]?.trim().toLowerCase();
+            
+            // Check if this is a table header row (starts with "Employee")
+            if (firstCell === 'employee') {
+                const headerLine = parsedLine;
+                const dayHeaders = headerLine.slice(1); // Skip "Employee" column
+                
+                // Get date row (next line)
+                if (i + 1 < lines.length) {
+                    const dateLine = this.parseCSVLine(lines[i + 1]);
+                    const dates = dateLine.length > 1 ? dateLine.slice(1) : dateLine;
+                    
+                    // Parse employee rows (every 2 rows: name + end times)
+                    for (let j = i + 2; j < lines.length; j += 2) {
+                        const nameLine = this.parseCSVLine(lines[j]);
+                        const employeeName = nameLine[0]?.trim();
+                        
+                        // Check if we've hit the next table (empty row, new header, or week label)
+                        if (!employeeName || employeeName.toLowerCase().startsWith('week') || employeeName.toLowerCase() === 'employee') {
+                            break;
+                        }
+                        
+                        // Get end times from next line if it exists
+                        const endTimeLine = j + 1 < lines.length ? this.parseCSVLine(lines[j + 1]) : [];
+                        
+                        // Check if end time line is actually employee data or next table
+                        if (endTimeLine[0] && endTimeLine[0].trim() && 
+                            !endTimeLine[0].trim().match(/^\d{1,2}:\d{2}\s*(AM|PM)$/i) &&
+                            endTimeLine[0].trim().toLowerCase() !== 'employee') {
+                            // This might be the next employee or table, skip
+                            j -= 1; // Adjust to process this line as employee name
+                            continue;
+                        }
+                        
+                        // Process each day
+                        dayHeaders.forEach((dayHeader, dayIndex) => {
+                            const startTime = nameLine[dayIndex + 1]?.trim();
+                            const endTime = endTimeLine[dayIndex + 1]?.trim();
+                            const dateStr = dates[dayIndex]?.trim();
+                            
+                            if (startTime && endTime && dateStr) {
+                                try {
+                                    // Parse date (MM/DD format)
+                                    const dateParts = dateStr.split('/');
+                                    if (dateParts.length === 2) {
+                                        const month = parseInt(dateParts[0], 10);
+                                        const day = parseInt(dateParts[1], 10);
+                                        const currentYear = new Date().getFullYear();
+                                        const scheduleDate = new Date(currentYear, month - 1, day);
+                                        
+                                        // Validate date
+                                        if (!isNaN(scheduleDate.getTime())) {
+                                            parsedData.push({
+                                                employee: employeeName,
+                                                date: scheduleDate,
+                                                dateStr: dateStr,
+                                                day: dayHeader,
+                                                startTime: startTime,
+                                                endTime: endTime,
+                                                timeRange: `${startTime} - ${endTime}`
+                                            });
+                                        }
+                                    }
+                                } catch (error) {
+                                    if (this.config.DEBUG_MODE) {
+                                        console.warn(`Failed to parse date ${dateStr} for ${employeeName}:`, error);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        
+        return parsedData;
+    }
+    
+    isScheduleCacheValid() {
+        try {
+            const lastUpdate = localStorage.getItem('lastScheduleUpdate');
+            if (!lastUpdate) return false;
+            
+            const cacheAge = Date.now() - parseInt(lastUpdate);
+            return cacheAge < this.config.SCHEDULE_CACHE_DURATION;
+        } catch (error) {
+            return false;
+        }
+    }
+    
+    getScheduleForWeek(weekIndex) {
+        if (weekIndex >= 0 && weekIndex < this.scheduleWeeks.length) {
+            return this.scheduleWeeks[weekIndex].shifts || [];
+        }
+        return [];
+    }
+    
+    getScheduleForDate(date) {
+        const targetDate = new Date(date);
+        targetDate.setHours(0, 0, 0, 0);
+        
+        return this.scheduleData.filter(shift => {
+            const shiftDate = new Date(shift.date);
+            shiftDate.setHours(0, 0, 0, 0);
+            return shiftDate.getTime() === targetDate.getTime();
+        });
+    }
+    
     showSplashScreen() {
         if (this.elements.splashScreen) {
             this.elements.splashScreen.style.display = 'flex';
@@ -616,7 +1115,9 @@ class ProtectApp {
             this.elements.mainApp.classList.add('authenticated');
             this.isAuthenticated = true;
             this.startTimeDateDisplay();
-            this.initializeDeviceFlow();
+            this.startHomeClock();
+            // Show Home tab by default
+            this.switchTab('home');
         }, 400);
     }
     
@@ -1440,8 +1941,314 @@ class ProtectApp {
             this.closeSettings();
         }
         
-        // Return to brand selection (home/start)
-        this.showBrandStep();
+        // Switch to Home tab
+        this.switchTab('home');
+    }
+    
+    // ========== TAB MANAGEMENT ==========
+    
+    switchTab(tabName) {
+        if (this.currentTab === tabName) return;
+        
+        this.currentTab = tabName;
+        
+        // Hide all tabs
+        if (this.elements.homeTab) this.elements.homeTab.classList.remove('active');
+        if (this.elements.scheduleTab) this.elements.scheduleTab.classList.remove('active');
+        if (this.elements.protectTab) this.elements.protectTab.classList.remove('active');
+        
+        // Remove active class from all nav items
+        if (this.elements.homeTabBtn) this.elements.homeTabBtn.classList.remove('active');
+        if (this.elements.scheduleTabBtn) this.elements.scheduleTabBtn.classList.remove('active');
+        if (this.elements.protectTabBtn) this.elements.protectTabBtn.classList.remove('active');
+        
+        // Show selected tab and activate nav button
+        switch(tabName) {
+            case 'home':
+                this.showHomeTab();
+                break;
+            case 'schedule':
+                this.showScheduleTab();
+                break;
+            case 'protect':
+                this.showProtectTab();
+                break;
+        }
+    }
+    
+    showHomeTab() {
+        if (this.elements.homeTab) {
+            this.elements.homeTab.classList.add('active');
+        }
+        if (this.elements.homeTabBtn) {
+            this.elements.homeTabBtn.classList.add('active');
+        }
+        this.updateHomeClock();
+    }
+    
+    showScheduleTab() {
+        if (this.elements.scheduleTab) {
+            this.elements.scheduleTab.classList.add('active');
+        }
+        if (this.elements.scheduleTabBtn) {
+            this.elements.scheduleTabBtn.classList.add('active');
+        }
+        
+        // Render schedule with current week
+        this.renderSchedule();
+    }
+    
+    showProtectTab() {
+        if (this.elements.protectTab) {
+            this.elements.protectTab.classList.add('active');
+        }
+        if (this.elements.protectTabBtn) {
+            this.elements.protectTabBtn.classList.add('active');
+        }
+        
+        // Initialize device flow if not already done
+        if (!this.allBrands || this.allBrands.length === 0) {
+            this.initializeDeviceFlow();
+        }
+    }
+    
+    // ========== HOME TAB CLOCK ==========
+    
+    startHomeClock() {
+        this.updateHomeClock();
+        if (this.homeClockInterval) {
+            clearInterval(this.homeClockInterval);
+        }
+        this.homeClockInterval = setInterval(() => this.updateHomeClock(), 1000);
+    }
+    
+    updateHomeClock() {
+        if (!this.elements.clockTime || !this.elements.clockPeriod || !this.elements.homeDate) return;
+        
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        
+        this.elements.clockTime.textContent = `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        this.elements.clockPeriod.textContent = period;
+        
+        // Update date
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        this.elements.homeDate.textContent = now.toLocaleDateString('en-US', dateOptions);
+    }
+    
+    // ========== SCHEDULE RENDERING ==========
+    
+    switchScheduleView(view) {
+        this.currentScheduleView = view;
+        
+        if (view === 'daily') {
+            if (this.elements.dailyViewBtn) this.elements.dailyViewBtn.classList.add('active');
+            if (this.elements.weeklyViewBtn) this.elements.weeklyViewBtn.classList.remove('active');
+            if (this.elements.dailyScheduleView) this.elements.dailyScheduleView.classList.add('active');
+            if (this.elements.weeklyScheduleView) this.elements.weeklyScheduleView.classList.remove('active');
+            // Reset to today when switching to daily view
+            this.currentSelectedDate = new Date();
+        } else {
+            if (this.elements.dailyViewBtn) this.elements.dailyViewBtn.classList.remove('active');
+            if (this.elements.weeklyViewBtn) this.elements.weeklyViewBtn.classList.add('active');
+            if (this.elements.dailyScheduleView) this.elements.dailyScheduleView.classList.remove('active');
+            if (this.elements.weeklyScheduleView) this.elements.weeklyScheduleView.classList.add('active');
+        }
+        
+        this.renderSchedule();
+    }
+    
+    changeWeek(direction) {
+        this.currentWeekIndex = Math.max(0, Math.min(this.scheduleWeeks.length - 1, this.currentWeekIndex + direction));
+        this.renderSchedule();
+    }
+    
+    changeDay(direction) {
+        const newDate = new Date(this.currentSelectedDate);
+        newDate.setDate(newDate.getDate() + direction);
+        this.currentSelectedDate = newDate;
+        this.renderSchedule();
+    }
+    
+    renderSchedule() {
+        if (this.currentScheduleView === 'daily') {
+            this.renderDailySchedule();
+        } else {
+            this.renderWeeklySchedule();
+        }
+    }
+    
+    renderDailySchedule() {
+        if (!this.elements.dailyScheduleList || !this.elements.dailyDate) return;
+        
+        const selectedDate = new Date(this.currentSelectedDate);
+        selectedDate.setHours(0, 0, 0, 0);
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const isToday = selectedDate.getTime() === today.getTime();
+        
+        // Get schedule for selected date
+        const daySchedule = this.getScheduleForDate(selectedDate);
+        
+        // Update date display
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateLabel = isToday 
+            ? `Today, ${selectedDate.toLocaleDateString('en-US', dateOptions)}`
+            : selectedDate.toLocaleDateString('en-US', dateOptions);
+        this.elements.dailyDate.textContent = dateLabel;
+        
+        // Update navigation label
+        if (this.elements.weekLabel) {
+            this.elements.weekLabel.textContent = isToday ? 'Today' : selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        
+        // Update navigation buttons - allow navigation within current week (Thu-Wed)
+        if (this.elements.prevWeekBtn && this.elements.nextWeekBtn) {
+            // Find which week contains the selected date
+            const dayOfWeek = selectedDate.getDay();
+            const daysFromThursday = dayOfWeek >= 4 ? dayOfWeek - 4 : dayOfWeek + 3;
+            const weekThursday = new Date(selectedDate);
+            weekThursday.setDate(selectedDate.getDate() - daysFromThursday);
+            weekThursday.setHours(0, 0, 0, 0);
+            
+            // Check if we can go back (not before Thursday of current week)
+            const weekStart = new Date(weekThursday);
+            const canGoBack = selectedDate.getTime() > weekStart.getTime();
+            
+            // Check if we can go forward (not after Wednesday of current week)
+            const weekEnd = new Date(weekThursday);
+            weekEnd.setDate(weekThursday.getDate() + 6);
+            const canGoForward = selectedDate.getTime() < weekEnd.getTime();
+            
+            this.elements.prevWeekBtn.disabled = !canGoBack;
+            this.elements.nextWeekBtn.disabled = !canGoForward;
+        }
+        
+        // Clear and render
+        this.elements.dailyScheduleList.innerHTML = '';
+        
+        if (daySchedule.length === 0) {
+            if (this.elements.dailyEmptyState) {
+                this.elements.dailyEmptyState.style.display = 'block';
+            }
+            return;
+        }
+        
+        if (this.elements.dailyEmptyState) {
+            this.elements.dailyEmptyState.style.display = 'none';
+        }
+        
+        // Group by employee (in case of multiple shifts)
+        const employeeShifts = {};
+        daySchedule.forEach(shift => {
+            if (!employeeShifts[shift.employee]) {
+                employeeShifts[shift.employee] = [];
+            }
+            employeeShifts[shift.employee].push(shift);
+        });
+        
+        // Render employee cards
+        Object.keys(employeeShifts).sort().forEach(employee => {
+            const shifts = employeeShifts[employee];
+            const card = document.createElement('div');
+            card.className = 'schedule-employee-card';
+            
+            const timeRanges = shifts.map(s => s.timeRange).join(', ');
+            card.innerHTML = `
+                <div class="employee-name">${employee}</div>
+                <div class="employee-shift">${timeRanges}</div>
+            `;
+            
+            this.elements.dailyScheduleList.appendChild(card);
+        });
+    }
+    
+    renderWeeklySchedule() {
+        if (!this.elements.weeklyScheduleTable) return;
+        
+        const weekData = this.getScheduleForWeek(this.currentWeekIndex);
+        const currentWeek = this.scheduleWeeks[this.currentWeekIndex];
+        
+        // Update week label
+        if (this.elements.weekLabel && currentWeek) {
+            this.elements.weekLabel.textContent = currentWeek.label;
+        }
+        
+        // Update navigation buttons
+        if (this.elements.prevWeekBtn) {
+            this.elements.prevWeekBtn.disabled = this.currentWeekIndex === 0;
+        }
+        if (this.elements.nextWeekBtn) {
+            this.elements.nextWeekBtn.disabled = this.currentWeekIndex >= this.scheduleWeeks.length - 1;
+        }
+        
+        if (weekData.length === 0) {
+            if (this.elements.weeklyEmptyState) {
+                this.elements.weeklyEmptyState.style.display = 'block';
+            }
+            this.elements.weeklyScheduleTable.innerHTML = '';
+            return;
+        }
+        
+        if (this.elements.weeklyEmptyState) {
+            this.elements.weeklyEmptyState.style.display = 'none';
+        }
+        
+        // Group by employee and day, and collect actual dates from data
+        const employeeSchedule = {};
+        const days = ['THU', 'FRI', 'SAT', 'SUN', 'MON', 'TUE', 'WED'];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Map to store actual dates for each day from the schedule data
+        const dayDateMap = {};
+        
+        weekData.forEach(shift => {
+            if (!employeeSchedule[shift.employee]) {
+                employeeSchedule[shift.employee] = {};
+            }
+            employeeSchedule[shift.employee][shift.day] = shift;
+            
+            // Store the actual date for this day
+            if (!dayDateMap[shift.day]) {
+                dayDateMap[shift.day] = {
+                    date: new Date(shift.date),
+                    dateStr: shift.dateStr
+                };
+            }
+        });
+        
+        // Create table
+        let tableHTML = '<table class="schedule-table"><thead><tr><th>Employee</th>';
+        days.forEach((day) => {
+            const dayData = dayDateMap[day];
+            const dateStr = dayData ? dayData.dateStr : '';
+            const dateForDay = dayData ? dayData.date : null;
+            const isToday = dateForDay && dateForDay.getTime() === today.getTime();
+            tableHTML += `<th class="${isToday ? 'today' : ''}">${day}<br><span class="date-label">${dateStr}</span></th>`;
+        });
+        tableHTML += '</tr></thead><tbody>';
+        
+        // Add employee rows
+        Object.keys(employeeSchedule).sort().forEach(employee => {
+            tableHTML += `<tr><td class="employee-cell">${employee}</td>`;
+            days.forEach(day => {
+                const shift = employeeSchedule[employee][day];
+                if (shift) {
+                    tableHTML += `<td class="schedule-cell"><div class="schedule-time">${shift.timeRange}</div></td>`;
+                } else {
+                    tableHTML += '<td class="schedule-cell empty"></td>';
+                }
+            });
+            tableHTML += '</tr>';
+        });
+        
+        tableHTML += '</tbody></table>';
+        this.elements.weeklyScheduleTable.innerHTML = tableHTML;
     }
     
     async refreshData() {

@@ -1,6 +1,6 @@
 {
   "name": "protectforever",
-  "version": "2.0.0",
+  "version": "1.12.18",
   "description": "Modern mobile-first device protection management PWA",
   "main": "index.html",
   "scripts": {

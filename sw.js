@@ -1,5 +1,5 @@
-// Modern Service Worker for Protect PWA
-const CACHE_NAME = 'protect-v3';
+// Modern Service Worker for StoreView PWA
+const CACHE_NAME = 'storeview-v3';
 const STATIC_CACHE_URLS = [
     '/',
     '/index.html',
@@ -226,7 +226,7 @@ self.addEventListener('push', event => {
     };
     
     event.waitUntil(
-        self.registration.showNotification('Protect', options)
+        self.registration.showNotification('StoreView', options)
     );
 });
 

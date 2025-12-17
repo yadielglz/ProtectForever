@@ -1,4 +1,4 @@
-// Configuration file for Protect
+// Configuration file for StoreView
 // Edit this file to customize your Google Sheets integration
 
 const CONFIG = {
@@ -26,11 +26,16 @@ const CONFIG = {
     
     // Cache settings
     CACHE_DURATION: 5 * 60 * 1000, // 5 minutes in milliseconds
-    CACHE_KEY: 'protect_serve_data_cache',
+    CACHE_KEY: 'storeview_data_cache',
+    
+    // Schedule Google Sheets URL (single sheet with 3 schedule tables: Week0, Week1, Week2)
+    SCHEDULE_SHEETS_URL: 'https://docs.google.com/spreadsheets/d/1RcMXkA2uaQK-ixK9K5EpOnszRAvzM_d3ZXVDsHsvOMw/export?format=csv',
+    SCHEDULE_CACHE_KEY: 'storeview_schedule_data_cache',
+    SCHEDULE_CACHE_DURATION: 60 * 60 * 1000, // 1 hour in milliseconds (schedules change less frequently)
     
     // App settings
-    APP_NAME: 'Protect',
-    APP_VERSION: '2.0.0',
+    APP_NAME: 'StoreView',
+    APP_VERSION: '1.12.18',
     
     // Security settings
     PASSCODE: '6974',

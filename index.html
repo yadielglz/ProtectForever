@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Protect">
+    <meta name="apple-mobile-web-app-title" content="StoreView">
     <meta name="theme-color" content="#E20074">
     <meta name="msapplication-TileColor" content="#E20074">
     <meta name="msapplication-TileImage" content="icon-192x192.png">
     
-    <title>Protect - Device Protection</title>
+    <title>StoreView - Employee Dashboard</title>
     
     <!-- Preload critical resources -->
     <link rel="preload" href="styles.css" as="style">
@@ -38,10 +38,10 @@
     <div id="splashScreen" class="splash-screen">
         <div class="splash-container">
             <div class="splash-logo">
-                <img src="https://i.ibb.co/ZpV0Xn3y/Chat-GPT-Image-Oct-19-2025-08-27-49-PM.png" alt="Protect" class="splash-icon">
+                <img src="https://i.ibb.co/ZpV0Xn3y/Chat-GPT-Image-Oct-19-2025-08-27-49-PM.png" alt="StoreView" class="splash-icon">
             </div>
-            <div class="splash-title">Protect</div>
-            <div class="splash-subtitle">Device Protection Solutions</div>
+            <div class="splash-title">StoreView</div>
+            <div class="splash-subtitle">Employee Dashboard & Management</div>
             <div class="splash-loader">
                 <div class="loader-spinner"></div>
             </div>
@@ -58,7 +58,7 @@
                     <div class="logo-icon-modern">
                         <i class="fas fa-shield-alt"></i>
                     </div>
-                    <h1 class="app-title-modern">Protect</h1>
+                    <h1 class="app-title-modern">StoreView</h1>
                 </div>
                 <p class="passcode-subtitle-modern">Enter your access code</p>
                 
@@ -127,12 +127,15 @@
                 <div class="nav-left">
                     <div class="app-brand">
                         <div class="brand-icon">
-                            <img src="https://i.ibb.co/ZpV0Xn3y/Chat-GPT-Image-Oct-19-2025-08-27-49-PM.png" alt="Protect" class="header-icon">
+                            <img src="https://i.ibb.co/ZpV0Xn3y/Chat-GPT-Image-Oct-19-2025-08-27-49-PM.png" alt="StoreView" class="header-icon">
                         </div>
-                        <span class="brand-text">Protect</span>
+                        <span class="brand-text">StoreView</span>
                     </div>
                 </div>
                 <div class="nav-right">
+                    <button id="headerSettingsBtn" class="header-settings-btn" aria-label="Settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
                     <div id="timeDateDisplay" class="time-date-display">
                         <div id="currentTime" class="current-time">12:00 PM</div>
                         <div id="currentDate" class="current-date">Jan 1, 2024</div>
@@ -143,99 +146,179 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Welcome Section -->
-            <section class="welcome-section">
-                <div class="welcome-content">
-                    <h2 class="welcome-title">Find Your Device Protection</h2>
-                    <p class="welcome-subtitle">Select your device to view available protection options</p>
-                </div>
-            </section>
-
-            <!-- Device Selection Flow -->
-            <section class="device-flow">
-                <!-- Step 1: Brand Selection -->
-                <div id="brandStep" class="flow-step active">
-                    <div class="step-header">
-                        <div class="step-indicator">
-                            <span class="step-number">1</span>
-                            <span class="step-label">Choose Brand</span>
+            <!-- Home Tab -->
+            <div id="homeTab" class="tab-content active">
+                <section class="home-section">
+                    <div class="home-clock-container">
+                        <div id="homeClock" class="home-clock">
+                            <div class="clock-time" id="clockTime">12:00</div>
+                            <div class="clock-period" id="clockPeriod">PM</div>
                         </div>
+                        <div id="homeDate" class="home-date">Monday, January 1, 2024</div>
                     </div>
-                    <div class="search-container">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="brandSearch" class="search-input" placeholder="Search brands..." aria-label="Search brands">
-                            <button id="clearBrandSearch" class="search-clear" aria-label="Clear search" style="display: none;">
-                                <i class="fas fa-times"></i>
+                    <div class="home-welcome">
+                        <h2 class="welcome-title">Welcome to StoreView</h2>
+                        <p class="welcome-subtitle">Your employee dashboard and management solution</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Schedule Tab -->
+            <div id="scheduleTab" class="tab-content">
+                <section class="schedule-section">
+                    <div class="schedule-header">
+                        <div class="schedule-view-toggle">
+                            <button id="dailyViewBtn" class="view-toggle-btn active" data-view="daily">
+                                <i class="fas fa-calendar-day"></i>
+                                <span>Daily</span>
+                            </button>
+                            <button id="weeklyViewBtn" class="view-toggle-btn" data-view="weekly">
+                                <i class="fas fa-calendar-week"></i>
+                                <span>Weekly</span>
+                            </button>
+                        </div>
+                        <div class="week-selector">
+                            <button id="prevWeekBtn" class="week-nav-btn" aria-label="Previous week">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span id="weekLabel" class="week-label">This Week</span>
+                            <button id="nextWeekBtn" class="week-nav-btn" aria-label="Next week">
+                                <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
                     </div>
-                    <div id="brandGrid" class="brand-grid">
-                        <!-- Brand cards will be populated here -->
-                    </div>
-                    <div id="brandEmptyState" class="empty-state" style="display: none;">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-search"></i>
-                        </div>
-                        <div class="empty-state-title">No brands found</div>
-                        <div class="empty-state-message">Try adjusting your search</div>
-                    </div>
-                </div>
 
-                <!-- Step 2: Model Selection -->
-                <div id="modelStep" class="flow-step">
-                    <div class="step-header">
-                        <div class="step-indicator">
-                            <span class="step-number">2</span>
-                            <span class="step-label">Choose Model</span>
+                    <!-- Daily View -->
+                    <div id="dailyScheduleView" class="schedule-daily active">
+                        <div class="daily-header">
+                            <h3 id="dailyDate" class="daily-date-title">Today, January 1, 2024</h3>
                         </div>
-                        <button id="backToBrands" class="back-button" aria-label="Back to brand selection">
-                            <i class="fas fa-arrow-left"></i>
-                            <span>Back</span>
-                        </button>
-                    </div>
-                    <div class="search-container">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="modelSearch" class="search-input" placeholder="Search models..." aria-label="Search models">
-                            <button id="clearModelSearch" class="search-clear" aria-label="Clear search" style="display: none;">
-                                <i class="fas fa-times"></i>
-                            </button>
+                        <div id="dailyScheduleList" class="daily-schedule-list">
+                            <!-- Daily schedule items will be populated here -->
+                        </div>
+                        <div id="dailyEmptyState" class="empty-state" style="display: none;">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-calendar-times"></i>
+                            </div>
+                            <div class="empty-state-title">No shifts scheduled</div>
+                            <div class="empty-state-message">No employees are scheduled for this day</div>
                         </div>
                     </div>
-                    <div id="modelGrid" class="model-grid">
-                        <!-- Model cards will be populated here -->
-                    </div>
-                    <div id="modelEmptyState" class="empty-state" style="display: none;">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-search"></i>
+
+                    <!-- Weekly View -->
+                    <div id="weeklyScheduleView" class="schedule-weekly">
+                        <div id="weeklyScheduleTable" class="schedule-table-container">
+                            <!-- Weekly schedule table will be populated here -->
                         </div>
-                        <div class="empty-state-title">No models found</div>
-                        <div class="empty-state-message">Try adjusting your search</div>
+                        <div id="weeklyEmptyState" class="empty-state" style="display: none;">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-calendar-times"></i>
+                            </div>
+                            <div class="empty-state-title">No schedule available</div>
+                            <div class="empty-state-message">Schedule data is loading or unavailable</div>
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            </div>
+
+            <!-- Protect Tab (Device Selection Flow) -->
+            <div id="protectTab" class="tab-content">
+                <section class="protect-section">
+                    <!-- Welcome Section -->
+                    <section class="welcome-section">
+                        <div class="welcome-content">
+                            <h2 class="welcome-title">Find Your Device Protection</h2>
+                            <p class="welcome-subtitle">Select your device to view available protection options</p>
+                        </div>
+                    </section>
+
+                    <!-- Device Selection Flow -->
+                    <section class="device-flow">
+                        <!-- Step 1: Brand Selection -->
+                        <div id="brandStep" class="flow-step active">
+                            <div class="step-header">
+                                <div class="step-indicator">
+                                    <span class="step-number">1</span>
+                                    <span class="step-label">Choose Brand</span>
+                                </div>
+                            </div>
+                            <div class="search-container">
+                                <div class="search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="brandSearch" class="search-input" placeholder="Search brands..." aria-label="Search brands">
+                                    <button id="clearBrandSearch" class="search-clear" aria-label="Clear search" style="display: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="brandGrid" class="brand-grid">
+                                <!-- Brand cards will be populated here -->
+                            </div>
+                            <div id="brandEmptyState" class="empty-state" style="display: none;">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div class="empty-state-title">No brands found</div>
+                                <div class="empty-state-message">Try adjusting your search</div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Model Selection -->
+                        <div id="modelStep" class="flow-step">
+                            <div class="step-header">
+                                <div class="step-indicator">
+                                    <span class="step-number">2</span>
+                                    <span class="step-label">Choose Model</span>
+                                </div>
+                                <button id="backToBrands" class="back-button" aria-label="Back to brand selection">
+                                    <i class="fas fa-arrow-left"></i>
+                                    <span>Back</span>
+                                </button>
+                            </div>
+                            <div class="search-container">
+                                <div class="search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="modelSearch" class="search-input" placeholder="Search models..." aria-label="Search models">
+                                    <button id="clearModelSearch" class="search-clear" aria-label="Clear search" style="display: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="modelGrid" class="model-grid">
+                                <!-- Model cards will be populated here -->
+                            </div>
+                            <div id="modelEmptyState" class="empty-state" style="display: none;">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div class="empty-state-title">No models found</div>
+                                <div class="empty-state-message">Try adjusting your search</div>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+            </div>
         </main>
 
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
-            <div class="nav-item active" id="homeNavBtn">
+            <div class="nav-item active" id="homeTabBtn" data-tab="home">
                 <div class="nav-icon">
                     <i class="fas fa-home"></i>
                 </div>
                 <span class="nav-label">Home</span>
             </div>
-            <div class="nav-item" id="settingsNavBtn">
+            <div class="nav-item" id="scheduleTabBtn" data-tab="schedule">
                 <div class="nav-icon">
-                    <i class="fas fa-cog"></i>
+                    <i class="fas fa-calendar-alt"></i>
                 </div>
-                <span class="nav-label">Settings</span>
+                <span class="nav-label">Schedule</span>
             </div>
-            <div class="nav-item" id="timerNavBtn">
+            <div class="nav-item" id="protectTabBtn" data-tab="protect">
                 <div class="nav-icon">
-                    <i class="fas fa-clock"></i>
+                    <i class="fas fa-shield-alt"></i>
                 </div>
-                <span class="nav-label" id="timerNavLabel">20</span>
+                <span class="nav-label">Protect</span>
             </div>
         </nav>
     </div>
@@ -325,7 +408,7 @@
                 <div class="version-info">
                     <div class="version-text">
                         <i class="fas fa-info-circle"></i>
-                        <span>Version 1.11.03.L1</span>
+                        <span>Version 1.12.18</span>
                     </div>
                     <div class="copyright-text">
                         Copyright © Glz Technical Services
