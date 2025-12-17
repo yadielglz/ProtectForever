@@ -269,13 +269,9 @@ class ProtectApp {
         this.elements.weatherZipSave = document.getElementById('weatherZipSave');
         this.elements.weatherUnitF = document.getElementById('weatherUnitF');
         this.elements.weatherUnitC = document.getElementById('weatherUnitC');
-        this.elements.themeLight = document.getElementById('themeLight');
-        this.elements.themeDark = document.getElementById('themeDark');
         this.elements.weatherToggle = document.getElementById('weatherToggle');
         this.elements.weatherBody = document.getElementById('weatherBody');
         this.elements.weatherRefreshBtn = document.getElementById('weatherRefreshBtn');
-        this.elements.themeToggle = document.getElementById('themeToggle');
-        this.elements.themeBody = document.getElementById('themeBody');
         
         // Schedule tab elements
         this.elements.dailyViewBtn = document.getElementById('dailyViewBtn');
@@ -418,15 +414,6 @@ class ProtectApp {
         }
         if (this.elements.weatherUnitC) {
             this.elements.weatherUnitC.addEventListener('click', () => this.setWeatherUnit('celsius'));
-        }
-        if (this.elements.themeToggle) {
-            this.elements.themeToggle.addEventListener('click', () => this.toggleThemeSettings());
-        }
-        if (this.elements.themeLight) {
-            this.elements.themeLight.addEventListener('click', () => this.setTheme('light'));
-        }
-        if (this.elements.themeDark) {
-            this.elements.themeDark.addEventListener('click', () => this.setTheme('dark'));
         }
         if (this.elements.promoRefreshBtn) {
             this.elements.promoRefreshBtn.addEventListener('click', () => this.loadPromos(true));
@@ -2220,17 +2207,11 @@ class ProtectApp {
         this.homeTimers.storeHours = setInterval(() => this.updateStoreHours(), 60000);
         this.applyStoredWeatherUnitToUI();
         this.populateWeatherZipInput();
-        this.applyStoredTheme();
         // Ensure collapsibles default closed
         if (this.elements.weatherBody) {
             this.elements.weatherBody.classList.remove('show');
             this.elements.weatherBody.setAttribute('aria-hidden', 'true');
             this.elements.weatherToggle?.setAttribute('aria-expanded', 'false');
-        }
-        if (this.elements.themeBody) {
-            this.elements.themeBody.classList.remove('show');
-            this.elements.themeBody.setAttribute('aria-hidden', 'true');
-            this.elements.themeToggle?.setAttribute('aria-expanded', 'false');
         }
         this.requestWeather();
     }
@@ -2512,39 +2493,6 @@ class ProtectApp {
         return unit === 'celsius' ? 'celsius' : 'fahrenheit';
     }
 
-    // ========== THEME ==========
-    setTheme(theme) {
-        const mode = theme === 'dark' ? 'dark' : 'light';
-        localStorage.setItem('appTheme', mode);
-        this.applyStoredTheme();
-    }
-
-    getStoredTheme() {
-        try {
-            const stored = localStorage.getItem('appTheme');
-            if (stored === 'dark' || stored === 'light') return stored;
-        } catch (e) {}
-        // Fallback to system preference
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return 'dark';
-        }
-        return 'light';
-    }
-
-    applyStoredTheme() {
-        const theme = this.getStoredTheme();
-        const body = document.body;
-        if (theme === 'dark') {
-            body.classList.add('dark-mode');
-        } else {
-            body.classList.remove('dark-mode');
-        }
-        if (this.elements.themeLight && this.elements.themeDark) {
-            this.elements.themeLight.classList.toggle('active', theme === 'light');
-            this.elements.themeDark.classList.toggle('active', theme === 'dark');
-        }
-    }
-
     toggleMaintenance() {
         if (!this.elements.maintenanceToggle || !this.elements.maintenanceBody) return;
         const expanded = this.elements.maintenanceToggle.getAttribute('aria-expanded') === 'true';
@@ -2579,14 +2527,6 @@ class ProtectApp {
         this.elements.weatherToggle.setAttribute('aria-expanded', (!expanded).toString());
         this.elements.weatherBody.classList.toggle('show', !expanded);
         this.elements.weatherBody.setAttribute('aria-hidden', expanded ? 'true' : 'false');
-    }
-
-    toggleThemeSettings() {
-        if (!this.elements.themeToggle || !this.elements.themeBody) return;
-        const expanded = this.elements.themeToggle.getAttribute('aria-expanded') === 'true';
-        this.elements.themeToggle.setAttribute('aria-expanded', (!expanded).toString());
-        this.elements.themeBody.classList.toggle('show', !expanded);
-        this.elements.themeBody.setAttribute('aria-hidden', expanded ? 'true' : 'false');
     }
 
     async fetchLocationName(coords) {
