@@ -3392,9 +3392,44 @@ body.dark-mode .weather-card,
 body.dark-mode .store-hours-card,
 body.dark-mode .settings-option,
 body.dark-mode .schedule-employee-card,
-body.dark-mode .modal-container {
+body.dark-mode .modal-container,
+body.dark-mode .contact-card {
     background: var(--bg-secondary);
     border-color: var(--gray-300);
+}
+
+body.dark-mode .nav-header {
+    background: linear-gradient(135deg, rgba(226, 0, 116, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .time-date-display,
+body.dark-mode .network-status {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+}
+
+body.dark-mode .bottom-nav {
+    background: var(--bg-secondary);
+    border-top-color: var(--gray-300);
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
+}
+
+body.dark-mode .nav-item:not(.active) {
+    color: var(--text-secondary);
+}
+
+body.dark-mode .nav-item.active {
+    background: var(--primary);
+    color: var(--text-inverse);
+}
+
+body.dark-mode .main-app {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(226, 0, 116, 0.06), transparent 38%),
+        radial-gradient(circle at 82% 0%, rgba(99, 102, 241, 0.08), transparent 34%),
+        linear-gradient(180deg, #0f172a 0%, #0b1224 45%, #0f172a 100%);
 }
 
 .settings-footer {
