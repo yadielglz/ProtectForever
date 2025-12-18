@@ -191,7 +191,8 @@ class ProtectApp {
             
             await Promise.all([
                 this.loadData(),
-                this.loadScheduleData()
+                this.loadScheduleData(),
+                this.loadSalesData()
             ]);
             this.hideLoading();
             setTimeout(() => {
@@ -228,14 +229,18 @@ class ProtectApp {
         
         // Bottom navigation
         this.elements.homeTabBtn = document.getElementById('homeTabBtn');
+        this.elements.salesTabBtn = document.getElementById('salesTabBtn');
         this.elements.scheduleTabBtn = document.getElementById('scheduleTabBtn');
         this.elements.protectTabBtn = document.getElementById('protectTabBtn');
+        this.elements.shiftTabBtn = document.getElementById('shiftTabBtn');
         this.elements.settingsTabBtn = document.getElementById('settingsTabBtn');
         this.elements.promoTabBtn = document.getElementById('promoTabBtn');
         
         // Tab content
         this.elements.homeTab = document.getElementById('homeTab');
+        this.elements.salesTab = document.getElementById('salesTab');
         this.elements.scheduleTab = document.getElementById('scheduleTab');
+        this.elements.shiftTab = document.getElementById('shiftTab');
         this.elements.protectTab = document.getElementById('protectTab');
         this.elements.promoTab = document.getElementById('promoTab');
         this.elements.promoList = document.getElementById('promoList');
@@ -270,6 +275,11 @@ class ProtectApp {
         this.elements.storeProgressBar = document.getElementById('storeProgressBar');
         this.elements.storeStatus = document.getElementById('storeStatus');
         this.elements.storeProgressLabel = document.getElementById('storeProgressLabel');
+        this.elements.homeSalesWidget = document.getElementById('homeSalesWidget');
+        this.elements.homeSalesBar = document.getElementById('homeSalesBar');
+        this.elements.homeSalesChip = document.getElementById('homeSalesChip');
+        this.elements.homeSalesGoal = document.getElementById('homeSalesGoal');
+        this.elements.homeSalesActual = document.getElementById('homeSalesActual');
         this.elements.weatherZipInput = document.getElementById('weatherZipInput');
         this.elements.weatherZipSave = document.getElementById('weatherZipSave');
         this.elements.weatherUnitF = document.getElementById('weatherUnitF');
@@ -291,6 +301,19 @@ class ProtectApp {
         this.elements.nextWeekBtn = document.getElementById('nextWeekBtn');
         this.elements.dailyEmptyState = document.getElementById('dailyEmptyState');
         this.elements.weeklyEmptyState = document.getElementById('weeklyEmptyState');
+        this.elements.shiftTrackList = document.getElementById('shiftTrackList');
+        this.elements.shiftTrackEmpty = document.getElementById('shiftTrackEmpty');
+        this.elements.shiftTrackSubtitle = document.getElementById('shiftTrackSubtitle');
+        this.elements.refreshShiftTrackBtn = document.getElementById('refreshShiftTrackBtn');
+        this.elements.salesRefreshBtn = document.getElementById('salesRefreshBtn');
+        this.elements.salesStatus = document.getElementById('salesStatus');
+        this.salesElements = {
+            VL: { bar: document.getElementById('vlBar'), chip: document.getElementById('vlChip'), actual: document.getElementById('vlActual'), goal: document.getElementById('vlGoal') },
+            BTS: { bar: document.getElementById('btsBar'), chip: document.getElementById('btsChip'), actual: document.getElementById('btsActual'), goal: document.getElementById('btsGoal') },
+            HSI: { bar: document.getElementById('hsiBar'), chip: document.getElementById('hsiChip'), actual: document.getElementById('hsiActual'), goal: document.getElementById('hsiGoal') },
+            HINT: { bar: document.getElementById('hintBar'), chip: document.getElementById('hintChip'), actual: document.getElementById('hintActual'), goal: document.getElementById('hintGoal') },
+            ACC: { bar: document.getElementById('accBar'), chip: document.getElementById('accChip'), actual: document.getElementById('accActual'), goal: document.getElementById('accGoal') },
+        };
         
         // Device flow
         this.elements.brandStep = document.getElementById('brandStep');
@@ -327,6 +350,10 @@ class ProtectApp {
         this.elements.clearCacheBtn = document.getElementById('clearCacheBtn');
         this.elements.reloadAppBtn = document.getElementById('reloadAppBtn');
         this.elements.appVersionText = document.getElementById('appVersionText');
+        this.elements.settingsTimerValue = document.getElementById('settingsTimerValue');
+        this.elements.settingsTimerBar = document.getElementById('settingsTimerBar');
+        this.elements.settingsTimerCard = document.getElementById('settingsTimerCard');
+        this.elements.showTimerInfoBtn = document.getElementById('showTimerInfoBtn');
         
         // Toast and loading
         this.elements.toastContainer = document.getElementById('toastContainer');
@@ -357,8 +384,14 @@ class ProtectApp {
         
         // Bottom navigation - Tab switching
         this.elements.homeTabBtn.addEventListener('click', () => this.switchTab('home'));
+        if (this.elements.salesTabBtn) {
+            this.elements.salesTabBtn.addEventListener('click', () => this.switchTab('sales'));
+        }
         this.elements.scheduleTabBtn.addEventListener('click', () => this.switchTab('schedule'));
         this.elements.protectTabBtn.addEventListener('click', () => this.switchTab('protect'));
+        if (this.elements.shiftTabBtn) {
+            this.elements.shiftTabBtn.addEventListener('click', () => this.switchTab('shift'));
+        }
         if (this.elements.promoTabBtn) {
             this.elements.promoTabBtn.addEventListener('click', () => this.switchTab('promo'));
         }
@@ -367,6 +400,12 @@ class ProtectApp {
         }
         if (this.elements.timerNavBtn) {
             this.elements.timerNavBtn.addEventListener('click', () => this.showTimerInfo());
+        }
+        if (this.elements.showTimerInfoBtn) {
+            this.elements.showTimerInfoBtn.addEventListener('click', () => this.showTimerInfo());
+        }
+        if (this.elements.settingsTimerCard) {
+            this.elements.settingsTimerCard.addEventListener('click', () => this.showTimerInfo());
         }
         
         // Schedule view toggles
@@ -395,6 +434,12 @@ class ProtectApp {
                     this.changeWeek(1);
                 }
             });
+        }
+        if (this.elements.refreshShiftTrackBtn) {
+            this.elements.refreshShiftTrackBtn.addEventListener('click', () => this.refreshShiftTrack());
+        }
+        if (this.elements.salesRefreshBtn) {
+            this.elements.salesRefreshBtn.addEventListener('click', () => this.refreshSalesTrack());
         }
         
         // Settings options
@@ -555,22 +600,39 @@ class ProtectApp {
     }
     
     updateTimerDisplay() {
-        if (!this.elements.timerNavLabel || !this.elements.timerNavBtn) return;
-        
         const remainingTime = this.getRemainingTime();
         const seconds = Math.floor(remainingTime / 1000);
+        const percentRemaining = Math.max(0, Math.min(100, (remainingTime / this.config.INACTIVITY_TIMEOUT) * 100));
         
-        // Display as SS format (e.g., 20, 19, 18...)
-        this.elements.timerNavLabel.textContent = `${seconds.toString().padStart(2, '0')}`;
+        // Header timer (if present)
+        if (this.elements.timerNavLabel) {
+            this.elements.timerNavLabel.textContent = `${seconds.toString().padStart(2, '0')}`;
+        }
+        if (this.elements.timerNavBtn) {
+            const timerBtn = this.elements.timerNavBtn;
+            timerBtn.classList.remove('warning', 'critical');
+            
+            if (remainingTime <= 5000) { // 5 seconds or less
+                timerBtn.classList.add('critical');
+            } else if (remainingTime <= 10000) { // 10 seconds or less
+                timerBtn.classList.add('warning');
+            }
+        }
         
-        // Update timer button styling based on remaining time
-        const timerBtn = this.elements.timerNavBtn;
-        timerBtn.classList.remove('warning', 'critical');
-        
-        if (remainingTime <= 5000) { // 5 seconds or less
-            timerBtn.classList.add('critical');
-        } else if (remainingTime <= 10000) { // 10 seconds or less
-            timerBtn.classList.add('warning');
+        // Settings session card
+        if (this.elements.settingsTimerValue) {
+            this.elements.settingsTimerValue.textContent = `${seconds}s`;
+        }
+        if (this.elements.settingsTimerBar) {
+            this.elements.settingsTimerBar.style.width = `${percentRemaining}%`;
+        }
+        if (this.elements.settingsTimerCard) {
+            this.elements.settingsTimerCard.classList.remove('warning', 'critical');
+            if (remainingTime <= 5000) {
+                this.elements.settingsTimerCard.classList.add('critical');
+            } else if (remainingTime <= 10000) {
+                this.elements.settingsTimerCard.classList.add('warning');
+            }
         }
     }
     
@@ -687,6 +749,235 @@ class ProtectApp {
         values.push(current.trim());
         return values;
     }
+
+    // SALES TRACK
+    toCsvUrl(url) {
+        if (!url) return '';
+        if (url.includes('/export?format=csv')) return url;
+        return url.replace(/\/edit.*$/, '/export?format=csv').replace(/\/view.*$/, '/export?format=csv');
+    }
+
+    getSalesData() {
+        // Clone config goals to avoid mutation
+        const goals = JSON.parse(JSON.stringify(this.config.SALES_GOALS || {}));
+        if (this.salesData) {
+            return {
+                VL: this.salesData.VL || goals.VL,
+                BTS: this.salesData.BTS || goals.BTS,
+                HSI: this.salesData.HSI || goals.HSI,
+                HINT: this.salesData.HINT || goals.HINT,
+                ACC: this.salesData.ACC || goals.ACC,
+                TL: this.salesData.TL || null
+            };
+        }
+        return goals;
+    }
+
+    computePercent(actual, goal) {
+        if (!goal || goal <= 0) return 0;
+        return Math.min(200, Math.max(0, (actual / goal) * 100));
+    }
+
+    renderSalesTrack() {
+        if (!this.salesElements) return;
+        const sales = this.getSalesData();
+
+        const applyMetric = (key, data) => {
+            const els = this.salesElements[key];
+            if (!els) return;
+            const goal = data?.goal || 0;
+            const actual = data?.actual || 0;
+            const pct = Math.round(this.computePercent(actual, goal));
+            if (els.bar) els.bar.style.width = `${Math.min(100, pct)}%`;
+            if (els.chip) els.chip.textContent = `${pct}%`;
+            if (els.actual) els.actual.textContent = actual;
+            if (els.goal) els.goal.textContent = goal;
+        };
+
+        applyMetric('VL', sales.VL);
+        applyMetric('BTS', sales.BTS);
+        applyMetric('HSI', sales.HSI);
+        applyMetric('HINT', sales.HINT);
+        applyMetric('ACC', sales.ACC);
+
+        // Update home widget for total lines (prefer TL from sheet; fallback to VL)
+        this.renderHomeSalesSummary(sales.TL || sales.VL);
+    }
+
+    refreshSalesTrack() {
+        this.loadSalesData(true)
+            .then(() => {
+                this.renderSalesTrack();
+                this.showToast('Sales refreshed', 'success');
+            })
+            .catch(() => this.showToast('Failed to refresh sales', 'error'));
+    }
+
+    renderHomeSalesSummary(vlData) {
+        if (!this.elements.homeSalesWidget || !vlData) return;
+        const goal = vlData.goal || 0;
+        const actual = vlData.actual || 0;
+        const pct = Math.round(this.computePercent(actual, goal));
+
+        if (this.elements.homeSalesBar) {
+            this.elements.homeSalesBar.style.width = `${Math.min(100, pct)}%`;
+        }
+        if (this.elements.homeSalesChip) {
+            this.elements.homeSalesChip.textContent = `${pct}%`;
+        }
+        if (this.elements.homeSalesGoal) {
+            this.elements.homeSalesGoal.textContent = goal;
+        }
+        if (this.elements.homeSalesActual) {
+            this.elements.homeSalesActual.textContent = actual;
+        }
+    }
+
+    parseSalesCSV(csvText) {
+        const lines = csvText.split(/\r?\n/).filter(line => line.trim());
+        if (lines.length < 2) return null;
+        const headers = this.parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+        const values = this.parseCSVLine(lines[1]);
+
+        const idx = (key) => headers.findIndex(h => h === key || h.includes(key));
+        const num = (val) => {
+            if (!val) return 0;
+            const cleaned = val.toString().replace(/[\$,]/g, '');
+            const n = parseFloat(cleaned);
+            return isNaN(n) ? 0 : n;
+        };
+
+        const data = {
+            VL: {
+                goal: num(values[idx('voice lines goal')]),
+                actual: num(values[idx('voice lines actual')])
+            },
+            BTS: {
+                goal: num(values[idx('bts goal')]),
+                actual: num(values[idx('bts actual')])
+            },
+            HSI: {
+                goal: num(values[idx('hsi goal')]),
+                actual: num(values[idx('hsi actual')])
+            },
+            HINT: {
+                goal: num(values[idx('hint goal')]), // may be missing
+                actual: num(values[idx('hint actual')])
+            },
+            ACC: {
+                goal: num(values[idx('accessory goal')]),
+                actual: num(values[idx('accessory actual')])
+            },
+            TL: {
+                goal: num(values[idx('total lines goal')]),
+                actual: num(values[idx('total lines actual')])
+            }
+        };
+        return data;
+    }
+
+    getCachedSalesData() {
+        try {
+            const cached = localStorage.getItem(this.config.SALES_CACHE_KEY);
+            return cached ? JSON.parse(cached) : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    cacheSalesData(data) {
+        try {
+            localStorage.setItem(this.config.SALES_CACHE_KEY, JSON.stringify(data));
+            localStorage.setItem('lastSalesUpdate', Date.now().toString());
+        } catch (error) {
+            console.error('Failed to cache sales data', error);
+        }
+    }
+
+    isSalesCacheValid() {
+        try {
+            const last = localStorage.getItem('lastSalesUpdate');
+            if (!last) return false;
+            const age = Date.now() - parseInt(last, 10);
+            return age < this.config.SALES_CACHE_DURATION;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    async loadSalesData(force = false) {
+        if (!force) {
+            const cached = this.getCachedSalesData();
+            if (cached && this.isSalesCacheValid()) {
+                this.salesData = cached;
+                return;
+            }
+        }
+
+        const sheetUrl = this.config.SALES_SHEET_URL;
+        if (!sheetUrl) {
+            if (this.config.DEBUG_MODE) console.warn('SALES_SHEET_URL not set; using defaults');
+            this.salesData = null;
+            return;
+        }
+
+        const csvUrl = this.toCsvUrl(sheetUrl);
+        let text = null;
+
+        try {
+            const res = await fetch(csvUrl);
+            if (res && res.ok) {
+                text = await res.text();
+                if (text && !text.includes('<html')) {
+                    if (this.config.DEBUG_MODE) console.log('Sales sheet loaded direct');
+                } else {
+                    text = null;
+                }
+            }
+        } catch (err) {
+            text = null;
+        }
+
+        if (!text) {
+            for (const proxy of this.config.CORS_PROXIES) {
+                try {
+                    const res = await fetch(proxy + encodeURIComponent(csvUrl));
+                    if (res && res.ok) {
+                        const t = await res.text();
+                        if (t && !t.includes('<html')) {
+                            text = t;
+                            if (this.config.DEBUG_MODE) console.log('Sales sheet loaded via proxy');
+                            break;
+                        }
+                    }
+                } catch (err) {
+                    continue;
+                }
+            }
+        }
+
+        if (!text) {
+            throw new Error('Failed to load sales sheet');
+        }
+
+        this.salesData = this.parseSalesCSV(text);
+        if (this.salesData) {
+            this.cacheSalesData(this.salesData);
+            // Update sales tab and home widget immediately after load
+            this.renderSalesTrack();
+            this.renderHomeSalesSummary(
+                this.salesData.TL ||
+                this.salesData.VL ||
+                this.config.SALES_GOALS?.VL ||
+                { goal: 0, actual: 0 }
+            );
+            if (this.elements.salesStatus) {
+                this.elements.salesStatus.textContent = 'Sales data loaded';
+            }
+        } else if (this.elements.salesStatus) {
+            this.elements.salesStatus.textContent = 'No sales data found';
+        }
+    }
     
     getCachedData() {
         try {
@@ -706,7 +997,7 @@ class ProtectApp {
             console.error('Failed to cache data:', error);
         }
     }
-    
+
     isCacheValid() {
         try {
             const lastUpdate = localStorage.getItem('lastDataUpdate');
@@ -2110,13 +2401,17 @@ class ProtectApp {
         
         // Hide all tabs
         if (this.elements.homeTab) this.elements.homeTab.classList.remove('active');
+        if (this.elements.salesTab) this.elements.salesTab.classList.remove('active');
         if (this.elements.scheduleTab) this.elements.scheduleTab.classList.remove('active');
+        if (this.elements.shiftTab) this.elements.shiftTab.classList.remove('active');
         if (this.elements.protectTab) this.elements.protectTab.classList.remove('active');
         if (this.elements.promoTab) this.elements.promoTab.classList.remove('active');
         
         // Remove active class from all nav items
         if (this.elements.homeTabBtn) this.elements.homeTabBtn.classList.remove('active');
+        if (this.elements.salesTabBtn) this.elements.salesTabBtn.classList.remove('active');
         if (this.elements.scheduleTabBtn) this.elements.scheduleTabBtn.classList.remove('active');
+        if (this.elements.shiftTabBtn) this.elements.shiftTabBtn.classList.remove('active');
         if (this.elements.protectTabBtn) this.elements.protectTabBtn.classList.remove('active');
         if (this.elements.promoTabBtn) this.elements.promoTabBtn.classList.remove('active');
         
@@ -2125,8 +2420,14 @@ class ProtectApp {
             case 'home':
                 this.showHomeTab();
                 break;
+            case 'sales':
+                this.showSalesTab();
+                break;
             case 'schedule':
                 this.showScheduleTab();
+                break;
+            case 'shift':
+                this.showShiftTrackTab();
                 break;
             case 'protect':
                 this.showProtectTab();
@@ -2146,7 +2447,22 @@ class ProtectApp {
         }
         this.updateHomeClock();
         this.toggleHeaderStatus(true);
+        // keep home sales widget updated
+        const sales = this.getSalesData() || {};
+        this.renderHomeSalesSummary(sales.TL || sales.VL || this.config.SALES_GOALS?.VL || { goal: 0, actual: 0 });
     }
+
+    showSalesTab() {
+        if (this.elements.salesTab) {
+            this.elements.salesTab.classList.add('active');
+        }
+        if (this.elements.salesTabBtn) {
+            this.elements.salesTabBtn.classList.add('active');
+        }
+        this.toggleHeaderStatus(false);
+        this.renderSalesTrack();
+    }
+
     
     showScheduleTab() {
         if (this.elements.scheduleTab) {
@@ -2158,6 +2474,17 @@ class ProtectApp {
         this.toggleHeaderStatus(false);
         // Render schedule with current week
         this.renderSchedule();
+    }
+
+    showShiftTrackTab() {
+        if (this.elements.shiftTab) {
+            this.elements.shiftTab.classList.add('active');
+        }
+        if (this.elements.shiftTabBtn) {
+            this.elements.shiftTabBtn.classList.add('active');
+        }
+        this.toggleHeaderStatus(false);
+        this.renderShiftTrack();
     }
     
     showProtectTab() {
@@ -3063,6 +3390,140 @@ class ProtectApp {
         
         tableHTML += '</tbody></table>';
         this.elements.weeklyScheduleTable.innerHTML = tableHTML;
+    }
+
+
+    parseShiftTime(timeStr, baseDate) {
+        if (!timeStr) return null;
+        const normalized = timeStr.toString().trim().toLowerCase().replace(/\s+/g, '');
+        const date = new Date(baseDate);
+        let hours = null;
+        let minutes = 0;
+        
+        // Matches 9a, 9am, 9:30a, 09:30pm etc.
+        const amPmMatch = normalized.match(/(\d{1,2})(?::?(\d{2}))?(am|pm|a|p)$/);
+        const twentyFourMatch = normalized.match(/(\d{1,2}):(\d{2})$/);
+        
+        if (amPmMatch) {
+            hours = parseInt(amPmMatch[1], 10);
+            minutes = parseInt(amPmMatch[2] || '0', 10);
+            const suffix = amPmMatch[3];
+            if (suffix.startsWith('p') && hours < 12) hours += 12;
+            if (suffix.startsWith('a') && hours === 12) hours = 0;
+        } else if (twentyFourMatch) {
+            hours = parseInt(twentyFourMatch[1], 10);
+            minutes = parseInt(twentyFourMatch[2], 10);
+        }
+        
+        if (hours === null || isNaN(hours) || isNaN(minutes)) return null;
+        
+        date.setHours(hours, minutes, 0, 0);
+        return date;
+    }
+
+    formatShiftTime(dateObj, fallback = '--') {
+        if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return fallback;
+        return dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    renderShiftTrack() {
+        if (!this.elements.shiftTrackList || !this.elements.shiftTrackSubtitle) return;
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Subtitle showing today's date
+        this.elements.shiftTrackSubtitle.textContent = today.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        const todayShifts = this.getScheduleForDate(today);
+        this.elements.shiftTrackList.innerHTML = '';
+        
+        if (!todayShifts || todayShifts.length === 0) {
+            if (this.elements.shiftTrackEmpty) {
+                this.elements.shiftTrackEmpty.style.display = 'block';
+            }
+            return;
+        }
+        
+        if (this.elements.shiftTrackEmpty) {
+            this.elements.shiftTrackEmpty.style.display = 'none';
+        }
+        
+        const now = new Date();
+        const sortedShifts = [...todayShifts].sort((a, b) => {
+            const startA = this.parseShiftTime(a.startTime, today);
+            const startB = this.parseShiftTime(b.startTime, today);
+            return (startA?.getTime() || 0) - (startB?.getTime() || 0);
+        });
+        
+        sortedShifts.forEach(shift => {
+            const start = this.parseShiftTime(shift.startTime, today);
+            const end = this.parseShiftTime(shift.endTime, today);
+            
+            let status = 'upcoming';
+            let statusLabel = 'Not started';
+            let statusIcon = 'fa-clock';
+            let progress = 0;
+            
+            if (start && end) {
+                if (now >= end) {
+                    status = 'done';
+                    statusLabel = 'Completed';
+                    statusIcon = 'fa-check';
+                    progress = 100;
+                } else if (now >= start) {
+                    status = 'live';
+                    statusLabel = 'On shift';
+                    statusIcon = 'fa-play';
+                    const duration = end.getTime() - start.getTime();
+                    const elapsed = now.getTime() - start.getTime();
+                    progress = Math.max(0, Math.min(100, (elapsed / duration) * 100));
+                }
+            }
+            
+            const startLabel = this.formatShiftTime(start, shift.startTime || '--');
+            const endLabel = this.formatShiftTime(end, shift.endTime || '--');
+            const timeLabel = `${startLabel} - ${endLabel}`;
+            
+            const card = document.createElement('div');
+            card.className = 'shift-card';
+            card.innerHTML = `
+                <div class="shift-card-header">
+                    <div>
+                        <div class="shift-employee">${shift.employee}</div>
+                        <div class="shift-time">${timeLabel}</div>
+                    </div>
+                    <div class="shift-status ${status}">
+                        <i class="fas ${statusIcon}"></i>
+                        <span>${statusLabel}</span>
+                    </div>
+                </div>
+                <div class="shift-progress-track">
+                    <div class="shift-progress-bar" style="width: ${progress}%;"></div>
+                </div>
+                <div class="shift-progress-meta">
+                    <span>${startLabel}</span>
+                    <span>${endLabel}</span>
+                </div>
+            `;
+            
+            this.elements.shiftTrackList.appendChild(card);
+        });
+    }
+
+    async refreshShiftTrack() {
+        try {
+            await this.loadScheduleData();
+            this.renderShiftTrack();
+            this.showToast('Shift track updated', 'success');
+        } catch (error) {
+            console.error('Failed to refresh shift track:', error);
+            this.showToast('Could not refresh shifts', 'error');
+        }
     }
     
     async refreshData() {

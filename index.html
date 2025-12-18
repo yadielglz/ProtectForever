@@ -103,12 +103,6 @@
                         <span class="brand-text">StoreView</span>
                     </div>
                 </div>
-                <div class="nav-center">
-                    <button id="timerNavBtn" class="timer-pill" aria-label="Lockout timer">
-                        <i class="fas fa-lock"></i>
-                        <span id="timerNavLabel">--</span>
-                    </button>
-                </div>
                 <div class="nav-right">
                     <div id="networkStatus" class="network-status">
                         <i class="fas fa-signal"></i>
@@ -152,6 +146,30 @@
                             <div class="store-status-row">
                                 <span id="storeStatus" class="store-status">Checking...</span>
                                 <span id="storeProgressLabel" class="store-progress-label">--%</span>
+                            </div>
+                        </section>
+
+                        <section class="home-sales-card" id="homeSalesWidget">
+                            <div class="home-sales-header">
+                                <div class="home-sales-title">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Total Lines</span>
+                                </div>
+                                <span id="homeSalesChip" class="home-sales-chip">--%</span>
+                            </div>
+                            <div class="home-sales-subtitle">Goal vs actual (lines)</div>
+                            <div class="home-sales-progress">
+                                <div id="homeSalesBar" class="home-sales-progress-bar"></div>
+                            </div>
+                            <div class="home-sales-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Actual</span>
+                                    <span id="homeSalesActual" class="metric-value">--</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Goal</span>
+                                    <span id="homeSalesGoal" class="metric-value">--</span>
+                                </div>
                             </div>
                         </section>
 
@@ -241,6 +259,129 @@
                             </div>
                             <div class="empty-state-title">No schedule available</div>
                             <div class="empty-state-message">Schedule data is loading or unavailable</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Shift Track Tab -->
+            <div id="shiftTab" class="tab-content">
+                <section class="shift-track-section">
+                    <div class="shift-track-header">
+                        <div>
+                            <h3>Shift Track</h3>
+                            <p id="shiftTrackSubtitle">Today's shifts</p>
+                        </div>
+                        <button id="refreshShiftTrackBtn" class="shift-track-refresh" aria-label="Refresh shift progress">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                    <div id="shiftTrackList" class="shift-track-list"></div>
+                    <div id="shiftTrackEmpty" class="empty-state" style="display: none;">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-users-slash"></i>
+                        </div>
+                        <div class="empty-state-title">No shifts for today</div>
+                        <div class="empty-state-message">Check back later or refresh the schedule</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Sales Track Tab -->
+            <div id="salesTab" class="tab-content">
+                <section class="sales-section">
+                    <div class="sales-header">
+                        <div>
+                            <h3>Sales Track</h3>
+                            <p>Daily goals and progress</p>
+                        </div>
+                        <button id="salesRefreshBtn" class="sales-refresh-btn" aria-label="Refresh sales progress">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                    <div id="salesStatus" class="sales-status">Loading...</div>
+                    <div class="sales-grid">
+                        <div class="sales-card" data-metric="VL">
+                            <div class="sales-card-top">
+                                <div class="sales-label">
+                                    <div class="sales-title">Voice Lines</div>
+                                    <div class="sales-sub">New lines activated</div>
+                                </div>
+                                <span class="sales-chip" id="vlChip">--%</span>
+                            </div>
+                            <div class="sales-progress">
+                                <div class="sales-progress-bar" id="vlBar"></div>
+                            </div>
+                            <div class="sales-metrics">
+                                <span id="vlActual">--</span>
+                                <span class="sales-goal">Goal <span id="vlGoal">--</span></span>
+                            </div>
+                        </div>
+                        <div class="sales-card" data-metric="BTS">
+                            <div class="sales-card-top">
+                                <div class="sales-label">
+                                    <div class="sales-title">BTS</div>
+                                    <div class="sales-sub">Watches, tablets, trackers</div>
+                                </div>
+                                <span class="sales-chip" id="btsChip">--%</span>
+                            </div>
+                            <div class="sales-progress">
+                                <div class="sales-progress-bar" id="btsBar"></div>
+                            </div>
+                            <div class="sales-metrics">
+                                <span id="btsActual">--</span>
+                                <span class="sales-goal">Goal <span id="btsGoal">--</span></span>
+                            </div>
+                        </div>
+                        <div class="sales-card" data-metric="HSI">
+                            <div class="sales-card-top">
+                                <div class="sales-label">
+                                    <div class="sales-title">HSI</div>
+                                    <div class="sales-sub">High Speed Internet</div>
+                                </div>
+                                <span class="sales-chip" id="hsiChip">--%</span>
+                            </div>
+                            <div class="sales-progress">
+                                <div class="sales-progress-bar" id="hsiBar"></div>
+                            </div>
+                            <div class="sales-metrics">
+                                <span id="hsiActual">--</span>
+                                <span class="sales-goal">Goal <span id="hsiGoal">--</span></span>
+                            </div>
+                        </div>
+                        <div class="sales-card" data-metric="HINT">
+                            <div class="sales-card-top">
+                                <div class="sales-label">
+                                    <div class="sales-title">HINT</div>
+                                    <div class="sales-sub">Home Internet</div>
+                                </div>
+                                <span class="sales-chip" id="hintChip">--%</span>
+                            </div>
+                            <div class="sales-progress">
+                                <div class="sales-progress-bar" id="hintBar"></div>
+                            </div>
+                            <div class="sales-metrics">
+                                <span id="hintActual">--</span>
+                                <span class="sales-goal">Goal <span id="hintGoal">--</span></span>
+                            </div>
+                        </div>
+                        <div class="sales-card" data-metric="ACC">
+                            <div class="sales-card-top">
+                                <div class="sales-label">
+                                    <div class="sales-title">Accessories</div>
+                                    <div class="sales-sub">Attachment & add-ons</div>
+                                </div>
+                                <span class="sales-chip" id="accChip">--%</span>
+                            </div>
+                            <div class="sales-progress">
+                                <div class="sales-progress-bar" id="accBar"></div>
+                            </div>
+                            <div class="sales-metrics">
+                                <span id="accActual">--</span>
+                                <span class="sales-goal">Goal <span id="accGoal">--</span></span>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -367,6 +508,12 @@
                 </div>
                 <span class="nav-label">Home</span>
             </div>
+            <div class="nav-item" id="salesTabBtn" data-tab="sales">
+                <div class="nav-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <span class="nav-label">Sales</span>
+            </div>
             <div class="nav-item" id="protectTabBtn" data-tab="protect">
                 <div class="nav-icon">
                     <i class="fas fa-shield-alt"></i>
@@ -384,6 +531,12 @@
                     <i class="fas fa-calendar-alt"></i>
                 </div>
                 <span class="nav-label">Schedule</span>
+            </div>
+            <div class="nav-item" id="shiftTabBtn" data-tab="shift">
+                <div class="nav-icon">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <span class="nav-label">Shift Track</span>
             </div>
             <div class="nav-item" id="settingsTabBtn">
                 <div class="nav-icon">
@@ -458,6 +611,24 @@
                 <h3>Settings</h3>
             </div>
             <div class="settings-options">
+                <div class="settings-session-card" id="settingsTimerCard">
+                    <div class="settings-session-meta">
+                        <div class="settings-session-title">
+                            <i class="fas fa-lock"></i>
+                            <div class="settings-session-copy">
+                                <div class="settings-session-label">Session timer</div>
+                                <div class="settings-session-sub">Auto-lock countdown</div>
+                            </div>
+                        </div>
+                        <button id="showTimerInfoBtn" class="settings-session-action" aria-label="Show timer details">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
+                    <div class="settings-session-value" id="settingsTimerValue">--s</div>
+                    <div class="settings-session-bar">
+                        <div class="settings-session-progress" id="settingsTimerBar"></div>
+                    </div>
+                </div>
                 <div class="settings-collapsible">
                     <button class="settings-collapsible-header" id="maintenanceToggle" aria-expanded="false">
                         <span>
