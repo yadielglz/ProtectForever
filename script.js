@@ -250,6 +250,8 @@ class ProtectApp {
         this.elements.networkStatus = document.getElementById('networkStatus');
         this.elements.networkLabel = document.getElementById('networkLabel');
         this.elements.networkSub = document.getElementById('networkSub');
+        this.elements.timerNavBtn = document.getElementById('timerNavBtn');
+        this.elements.timerNavLabel = document.getElementById('timerNavLabel');
         
         // Home tab elements
         this.elements.homeClock = document.getElementById('homeClock');
@@ -362,6 +364,9 @@ class ProtectApp {
         }
         if (this.elements.settingsTabBtn) {
             this.elements.settingsTabBtn.addEventListener('click', () => this.toggleSettings());
+        }
+        if (this.elements.timerNavBtn) {
+            this.elements.timerNavBtn.addEventListener('click', () => this.showTimerInfo());
         }
         
         // Schedule view toggles
@@ -550,7 +555,7 @@ class ProtectApp {
     }
     
     updateTimerDisplay() {
-        if (!this.elements.timerNavLabel) return;
+        if (!this.elements.timerNavLabel || !this.elements.timerNavBtn) return;
         
         const remainingTime = this.getRemainingTime();
         const seconds = Math.floor(remainingTime / 1000);
@@ -1209,8 +1214,11 @@ class ProtectApp {
             this.elements.mainApp.style.display = 'block';
             this.elements.mainApp.classList.add('authenticated');
             this.isAuthenticated = true;
+            this.timerStartTime = Date.now();
             this.startTimeDateDisplay();
             this.startHomeClock();
+            this.updateTimerDisplay();
+            this.startTimerCountdown();
             // Show Home tab by default
             this.switchTab('home');
             this.initHomeWidgets();
