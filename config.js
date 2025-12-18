@@ -35,7 +35,7 @@ const CONFIG = {
     
     // App settings
     APP_NAME: 'StoreView',
-    APP_VERSION: '2.0.12.18.F2',
+    APP_VERSION: '2.12.28.B5',
 
     // Store hours (local time)
     STORE_HOURS: {

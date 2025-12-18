@@ -169,6 +169,7 @@ class ProtectApp {
     async init() {
         try {
             this.cacheDOM();
+            this.applyVersionInfo();
             this.setupEventListeners();
             this.setupInactivityTimeout();
             
@@ -244,6 +245,8 @@ class ProtectApp {
         this.elements.promoFilters = document.querySelector('.promo-filters');
         this.elements.maintenanceToggle = document.getElementById('maintenanceToggle');
         this.elements.maintenanceBody = document.getElementById('maintenanceBody');
+        this.elements.helpdeskToggle = document.getElementById('helpdeskToggle');
+        this.elements.helpdeskBody = document.getElementById('helpdeskBody');
         this.elements.networkStatus = document.getElementById('networkStatus');
         this.elements.networkLabel = document.getElementById('networkLabel');
         this.elements.networkSub = document.getElementById('networkSub');
@@ -321,6 +324,7 @@ class ProtectApp {
         this.elements.updateAppBtn = document.getElementById('updateAppBtn');
         this.elements.clearCacheBtn = document.getElementById('clearCacheBtn');
         this.elements.reloadAppBtn = document.getElementById('reloadAppBtn');
+        this.elements.appVersionText = document.getElementById('appVersionText');
         
         // Toast and loading
         this.elements.toastContainer = document.getElementById('toastContainer');
@@ -420,6 +424,9 @@ class ProtectApp {
         }
         if (this.elements.maintenanceToggle) {
             this.elements.maintenanceToggle.addEventListener('click', () => this.toggleMaintenance());
+        }
+        if (this.elements.helpdeskToggle) {
+            this.elements.helpdeskToggle.addEventListener('click', () => this.toggleHelpdesk());
         }
         window.addEventListener('online', () => this.updateNetworkStatus());
         window.addEventListener('offline', () => this.updateNetworkStatus());
@@ -2491,6 +2498,21 @@ class ProtectApp {
     getWeatherUnitParam() {
         const unit = this.getStoredWeatherUnit();
         return unit === 'celsius' ? 'celsius' : 'fahrenheit';
+    }
+
+    applyVersionInfo() {
+        if (this.elements.appVersionText) {
+            const versionLabel = this.config.APP_VERSION || 'Unknown';
+            this.elements.appVersionText.textContent = `Version ${versionLabel}`;
+        }
+    }
+
+    toggleHelpdesk() {
+        if (!this.elements.helpdeskToggle || !this.elements.helpdeskBody) return;
+        const expanded = this.elements.helpdeskToggle.getAttribute('aria-expanded') === 'true';
+        this.elements.helpdeskToggle.setAttribute('aria-expanded', (!expanded).toString());
+        this.elements.helpdeskBody.classList.toggle('show', !expanded);
+        this.elements.helpdeskBody.setAttribute('aria-hidden', expanded ? 'true' : 'false');
     }
 
     toggleMaintenance() {

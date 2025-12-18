@@ -4068,3 +4068,25 @@ body {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* Force light theme even when device is set to dark mode */
+:root {
+    color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: light;
+        --bg-primary: #FFFFFF;
+        --bg-secondary: var(--gray-50);
+        --bg-tertiary: var(--gray-100);
+        --text-primary: var(--gray-900);
+        --text-secondary: var(--gray-600);
+        --text-tertiary: var(--gray-500);
+    }
+    
+    body {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+    }
+}
