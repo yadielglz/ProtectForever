@@ -2366,9 +2366,9 @@ class ProtectApp {
             const data = await res.json();
             const first = data?.results?.[0];
             if (!first) throw new Error('ZIP not found');
-            const { latitude, longitude, name, country_code, admin1 } = first;
+            const { latitude, longitude, name, admin1 } = first;
             this.weatherState.coords = { latitude, longitude };
-            const locName = `${name || zip}${admin1 ? ', ' + admin1 : ''}${country_code ? ', ' + country_code : ''}`;
+            const locName = `${name || zip}${admin1 ? ', ' + admin1 : ''}`;
             this.weatherState.locationName = locName;
             this.elements.weatherLocation.textContent = locName;
             await this.fetchWeather(latitude, longitude);
@@ -2570,7 +2570,7 @@ class ProtectApp {
             const data = await res.json();
             const first = data?.results?.[0];
             if (first) {
-                const locName = `${first.name || 'Current location'}${first.admin1 ? ', ' + first.admin1 : ''}${first.country_code ? ', ' + first.country_code : ''}`;
+                const locName = `${first.name || 'Current location'}${first.admin1 ? ', ' + first.admin1 : ''}`;
                 this.weatherState.locationName = locName;
                 if (this.elements.weatherLocation) {
                     this.elements.weatherLocation.textContent = locName;
@@ -3001,28 +3001,37 @@ class ProtectApp {
             this.elements.weeklyEmptyState.style.display = 'none';
         }
         
-        // Group by employee and day, and collect actual dates from data
+        // Group by employee and day, and collect dates
         const employeeSchedule = {};
         const days = ['THU', 'FRI', 'SAT', 'SUN', 'MON', 'TUE', 'WED'];
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        // Map to store actual dates for each day from the schedule data
+        // Pre-fill dayDateMap from the week's start date so date labels always render
         const dayDateMap = {};
+        if (currentWeek?.startDate) {
+            const weekStart = new Date(currentWeek.startDate);
+            days.forEach((day, idx) => {
+                const d = new Date(weekStart);
+                d.setDate(weekStart.getDate() + idx);
+                dayDateMap[day] = {
+                    date: d,
+                    dateStr: d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+                };
+            });
+        }
         
+        // Fill schedules and override with actual shift dates if present
         weekData.forEach(shift => {
             if (!employeeSchedule[shift.employee]) {
                 employeeSchedule[shift.employee] = {};
             }
             employeeSchedule[shift.employee][shift.day] = shift;
             
-            // Store the actual date for this day
-            if (!dayDateMap[shift.day]) {
-                dayDateMap[shift.day] = {
-                    date: new Date(shift.date),
-                    dateStr: shift.dateStr
-                };
-            }
+            dayDateMap[shift.day] = {
+                date: new Date(shift.date),
+                dateStr: shift.dateStr
+            };
         });
         
         // Create table
