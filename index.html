@@ -10,7 +10,7 @@
     <meta name="msapplication-TileColor" content="#E20074">
     <meta name="msapplication-TileImage" content="icon-192x192.png">
     
-    <title>StoreView - Employee Dashboard</title>
+    <title>StoreView - Daily Outlook</title>
     
     <!-- Preload critical resources -->
     <link rel="preload" href="styles.css" as="style">
@@ -41,7 +41,7 @@
                 <img src="https://i.ibb.co/ZpV0Xn3y/Chat-GPT-Image-Oct-19-2025-08-27-49-PM.png" alt="StoreView" class="splash-icon">
             </div>
             <div class="splash-title">StoreView</div>
-            <div class="splash-subtitle">Employee Dashboard & Management</div>
+            <div class="splash-subtitle">Daily Outlook</div>
             <div class="splash-loader">
                 <div class="loader-spinner"></div>
             </div>
@@ -132,11 +132,28 @@
                         <div id="homeDate" class="home-date">Monday, January 1, 2024</div>
                     </div>
                     <div class="home-widgets">
+                        <section class="store-hours-card" id="storeHoursWidget">
+                            <div class="store-hours-header">
+                                <div class="store-title">
+                                    <i class="fas fa-store"></i>
+                                    <span>Store Operations</span>
+                                </div>
+                                <div id="storeHoursRange" class="store-range">--</div>
+                            </div>
+                            <div class="store-progress">
+                                <div id="storeProgressBar" class="store-progress-bar"></div>
+                            </div>
+                            <div class="store-status-row">
+                                <span id="storeStatus" class="store-status">Checking...</span>
+                                <span id="storeProgressLabel" class="store-progress-label">--%</span>
+                            </div>
+                        </section>
+
                         <section class="weather-card" id="weatherWidget">
                             <div class="weather-header">
                                 <div class="weather-title">
                                     <i class="fas fa-cloud-sun"></i>
-                                    <span>Local weather</span>
+                                    <span>Local Weather</span>
                                 </div>
                                 <div id="weatherLocation" class="weather-location">Locating...</div>
                             </div>
@@ -160,49 +177,6 @@
                             <div class="forecast-grid" id="weatherForecastDays"></div>
                         </div>
                     </div>
-                        </section>
-
-                        <section class="store-hours-card" id="storeHoursWidget">
-                            <div class="store-hours-header">
-                                <div class="store-title">
-                                    <i class="fas fa-store"></i>
-                                    <span>Store hours</span>
-                                </div>
-                                <div id="storeHoursRange" class="store-range">--</div>
-                            </div>
-                            <div class="store-progress">
-                                <div id="storeProgressBar" class="store-progress-bar"></div>
-                            </div>
-                            <div class="store-status-row">
-                                <span id="storeStatus" class="store-status">Checking...</span>
-                                <span id="storeProgressLabel" class="store-progress-label">--%</span>
-                            </div>
-                        </section>
-
-                        <section class="contact-card" id="contactWidget">
-                            <div class="contact-header">
-                                <div class="contact-title">
-                                    <i class="fas fa-phone-alt"></i>
-                                    <span>Contacts</span>
-                                </div>
-                            </div>
-                            <div class="contact-list">
-                                <a class="contact-item" href="tel:8634963870">
-                                    <div class="contact-label">Store 697D</div>
-                                    <div class="contact-value">(863) 496-3870</div>
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
-                                <a class="contact-item" href="tel:8009378997">
-                                    <div class="contact-label">Customer Service</div>
-                                    <div class="contact-value">(800) 937-8997</div>
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
-                                <a class="contact-item" href="tel:8883108369">
-                                    <div class="contact-label">Retail Sales Support Line</div>
-                                    <div class="contact-value">(888) 310-8369</div>
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
-                            </div>
                         </section>
                     </div>
                 </section>
@@ -376,6 +350,7 @@
                     </div>
                 </section>
             </div>
+
         </main>
 
         <!-- Bottom Navigation -->
@@ -542,12 +517,71 @@
                         </div>
                     </div>
                 </div>
+                <div class="settings-collapsible">
+                    <button class="settings-collapsible-header" id="helpdeskToggle" aria-expanded="false">
+                        <span>
+                            <i class="fas fa-headset"></i>
+                            Help Desk
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="settings-collapsible-body" id="helpdeskBody" aria-hidden="true">
+                        <div class="helpdesk-section">
+                            <div class="helpdesk-header">
+                                <div class="helpdesk-title">
+                                    <h3>Stores</h3>
+                                </div>
+                            </div>
+                            <div class="helpdesk-list">
+                                <div class="helpdesk-card">
+                                    <div class="helpdesk-label">Store 697D - Poinciana</div>
+                                    <a class="helpdesk-value" href="tel:8634963870">(863) 496-3870</a>
+                                </div>
+                                <div class="helpdesk-card">
+                                    <div class="helpdesk-label">Store 769D - Haines City</div>
+                                    <a class="helpdesk-value" href="tel:8638667500">(863) 866-7500</a>
+                                </div>
+                                <div class="helpdesk-card">
+                                    <div class="helpdesk-label">Store 367E - Lake Wales</div>
+                                    <a class="helpdesk-value" href="tel:7278077813">(727) 807-7813</a>
+                                </div>
+                                <div class="helpdesk-card">
+                                    <div class="helpdesk-label">Store 5733 - Havendale</div>
+                                    <a class="helpdesk-value" href="tel:8635942400">(863) 594-2400</a>
+                                </div>
+                                <div class="helpdesk-card">
+                                    <div class="helpdesk-label">Store 5383 - Davenport</div>
+                                    <a class="helpdesk-value" href="tel:8638660700">(863) 866-0700</a>
+                                </div>
+                                <div class="helpdesk-card">
+                                    <div class="helpdesk-label">Store 2OSP - Bellalago</div>
+                                    <a class="helpdesk-value" href="tel:4073434630">(407) 343-4630</a>
+                                </div>
+                            </div>
+                            <div class="helpdesk-header">
+                                <div class="helpdesk-title">
+                                    <h3>Support</h3>
+                                </div>
+                            </div>
+                            <div class="helpdesk-list">
+                                <div class="helpdesk-card">
+                                    <div class="helpdesk-label">Customer Service</div>
+                                    <a class="helpdesk-value" href="tel:8009378997">(800) 937-8997</a>
+                                </div>
+                                <div class="helpdesk-card">
+                                    <div class="helpdesk-label">Retail Sales Support Line</div>
+                                    <a class="helpdesk-value" href="tel:8883108369">(888) 310-8369</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="settings-footer">
                 <div class="version-info">
                     <div class="version-text">
                         <i class="fas fa-info-circle"></i>
-                        <span>Version 2.0.12.18.F2</span>
+                        <span>Version 1.12.18</span>
                     </div>
                     <div class="copyright-text">
                         Copyright © Glz Technical Services
