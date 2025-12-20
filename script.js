@@ -2187,9 +2187,6 @@ class ProtectApp {
         }
         this.updateHomeClock();
         this.toggleHeaderStatus(true);
-        // keep home sales widget updated
-        const sales = this.getSalesData() || {};
-        // No sales widget
     }
 
     showScheduleTab() {
