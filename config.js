@@ -35,7 +35,7 @@ const CONFIG = {
     
     // App settings
     APP_NAME: 'StoreView',
-    APP_VERSION: '2.12.28.B5',
+    APP_VERSION: '2.12.19.A2',
 
     // Store hours (local time)
     STORE_HOURS: {
@@ -57,27 +57,13 @@ const CONFIG = {
 
     // Promotions Google Sheet (CSV export URL)
     PROMO_SHEET_URL: 'https://docs.google.com/spreadsheets/d/1aHZ2p4KK3Kho75aT8wjOFMlvhrgFSITj9VG7te2Apyk/export?format=csv',
-
-    // Sales tracking sheet (CSV export URL)
-    SALES_SHEET_URL: 'https://docs.google.com/spreadsheets/d/1zvJB8IfBuHKGoUN8vfrw2Y3RrGnxDhvMhXKDBSAKFx4/edit?usp=sharing',
-    SALES_CACHE_KEY: 'storeview_sales_cache',
-    SALES_CACHE_DURATION: 10 * 60 * 1000, // 10 minutes
     
     // Security settings
     PASSCODE: '6974',
     INACTIVITY_TIMEOUT: 20 * 1000, // 20 seconds in milliseconds
     
     // Debug mode (shows console logs)
-    DEBUG_MODE: true,
-
-    // Sales tracking goals (defaults)
-    SALES_GOALS: {
-        VL: { goal: 12, actual: 7 },
-        BTS: { goal: 8, actual: 3 },   // Watches, tablets, trackers
-        HSI: { goal: 5, actual: 2 },   // High Speed Internet
-        HINT: { goal: 4, actual: 1 },  // Home Internet
-        ACC: { goal: 20, actual: 11 }  // Accessories
-    }
+    DEBUG_MODE: true
 };
 
 // Export configuration

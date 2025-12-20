@@ -191,8 +191,7 @@ class ProtectApp {
             
             await Promise.all([
                 this.loadData(),
-                this.loadScheduleData(),
-                this.loadSalesData()
+                this.loadScheduleData()
             ]);
             this.hideLoading();
             setTimeout(() => {
@@ -229,18 +228,14 @@ class ProtectApp {
         
         // Bottom navigation
         this.elements.homeTabBtn = document.getElementById('homeTabBtn');
-        this.elements.salesTabBtn = document.getElementById('salesTabBtn');
         this.elements.scheduleTabBtn = document.getElementById('scheduleTabBtn');
         this.elements.protectTabBtn = document.getElementById('protectTabBtn');
-        this.elements.shiftTabBtn = document.getElementById('shiftTabBtn');
         this.elements.settingsTabBtn = document.getElementById('settingsTabBtn');
         this.elements.promoTabBtn = document.getElementById('promoTabBtn');
         
         // Tab content
         this.elements.homeTab = document.getElementById('homeTab');
-        this.elements.salesTab = document.getElementById('salesTab');
         this.elements.scheduleTab = document.getElementById('scheduleTab');
-        this.elements.shiftTab = document.getElementById('shiftTab');
         this.elements.protectTab = document.getElementById('protectTab');
         this.elements.promoTab = document.getElementById('promoTab');
         this.elements.promoList = document.getElementById('promoList');
@@ -275,11 +270,6 @@ class ProtectApp {
         this.elements.storeProgressBar = document.getElementById('storeProgressBar');
         this.elements.storeStatus = document.getElementById('storeStatus');
         this.elements.storeProgressLabel = document.getElementById('storeProgressLabel');
-        this.elements.homeSalesWidget = document.getElementById('homeSalesWidget');
-        this.elements.homeSalesBar = document.getElementById('homeSalesBar');
-        this.elements.homeSalesChip = document.getElementById('homeSalesChip');
-        this.elements.homeSalesGoal = document.getElementById('homeSalesGoal');
-        this.elements.homeSalesActual = document.getElementById('homeSalesActual');
         this.elements.weatherZipInput = document.getElementById('weatherZipInput');
         this.elements.weatherZipSave = document.getElementById('weatherZipSave');
         this.elements.weatherUnitF = document.getElementById('weatherUnitF');
@@ -305,15 +295,9 @@ class ProtectApp {
         this.elements.shiftTrackEmpty = document.getElementById('shiftTrackEmpty');
         this.elements.shiftTrackSubtitle = document.getElementById('shiftTrackSubtitle');
         this.elements.refreshShiftTrackBtn = document.getElementById('refreshShiftTrackBtn');
-        this.elements.salesRefreshBtn = document.getElementById('salesRefreshBtn');
-        this.elements.salesStatus = document.getElementById('salesStatus');
-        this.salesElements = {
-            VL: { bar: document.getElementById('vlBar'), chip: document.getElementById('vlChip'), actual: document.getElementById('vlActual'), goal: document.getElementById('vlGoal') },
-            BTS: { bar: document.getElementById('btsBar'), chip: document.getElementById('btsChip'), actual: document.getElementById('btsActual'), goal: document.getElementById('btsGoal') },
-            HSI: { bar: document.getElementById('hsiBar'), chip: document.getElementById('hsiChip'), actual: document.getElementById('hsiActual'), goal: document.getElementById('hsiGoal') },
-            HINT: { bar: document.getElementById('hintBar'), chip: document.getElementById('hintChip'), actual: document.getElementById('hintActual'), goal: document.getElementById('hintGoal') },
-            ACC: { bar: document.getElementById('accBar'), chip: document.getElementById('accChip'), actual: document.getElementById('accActual'), goal: document.getElementById('accGoal') },
-        };
+        this.elements.shiftTrackSection = document.getElementById('shiftTrackSection');
+        this.elements.shiftTrackToggle = document.getElementById('shiftTrackToggle');
+        this.elements.shiftTrackBody = document.getElementById('shiftTrackBody');
         
         // Device flow
         this.elements.brandStep = document.getElementById('brandStep');
@@ -384,14 +368,8 @@ class ProtectApp {
         
         // Bottom navigation - Tab switching
         this.elements.homeTabBtn.addEventListener('click', () => this.switchTab('home'));
-        if (this.elements.salesTabBtn) {
-            this.elements.salesTabBtn.addEventListener('click', () => this.switchTab('sales'));
-        }
         this.elements.scheduleTabBtn.addEventListener('click', () => this.switchTab('schedule'));
         this.elements.protectTabBtn.addEventListener('click', () => this.switchTab('protect'));
-        if (this.elements.shiftTabBtn) {
-            this.elements.shiftTabBtn.addEventListener('click', () => this.switchTab('shift'));
-        }
         if (this.elements.promoTabBtn) {
             this.elements.promoTabBtn.addEventListener('click', () => this.switchTab('promo'));
         }
@@ -438,8 +416,8 @@ class ProtectApp {
         if (this.elements.refreshShiftTrackBtn) {
             this.elements.refreshShiftTrackBtn.addEventListener('click', () => this.refreshShiftTrack());
         }
-        if (this.elements.salesRefreshBtn) {
-            this.elements.salesRefreshBtn.addEventListener('click', () => this.refreshSalesTrack());
+        if (this.elements.shiftTrackToggle) {
+            this.elements.shiftTrackToggle.addEventListener('click', () => this.toggleShiftTrackCollapse());
         }
         
         // Settings options
@@ -750,234 +728,6 @@ class ProtectApp {
         return values;
     }
 
-    // SALES TRACK
-    toCsvUrl(url) {
-        if (!url) return '';
-        if (url.includes('/export?format=csv')) return url;
-        return url.replace(/\/edit.*$/, '/export?format=csv').replace(/\/view.*$/, '/export?format=csv');
-    }
-
-    getSalesData() {
-        // Clone config goals to avoid mutation
-        const goals = JSON.parse(JSON.stringify(this.config.SALES_GOALS || {}));
-        if (this.salesData) {
-            return {
-                VL: this.salesData.VL || goals.VL,
-                BTS: this.salesData.BTS || goals.BTS,
-                HSI: this.salesData.HSI || goals.HSI,
-                HINT: this.salesData.HINT || goals.HINT,
-                ACC: this.salesData.ACC || goals.ACC,
-                TL: this.salesData.TL || null
-            };
-        }
-        return goals;
-    }
-
-    computePercent(actual, goal) {
-        if (!goal || goal <= 0) return 0;
-        return Math.min(200, Math.max(0, (actual / goal) * 100));
-    }
-
-    renderSalesTrack() {
-        if (!this.salesElements) return;
-        const sales = this.getSalesData();
-
-        const applyMetric = (key, data) => {
-            const els = this.salesElements[key];
-            if (!els) return;
-            const goal = data?.goal || 0;
-            const actual = data?.actual || 0;
-            const pct = Math.round(this.computePercent(actual, goal));
-            if (els.bar) els.bar.style.width = `${Math.min(100, pct)}%`;
-            if (els.chip) els.chip.textContent = `${pct}%`;
-            if (els.actual) els.actual.textContent = actual;
-            if (els.goal) els.goal.textContent = goal;
-        };
-
-        applyMetric('VL', sales.VL);
-        applyMetric('BTS', sales.BTS);
-        applyMetric('HSI', sales.HSI);
-        applyMetric('HINT', sales.HINT);
-        applyMetric('ACC', sales.ACC);
-
-        // Update home widget for total lines (prefer TL from sheet; fallback to VL)
-        this.renderHomeSalesSummary(sales.TL || sales.VL);
-    }
-
-    refreshSalesTrack() {
-        this.loadSalesData(true)
-            .then(() => {
-                this.renderSalesTrack();
-                this.showToast('Sales refreshed', 'success');
-            })
-            .catch(() => this.showToast('Failed to refresh sales', 'error'));
-    }
-
-    renderHomeSalesSummary(vlData) {
-        if (!this.elements.homeSalesWidget || !vlData) return;
-        const goal = vlData.goal || 0;
-        const actual = vlData.actual || 0;
-        const pct = Math.round(this.computePercent(actual, goal));
-
-        if (this.elements.homeSalesBar) {
-            this.elements.homeSalesBar.style.width = `${Math.min(100, pct)}%`;
-        }
-        if (this.elements.homeSalesChip) {
-            this.elements.homeSalesChip.textContent = `${pct}%`;
-        }
-        if (this.elements.homeSalesGoal) {
-            this.elements.homeSalesGoal.textContent = goal;
-        }
-        if (this.elements.homeSalesActual) {
-            this.elements.homeSalesActual.textContent = actual;
-        }
-    }
-
-    parseSalesCSV(csvText) {
-        const lines = csvText.split(/\r?\n/).filter(line => line.trim());
-        if (lines.length < 2) return null;
-        const headers = this.parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
-        const values = this.parseCSVLine(lines[1]);
-
-        const idx = (key) => headers.findIndex(h => h === key || h.includes(key));
-        const num = (val) => {
-            if (!val) return 0;
-            const cleaned = val.toString().replace(/[\$,]/g, '');
-            const n = parseFloat(cleaned);
-            return isNaN(n) ? 0 : n;
-        };
-
-        const data = {
-            VL: {
-                goal: num(values[idx('voice lines goal')]),
-                actual: num(values[idx('voice lines actual')])
-            },
-            BTS: {
-                goal: num(values[idx('bts goal')]),
-                actual: num(values[idx('bts actual')])
-            },
-            HSI: {
-                goal: num(values[idx('hsi goal')]),
-                actual: num(values[idx('hsi actual')])
-            },
-            HINT: {
-                goal: num(values[idx('hint goal')]), // may be missing
-                actual: num(values[idx('hint actual')])
-            },
-            ACC: {
-                goal: num(values[idx('accessory goal')]),
-                actual: num(values[idx('accessory actual')])
-            },
-            TL: {
-                goal: num(values[idx('total lines goal')]),
-                actual: num(values[idx('total lines actual')])
-            }
-        };
-        return data;
-    }
-
-    getCachedSalesData() {
-        try {
-            const cached = localStorage.getItem(this.config.SALES_CACHE_KEY);
-            return cached ? JSON.parse(cached) : null;
-        } catch (error) {
-            return null;
-        }
-    }
-
-    cacheSalesData(data) {
-        try {
-            localStorage.setItem(this.config.SALES_CACHE_KEY, JSON.stringify(data));
-            localStorage.setItem('lastSalesUpdate', Date.now().toString());
-        } catch (error) {
-            console.error('Failed to cache sales data', error);
-        }
-    }
-
-    isSalesCacheValid() {
-        try {
-            const last = localStorage.getItem('lastSalesUpdate');
-            if (!last) return false;
-            const age = Date.now() - parseInt(last, 10);
-            return age < this.config.SALES_CACHE_DURATION;
-        } catch (error) {
-            return false;
-        }
-    }
-
-    async loadSalesData(force = false) {
-        if (!force) {
-            const cached = this.getCachedSalesData();
-            if (cached && this.isSalesCacheValid()) {
-                this.salesData = cached;
-                return;
-            }
-        }
-
-        const sheetUrl = this.config.SALES_SHEET_URL;
-        if (!sheetUrl) {
-            if (this.config.DEBUG_MODE) console.warn('SALES_SHEET_URL not set; using defaults');
-            this.salesData = null;
-            return;
-        }
-
-        const csvUrl = this.toCsvUrl(sheetUrl);
-        let text = null;
-
-        try {
-            const res = await fetch(csvUrl);
-            if (res && res.ok) {
-                text = await res.text();
-                if (text && !text.includes('<html')) {
-                    if (this.config.DEBUG_MODE) console.log('Sales sheet loaded direct');
-                } else {
-                    text = null;
-                }
-            }
-        } catch (err) {
-            text = null;
-        }
-
-        if (!text) {
-            for (const proxy of this.config.CORS_PROXIES) {
-                try {
-                    const res = await fetch(proxy + encodeURIComponent(csvUrl));
-                    if (res && res.ok) {
-                        const t = await res.text();
-                        if (t && !t.includes('<html')) {
-                            text = t;
-                            if (this.config.DEBUG_MODE) console.log('Sales sheet loaded via proxy');
-                            break;
-                        }
-                    }
-                } catch (err) {
-                    continue;
-                }
-            }
-        }
-
-        if (!text) {
-            throw new Error('Failed to load sales sheet');
-        }
-
-        this.salesData = this.parseSalesCSV(text);
-        if (this.salesData) {
-            this.cacheSalesData(this.salesData);
-            // Update sales tab and home widget immediately after load
-            this.renderSalesTrack();
-            this.renderHomeSalesSummary(
-                this.salesData.TL ||
-                this.salesData.VL ||
-                this.config.SALES_GOALS?.VL ||
-                { goal: 0, actual: 0 }
-            );
-            if (this.elements.salesStatus) {
-                this.elements.salesStatus.textContent = 'Sales data loaded';
-            }
-        } else if (this.elements.salesStatus) {
-            this.elements.salesStatus.textContent = 'No sales data found';
-        }
-    }
     
     getCachedData() {
         try {
@@ -2401,17 +2151,13 @@ class ProtectApp {
         
         // Hide all tabs
         if (this.elements.homeTab) this.elements.homeTab.classList.remove('active');
-        if (this.elements.salesTab) this.elements.salesTab.classList.remove('active');
         if (this.elements.scheduleTab) this.elements.scheduleTab.classList.remove('active');
-        if (this.elements.shiftTab) this.elements.shiftTab.classList.remove('active');
         if (this.elements.protectTab) this.elements.protectTab.classList.remove('active');
         if (this.elements.promoTab) this.elements.promoTab.classList.remove('active');
         
         // Remove active class from all nav items
         if (this.elements.homeTabBtn) this.elements.homeTabBtn.classList.remove('active');
-        if (this.elements.salesTabBtn) this.elements.salesTabBtn.classList.remove('active');
         if (this.elements.scheduleTabBtn) this.elements.scheduleTabBtn.classList.remove('active');
-        if (this.elements.shiftTabBtn) this.elements.shiftTabBtn.classList.remove('active');
         if (this.elements.protectTabBtn) this.elements.protectTabBtn.classList.remove('active');
         if (this.elements.promoTabBtn) this.elements.promoTabBtn.classList.remove('active');
         
@@ -2420,14 +2166,8 @@ class ProtectApp {
             case 'home':
                 this.showHomeTab();
                 break;
-            case 'sales':
-                this.showSalesTab();
-                break;
             case 'schedule':
                 this.showScheduleTab();
-                break;
-            case 'shift':
-                this.showShiftTrackTab();
                 break;
             case 'protect':
                 this.showProtectTab();
@@ -2449,21 +2189,9 @@ class ProtectApp {
         this.toggleHeaderStatus(true);
         // keep home sales widget updated
         const sales = this.getSalesData() || {};
-        this.renderHomeSalesSummary(sales.TL || sales.VL || this.config.SALES_GOALS?.VL || { goal: 0, actual: 0 });
+        // No sales widget
     }
 
-    showSalesTab() {
-        if (this.elements.salesTab) {
-            this.elements.salesTab.classList.add('active');
-        }
-        if (this.elements.salesTabBtn) {
-            this.elements.salesTabBtn.classList.add('active');
-        }
-        this.toggleHeaderStatus(false);
-        this.renderSalesTrack();
-    }
-
-    
     showScheduleTab() {
         if (this.elements.scheduleTab) {
             this.elements.scheduleTab.classList.add('active');
@@ -2476,17 +2204,6 @@ class ProtectApp {
         this.renderSchedule();
     }
 
-    showShiftTrackTab() {
-        if (this.elements.shiftTab) {
-            this.elements.shiftTab.classList.add('active');
-        }
-        if (this.elements.shiftTabBtn) {
-            this.elements.shiftTabBtn.classList.add('active');
-        }
-        this.toggleHeaderStatus(false);
-        this.renderShiftTrack();
-    }
-    
     showProtectTab() {
         if (this.elements.protectTab) {
             this.elements.protectTab.classList.add('active');
@@ -3209,6 +2926,8 @@ class ProtectApp {
         } else {
             this.renderWeeklySchedule();
         }
+        this.renderShiftTrack();
+        this.updateShiftTrackVisibility();
     }
     
     renderDailySchedule() {
@@ -3523,6 +3242,35 @@ class ProtectApp {
         } catch (error) {
             console.error('Failed to refresh shift track:', error);
             this.showToast('Could not refresh shifts', 'error');
+        }
+    }
+
+    toggleShiftTrackCollapse() {
+        if (!this.elements.shiftTrackBody || !this.elements.shiftTrackToggle) return;
+        const isExpanded = this.elements.shiftTrackToggle.getAttribute('aria-expanded') === 'true';
+        this.elements.shiftTrackToggle.setAttribute('aria-expanded', String(!isExpanded));
+        if (isExpanded) {
+            this.elements.shiftTrackBody.classList.add('collapsed');
+        } else {
+            this.elements.shiftTrackBody.classList.remove('collapsed');
+        }
+    }
+
+    updateShiftTrackVisibility() {
+        if (!this.elements.shiftTrackSection) return;
+        const isWeekly = this.currentScheduleView === 'weekly';
+        this.elements.shiftTrackSection.style.display = isWeekly ? 'none' : '';
+        if (this.elements.shiftTrackBody) {
+            const shouldCollapse = isWeekly || this.currentScheduleView === 'daily';
+            this.elements.shiftTrackBody.classList.toggle('collapsed', shouldCollapse);
+        }
+        if (this.elements.shiftTrackToggle) {
+            const expanded = !isWeekly && this.currentScheduleView === 'daily' ? 'false' : 'false';
+            this.elements.shiftTrackToggle.setAttribute('aria-expanded', expanded);
+        }
+        if (isWeekly && this.elements.shiftTrackBody) {
+            this.elements.shiftTrackBody.classList.add('collapsed');
+            if (this.elements.shiftTrackToggle) this.elements.shiftTrackToggle.setAttribute('aria-expanded', 'false');
         }
     }
     
