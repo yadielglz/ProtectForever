@@ -378,6 +378,27 @@
                 </section>
             </div>
 
+            <!-- Pulse Tab -->
+            <div id="pulseTab" class="tab-content">
+                <section class="pulse-section">
+                    <div class="pulse-header">
+                        <div class="pulse-title-group">
+                            <h3>Pulse</h3>
+                            <p>Performance snapshot across all stores</p>
+                        </div>
+                        <div class="pulse-actions">
+                            <button id="pulseRefreshBtn" class="pulse-refresh-btn" aria-label="Refresh pulse data">
+                                <i class="fas fa-sync-alt"></i>
+                                <span>Refresh</span>
+                            </button>
+                            <div id="pulseUpdatedAt" class="pulse-updated">Waiting for data...</div>
+                        </div>
+                    </div>
+                    <div id="pulseStatus" class="pulse-status">Loading pulse data...</div>
+                    <div id="pulseGrid" class="pulse-grid"></div>
+                </section>
+            </div>
+
         </main>
 
         <!-- Bottom Navigation -->
@@ -387,6 +408,12 @@
                     <i class="fas fa-home"></i>
                 </div>
                 <span class="nav-label">Home</span>
+            </div>
+            <div class="nav-item" id="pulseTabBtn" data-tab="pulse">
+                <div class="nav-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <span class="nav-label">Pulse</span>
             </div>
             <div class="nav-item" id="protectTabBtn" data-tab="protect">
                 <div class="nav-icon">

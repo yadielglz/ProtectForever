@@ -27,6 +27,9 @@ class ProtectApp {
         this.promos = [];
         this.promosLoaded = false;
         this.promoFilter = 'all';
+        this.pulseData = [];
+        this.pulseLoaded = false;
+        this.pulseUpdatedAt = null;
         
         // DOM Elements
         this.elements = {};
@@ -228,6 +231,7 @@ class ProtectApp {
         
         // Bottom navigation
         this.elements.homeTabBtn = document.getElementById('homeTabBtn');
+        this.elements.pulseTabBtn = document.getElementById('pulseTabBtn');
         this.elements.scheduleTabBtn = document.getElementById('scheduleTabBtn');
         this.elements.protectTabBtn = document.getElementById('protectTabBtn');
         this.elements.settingsTabBtn = document.getElementById('settingsTabBtn');
@@ -235,6 +239,7 @@ class ProtectApp {
         
         // Tab content
         this.elements.homeTab = document.getElementById('homeTab');
+        this.elements.pulseTab = document.getElementById('pulseTab');
         this.elements.scheduleTab = document.getElementById('scheduleTab');
         this.elements.protectTab = document.getElementById('protectTab');
         this.elements.promoTab = document.getElementById('promoTab');
@@ -243,6 +248,10 @@ class ProtectApp {
         this.elements.promoEmpty = document.getElementById('promoEmpty');
         this.elements.promoRefreshBtn = document.getElementById('promoRefreshBtn');
         this.elements.promoFilters = document.querySelector('.promo-filters');
+        this.elements.pulseGrid = document.getElementById('pulseGrid');
+        this.elements.pulseStatus = document.getElementById('pulseStatus');
+        this.elements.pulseRefreshBtn = document.getElementById('pulseRefreshBtn');
+        this.elements.pulseUpdatedAt = document.getElementById('pulseUpdatedAt');
         this.elements.maintenanceToggle = document.getElementById('maintenanceToggle');
         this.elements.maintenanceBody = document.getElementById('maintenanceBody');
         this.elements.helpdeskToggle = document.getElementById('helpdeskToggle');
@@ -368,6 +377,9 @@ class ProtectApp {
         
         // Bottom navigation - Tab switching
         this.elements.homeTabBtn.addEventListener('click', () => this.switchTab('home'));
+        if (this.elements.pulseTabBtn) {
+            this.elements.pulseTabBtn.addEventListener('click', () => this.switchTab('pulse'));
+        }
         this.elements.scheduleTabBtn.addEventListener('click', () => this.switchTab('schedule'));
         this.elements.protectTabBtn.addEventListener('click', () => this.switchTab('protect'));
         if (this.elements.promoTabBtn) {
@@ -384,6 +396,9 @@ class ProtectApp {
         }
         if (this.elements.settingsTimerCard) {
             this.elements.settingsTimerCard.addEventListener('click', () => this.showTimerInfo());
+        }
+        if (this.elements.pulseRefreshBtn) {
+            this.elements.pulseRefreshBtn.addEventListener('click', () => this.loadPulseData(true));
         }
         
         // Schedule view toggles
@@ -2151,12 +2166,14 @@ class ProtectApp {
         
         // Hide all tabs
         if (this.elements.homeTab) this.elements.homeTab.classList.remove('active');
+        if (this.elements.pulseTab) this.elements.pulseTab.classList.remove('active');
         if (this.elements.scheduleTab) this.elements.scheduleTab.classList.remove('active');
         if (this.elements.protectTab) this.elements.protectTab.classList.remove('active');
         if (this.elements.promoTab) this.elements.promoTab.classList.remove('active');
         
         // Remove active class from all nav items
         if (this.elements.homeTabBtn) this.elements.homeTabBtn.classList.remove('active');
+        if (this.elements.pulseTabBtn) this.elements.pulseTabBtn.classList.remove('active');
         if (this.elements.scheduleTabBtn) this.elements.scheduleTabBtn.classList.remove('active');
         if (this.elements.protectTabBtn) this.elements.protectTabBtn.classList.remove('active');
         if (this.elements.promoTabBtn) this.elements.promoTabBtn.classList.remove('active');
@@ -2165,6 +2182,9 @@ class ProtectApp {
         switch(tabName) {
             case 'home':
                 this.showHomeTab();
+                break;
+            case 'pulse':
+                this.showPulseTab();
                 break;
             case 'schedule':
                 this.showScheduleTab();
@@ -2187,6 +2207,17 @@ class ProtectApp {
         }
         this.updateHomeClock();
         this.toggleHeaderStatus(true);
+    }
+
+    showPulseTab() {
+        if (this.elements.pulseTab) {
+            this.elements.pulseTab.classList.add('active');
+        }
+        if (this.elements.pulseTabBtn) {
+            this.elements.pulseTabBtn.classList.add('active');
+        }
+        this.toggleHeaderStatus(false);
+        this.loadPulseData(false);
     }
 
     showScheduleTab() {
@@ -2622,6 +2653,254 @@ class ProtectApp {
         } finally {
             this.weatherState.reverseLookupPending = false;
         }
+    }
+
+    // ========== PULSE DASHBOARD ==========
+    async loadPulseData(forceRefresh = false) {
+        if (!this.elements.pulseGrid || !this.elements.pulseStatus) return;
+
+        if (this.pulseLoaded && !forceRefresh) {
+            this.renderPulseDashboard();
+            return;
+        }
+
+        this.elements.pulseStatus.textContent = 'Loading pulse data...';
+        this.elements.pulseStatus.style.display = 'block';
+        this.elements.pulseGrid.innerHTML = '';
+
+        try {
+            const url = this.config.PULSE_SHEET_URL;
+            if (!url) throw new Error('Pulse sheet URL missing');
+            let res;
+            try {
+                res = await fetch(url, { cache: 'no-store' });
+            } catch (directError) {
+                for (const proxy of this.config.CORS_PROXIES || []) {
+                    try {
+                        res = await fetch(proxy + encodeURIComponent(url), { cache: 'no-store' });
+                        if (res && res.ok) break;
+                    } catch (proxyError) {
+                        continue;
+                    }
+                }
+            }
+
+            if (!res || !res.ok) throw new Error(`HTTP ${res ? res.status : 'No response'}`);
+
+            const csvText = await res.text();
+            this.pulseData = this.parsePulseCSV(csvText);
+            this.pulseLoaded = true;
+            this.pulseUpdatedAt = new Date();
+            this.renderPulseDashboard();
+        } catch (error) {
+            console.error('Failed to load pulse data:', error);
+            this.pulseLoaded = false;
+            this.elements.pulseStatus.textContent = 'Unable to load pulse data';
+            this.elements.pulseStatus.style.display = 'block';
+            if (this.elements.pulseUpdatedAt) {
+                this.elements.pulseUpdatedAt.textContent = 'Refresh to retry';
+            }
+        }
+    }
+
+    parsePulseCSV(csvText) {
+        const lines = csvText.split(/\r?\n/).filter(line => line.trim());
+        if (lines.length < 2) return [];
+        const rows = lines.map(line => this.parseCSVLine(line));
+        const entries = [];
+
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i];
+            const store = (cells[1] || '').trim();
+            if (!store) continue;
+
+            const entry = {
+                store,
+                traffic: this.parseNumeric(cells[2]),
+                postpaidGoal: this.parseNumeric(cells[4]),
+                postpaidAttainmentText: this.parsePercentValue(cells[5]),
+                postRate: this.parsePercentValue(cells[7]),
+                btsRate: this.parsePercentValue(cells[8]),
+                t4bRate: this.parsePercentValue(cells[9]),
+                vlGoal: this.parseNumeric(cells[10]),
+                btsGoal: this.parseNumeric(cells[11]),
+                hsiGoal: this.parseNumeric(cells[12]),
+                postpaidActual: this.parseNumeric(cells[13]),
+                netRevGoal: this.parseNumeric(cells[14]),
+                netRevActual: this.parseNumeric(cells[15]),
+                vlActual: this.parseNumeric(cells[16]),
+                btsActual: this.parseNumeric(cells[17]),
+                hsiActual: this.parseNumeric(cells[18]),
+                t4bActual: this.parseNumeric(cells[19]),
+                netRevenue: this.parseNumeric(cells[20]),
+                p360: this.parseNumeric(cells[21]),
+                accActual: this.parseNumeric(cells[22]),
+                accGoal: this.parseNumeric(cells[23]),
+                accAttainmentText: this.parsePercentValue(cells[24]),
+                dailyGoal: this.parseNumeric(cells[25]),
+                gap: this.parseNumeric(cells[27])
+            };
+
+            entry.postpaidAttainment = this.computeAttainment(entry.postpaidActual, entry.postpaidGoal, entry.postpaidAttainmentText);
+            entry.accAttainment = this.computeAttainment(entry.accActual, entry.accGoal, entry.accAttainmentText);
+
+            const hasValues = entry.postpaidActual !== null || entry.postpaidGoal !== null || entry.accActual !== null;
+            if (hasValues) {
+                entries.push(entry);
+            }
+        }
+
+        return entries;
+    }
+
+    parseNumeric(value) {
+        if (value === undefined || value === null) return null;
+        const cleaned = value.toString().replace(/[^0-9.-]/g, '');
+        if (!cleaned) return null;
+        const num = parseFloat(cleaned);
+        return Number.isFinite(num) ? num : null;
+    }
+
+    parsePercentValue(value) {
+        const num = this.parseNumeric(value);
+        return num === null ? null : num;
+    }
+
+    computeAttainment(actual, goal, pctFromSheet) {
+        if (Number.isFinite(pctFromSheet)) return pctFromSheet;
+        if (Number.isFinite(goal) && goal > 0 && Number.isFinite(actual)) {
+            const pct = (actual / goal) * 100;
+            return Number.isFinite(pct) ? pct : null;
+        }
+        return null;
+    }
+
+    renderPulseDashboard() {
+        if (!this.elements.pulseGrid || !this.elements.pulseStatus) return;
+
+        if (!this.pulseData || this.pulseData.length === 0) {
+            this.elements.pulseStatus.textContent = 'No pulse data available';
+            this.elements.pulseStatus.style.display = 'block';
+            this.elements.pulseGrid.innerHTML = '';
+            return;
+        }
+
+        this.elements.pulseStatus.style.display = 'none';
+
+        const cards = [];
+        const dataCopy = [...this.pulseData];
+        const totalIdx = dataCopy.findIndex(item => item.store.toLowerCase() === 'total');
+        if (totalIdx >= 0) {
+            const [totalEntry] = dataCopy.splice(totalIdx, 1);
+            cards.push(this.renderPulseCard(totalEntry, true));
+        }
+
+        dataCopy
+            .filter(item => item.store.toLowerCase() !== 'hu$tler$')
+            .forEach(entry => cards.push(this.renderPulseCard(entry, false)));
+
+        this.elements.pulseGrid.innerHTML = cards.join('');
+
+        if (this.elements.pulseUpdatedAt && this.pulseUpdatedAt) {
+            const ts = this.pulseUpdatedAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            this.elements.pulseUpdatedAt.textContent = `Updated ${ts}`;
+        }
+    }
+
+    renderPulseCard(entry, isTotal = false) {
+        const attainmentClass = this.getAttainmentClass(entry.postpaidAttainment);
+        const pctLabel = this.formatPercent(entry.postpaidAttainment);
+        const traffic = entry.traffic ? `<div class="pulse-traffic">Traffic ${this.formatNumber(entry.traffic)}</div>` : '';
+        return `
+            <div class="pulse-card ${isTotal ? 'pulse-card-total' : ''}">
+                <div class="pulse-card-header">
+                    <div class="pulse-card-title">
+                        <div class="pulse-store">${entry.store}</div>
+                        ${traffic}
+                    </div>
+                    ${pctLabel ? `<div class="pulse-chip ${attainmentClass}">${pctLabel}</div>` : '<div class="pulse-chip muted">--</div>'}
+                </div>
+                ${this.renderPulseSummary(entry)}
+                <div class="pulse-kpi-grid">
+                    ${this.renderPulseKpi('VL', entry.vlActual, entry.vlGoal)}
+                    ${this.renderPulseKpi('BTS', entry.btsActual, entry.btsGoal)}
+                    ${this.renderPulseKpi('HSI', entry.hsiActual, entry.hsiGoal)}
+                    ${this.renderPulseKpi('Acc', entry.accActual, entry.accGoal, entry.accAttainment, { currency: true })}
+                </div>
+            </div>
+        `;
+    }
+
+    renderPulseSummary(entry) {
+        const actualLabel = this.formatNumber(entry.postpaidActual);
+        const goalLabel = entry.postpaidGoal ? this.formatNumber(entry.postpaidGoal) : '—';
+        const pctLabel = this.formatPercent(entry.postpaidAttainment);
+        const attainmentClass = this.getAttainmentClass(entry.postpaidAttainment);
+        const gapLabel = Number.isFinite(entry.gap) ? ` · Gap ${this.formatNumber(entry.gap)}` : '';
+        return `
+            <div class="pulse-metric primary">
+                <div>
+                    <div class="pulse-metric-label">Total Postpaid</div>
+                    <div class="pulse-metric-sub">${goalLabel !== '—' ? `Goal ${goalLabel}` : 'Goal —'}${gapLabel}</div>
+                </div>
+                <div class="pulse-metric-value-group">
+                    <div class="pulse-metric-value">${actualLabel}</div>
+                    ${pctLabel ? `<div class="pulse-chip ${attainmentClass}">${pctLabel}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    renderPulseKpi(label, actual, goal, attainment = null, options = {}) {
+        const isCurrency = options.currency || false;
+        const actualLabel = this.formatDisplayValue(actual, { currency: isCurrency });
+        const goalLabel = goal ? this.formatDisplayValue(goal, { currency: isCurrency }) : '—';
+        const pct = attainment ?? this.computeAttainment(actual, goal, null);
+        const pctLabel = this.formatPercent(pct);
+        const chipClass = this.getAttainmentClass(pct);
+        return `
+            <div class="pulse-kpi">
+                <div class="pulse-kpi-header">
+                    <span>${label}</span>
+                    ${pctLabel ? `<span class="pulse-chip mini ${chipClass}">${pctLabel}</span>` : ''}
+                </div>
+                <div class="pulse-kpi-value">${actualLabel}</div>
+                <div class="pulse-kpi-sub">${goalLabel !== '—' ? `Goal ${goalLabel}` : 'Goal —'}</div>
+            </div>
+        `;
+    }
+
+    formatDisplayValue(value, { currency = false } = {}) {
+        if (!Number.isFinite(value)) return '--';
+        return currency ? this.formatCurrency(value) : this.formatNumber(value);
+    }
+
+    formatNumber(value) {
+        if (!Number.isFinite(value)) return '--';
+        return Number(value).toLocaleString('en-US');
+    }
+
+    formatCurrency(value) {
+        if (!Number.isFinite(value)) return '--';
+        return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+    }
+
+    formatPercent(value) {
+        if (!Number.isFinite(value)) return '';
+        if (Math.abs(value) >= 100) {
+            return `${Math.round(value)}%`;
+        }
+        if (Math.abs(value) >= 10) {
+            return `${value.toFixed(0)}%`;
+        }
+        return `${value.toFixed(1)}%`;
+    }
+
+    getAttainmentClass(value) {
+        if (!Number.isFinite(value)) return 'muted';
+        if (value >= 100) return 'success';
+        if (value >= 85) return 'warn';
+        return 'alert';
     }
 
     // ========== PROMOTIONS ==========

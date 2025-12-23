@@ -37,6 +37,9 @@ const CONFIG = {
     APP_NAME: 'StoreView',
     APP_VERSION: '2.12.19.A2',
 
+    // Pulse dashboard (performance sheet)
+    PULSE_SHEET_URL: 'https://docs.google.com/spreadsheets/d/1Xtib3XoA1gJ9OJWVL0pd9GFDqHQH5W_KoWFuxglXlMU/gviz/tq?tqx=out:csv&gid=0',
+
     // Store hours (local time)
     STORE_HOURS: {
         DEFAULT: {

@@ -4405,6 +4405,219 @@ body {
     }
 }
 
+/* Pulse dashboard */
+.pulse-section {
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.pulse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.pulse-title-group h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.pulse-title-group p {
+    margin: 4px 0 0;
+    color: var(--gray-500);
+    font-size: 0.95rem;
+}
+
+.pulse-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.pulse-refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: #e20074;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: var(--space-3) var(--space-4);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(226, 0, 116, 0.25);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pulse-refresh-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px rgba(226, 0, 116, 0.3);
+}
+
+.pulse-updated {
+    color: var(--gray-500);
+    font-size: 0.9rem;
+}
+
+.pulse-status {
+    background: var(--gray-50);
+    border-radius: 14px;
+    padding: var(--space-3);
+    color: var(--gray-800);
+    border: 1px solid var(--gray-200);
+}
+
+.pulse-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-3);
+}
+
+.pulse-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: var(--space-4);
+    box-shadow: 0 12px 32px rgba(17, 24, 39, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    border: 1px solid var(--gray-200);
+}
+
+.pulse-card-total {
+    border: 1px solid #e20074;
+    box-shadow: 0 14px 34px rgba(226, 0, 116, 0.14);
+}
+
+.pulse-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.pulse-card-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pulse-store {
+    font-weight: 800;
+    color: var(--gray-900);
+}
+
+.pulse-traffic {
+    color: var(--gray-500);
+    font-size: 0.9rem;
+}
+
+.pulse-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    background: var(--gray-100);
+    color: var(--gray-800);
+}
+
+.pulse-chip.success {
+    background: #ecfdf3;
+    color: #15803d;
+}
+
+.pulse-chip.warn {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.pulse-chip.alert {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.pulse-chip.muted {
+    background: var(--gray-100);
+    color: var(--gray-500);
+}
+
+.pulse-chip.mini {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+}
+
+.pulse-metric.primary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    background: var(--gray-50);
+    border-radius: 14px;
+    padding: var(--space-3);
+}
+
+.pulse-metric-label {
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.pulse-metric-sub {
+    color: var(--gray-500);
+    margin-top: 4px;
+}
+
+.pulse-metric-value-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.pulse-metric-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--gray-900);
+}
+
+.pulse-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-3);
+}
+
+.pulse-kpi {
+    background: var(--gray-50);
+    border-radius: 12px;
+    padding: var(--space-3);
+    border: 1px solid var(--gray-200);
+}
+
+.pulse-kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.pulse-kpi-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-top: 6px;
+    color: var(--gray-900);
+}
+
+.pulse-kpi-sub {
+    color: var(--gray-500);
+    font-size: 0.92rem;
+    margin-top: 4px;
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
     :root {
