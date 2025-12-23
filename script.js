@@ -400,6 +400,16 @@ class ProtectApp {
         if (this.elements.pulseRefreshBtn) {
             this.elements.pulseRefreshBtn.addEventListener('click', () => this.loadPulseData(true));
         }
+        if (this.elements.pulseGrid) {
+            this.elements.pulseGrid.addEventListener('click', (e) => {
+                const header = e.target.closest('.pulse-card-header');
+                if (!header) return;
+                const card = header.closest('.pulse-card');
+                if (!card) return;
+                const isCollapsed = card.classList.toggle('collapsed');
+                header.setAttribute('aria-expanded', (!isCollapsed).toString());
+            });
+        }
         
         // Schedule view toggles
         if (this.elements.dailyViewBtn) {
@@ -2797,7 +2807,7 @@ class ProtectApp {
 
         dataCopy
             .filter(item => item.store.toLowerCase() !== 'hu$tler$')
-            .forEach(entry => cards.push(this.renderPulseCard(entry, false)));
+            .forEach((entry, idx) => cards.push(this.renderPulseCard(entry, false, idx)));
 
         this.elements.pulseGrid.innerHTML = cards.join('');
 
@@ -2807,25 +2817,31 @@ class ProtectApp {
         }
     }
 
-    renderPulseCard(entry, isTotal = false) {
+    renderPulseCard(entry, isTotal = false, idx = 0) {
         const attainmentClass = this.getAttainmentClass(entry.postpaidAttainment);
         const pctLabel = this.formatPercent(entry.postpaidAttainment);
         const traffic = entry.traffic ? `<div class="pulse-traffic">Traffic ${this.formatNumber(entry.traffic)}</div>` : '';
+        const collapsedClass = isTotal ? '' : 'collapsed';
         return `
-            <div class="pulse-card ${isTotal ? 'pulse-card-total' : ''}">
-                <div class="pulse-card-header">
+            <div class="pulse-card ${isTotal ? 'pulse-card-total' : ''} ${collapsedClass}" data-pulse-card="${idx}">
+                <button class="pulse-card-header" type="button" aria-expanded="${!collapsedClass}">
                     <div class="pulse-card-title">
                         <div class="pulse-store">${entry.store}</div>
                         ${traffic}
                     </div>
-                    ${pctLabel ? `<div class="pulse-chip ${attainmentClass}">${pctLabel}</div>` : '<div class="pulse-chip muted">--</div>'}
-                </div>
-                ${this.renderPulseSummary(entry)}
-                <div class="pulse-kpi-grid">
-                    ${this.renderPulseKpi('VL', entry.vlActual, entry.vlGoal)}
-                    ${this.renderPulseKpi('BTS', entry.btsActual, entry.btsGoal)}
-                    ${this.renderPulseKpi('HSI', entry.hsiActual, entry.hsiGoal)}
-                    ${this.renderPulseKpi('Acc', entry.accActual, entry.accGoal, entry.accAttainment, { currency: true })}
+                    <div class="pulse-header-right">
+                        ${pctLabel ? `<div class="pulse-chip ${attainmentClass}">${pctLabel}</div>` : '<div class="pulse-chip muted">--</div>'}
+                        <span class="pulse-caret"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                </button>
+                <div class="pulse-card-body">
+                    ${this.renderPulseSummary(entry)}
+                    <div class="pulse-kpi-grid">
+                        ${this.renderPulseKpi('VL', entry.vlActual, entry.vlGoal)}
+                        ${this.renderPulseKpi('BTS', entry.btsActual, entry.btsGoal)}
+                        ${this.renderPulseKpi('HSI', entry.hsiActual, entry.hsiGoal)}
+                        ${this.renderPulseKpi('Acc', entry.accActual, entry.accGoal, entry.accAttainment, { currency: true })}
+                    </div>
                 </div>
             </div>
         `;

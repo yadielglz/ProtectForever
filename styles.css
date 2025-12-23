@@ -4498,6 +4498,12 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: var(--space-2);
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
 }
 
 .pulse-card-title {
@@ -4509,6 +4515,17 @@ body {
 .pulse-store {
     font-weight: 800;
     color: var(--gray-900);
+}
+
+.pulse-header-right {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.pulse-caret {
+    color: var(--gray-500);
+    transition: transform 0.2s ease;
 }
 
 .pulse-traffic {
@@ -4586,8 +4603,9 @@ body {
 
 .pulse-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-3);
+    width: 100%;
 }
 
 .pulse-kpi {
@@ -4595,6 +4613,11 @@ body {
     border-radius: 12px;
     padding: var(--space-3);
     border: 1px solid var(--gray-200);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    align-items: center;
+    text-align: center;
+    aspect-ratio: 1 / 1;
 }
 
 .pulse-kpi-header {
@@ -4603,6 +4626,7 @@ body {
     align-items: center;
     font-weight: 700;
     color: var(--gray-900);
+    gap: var(--space-2);
 }
 
 .pulse-kpi-value {
@@ -4616,6 +4640,14 @@ body {
     color: var(--gray-500);
     font-size: 0.92rem;
     margin-top: 4px;
+}
+
+.pulse-card.collapsed .pulse-card-body {
+    display: none;
+}
+
+.pulse-card.collapsed .pulse-caret {
+    transform: rotate(-90deg);
 }
 
 /* Dark mode support */
