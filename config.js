@@ -35,7 +35,7 @@ const CONFIG = {
     
     // App settings
     APP_NAME: 'StoreView',
-    APP_VERSION: '2.12.19.A2',
+    APP_VERSION: '2.12.28.R5',
 
     // Pulse dashboard (performance sheet)
     PULSE_SHEET_URL: 'https://docs.google.com/spreadsheets/d/1Xtib3XoA1gJ9OJWVL0pd9GFDqHQH5W_KoWFuxglXlMU/gviz/tq?tqx=out:csv&gid=0',

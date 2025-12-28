@@ -275,6 +275,11 @@ class ProtectApp {
         this.elements.weatherForecast = document.getElementById('weatherForecast');
         this.elements.weatherForecastHours = document.getElementById('weatherForecastHours');
         this.elements.weatherForecastDays = document.getElementById('weatherForecastDays');
+        // Header weather elements
+        this.elements.headerWeather = document.getElementById('headerWeather');
+        this.elements.headerWeatherTemp = document.getElementById('headerWeatherTemp');
+        this.elements.headerWeatherDesc = document.getElementById('headerWeatherDesc');
+        this.elements.headerWeatherLocation = document.getElementById('headerWeatherLocation');
         this.elements.storeHoursRange = document.getElementById('storeHoursRange');
         this.elements.storeProgressBar = document.getElementById('storeProgressBar');
         this.elements.storeStatus = document.getElementById('storeStatus');
@@ -2453,6 +2458,10 @@ class ProtectApp {
             const locName = `${name || zip}${admin1 ? ', ' + admin1 : ''}`;
             this.weatherState.locationName = locName;
             this.elements.weatherLocation.textContent = locName;
+            // Update header weather location
+            if (this.elements.headerWeatherLocation) {
+                this.elements.headerWeatherLocation.textContent = locName;
+            }
             await this.fetchWeather(latitude, longitude);
         } catch (error) {
             console.error(error);
@@ -2498,14 +2507,21 @@ class ProtectApp {
         this.elements.weatherDesc.textContent = desc;
         this.elements.weatherUpdated.textContent = 'Updated just now';
         const coords = this.weatherState.coords;
+        let locationText = '';
         if (this.weatherState.locationName) {
-            this.elements.weatherLocation.textContent = this.weatherState.locationName;
+            locationText = this.weatherState.locationName;
+            this.elements.weatherLocation.textContent = locationText;
         } else if (coords) {
             this.elements.weatherLocation.textContent = 'Fetching location...';
+            locationText = 'Fetching location...';
             this.fetchLocationName(coords);
         } else {
-            this.elements.weatherLocation.textContent = 'Current location';
+            locationText = 'Current location';
+            this.elements.weatherLocation.textContent = locationText;
         }
+        
+        // Update header weather
+        this.updateHeaderWeather(temp, desc, locationText);
 
         this.renderHourlyForecast(hourly);
         this.renderDailyForecast(daily);
@@ -2517,6 +2533,9 @@ class ProtectApp {
         this.elements.weatherDesc.textContent = message || 'Weather unavailable';
         this.elements.weatherUpdated.textContent = '—';
         this.elements.weatherLocation.textContent = '—';
+        
+        // Update header weather with error
+        this.updateHeaderWeather('--', message || 'Weather unavailable', '—');
         if (this.elements.weatherForecastHours) this.elements.weatherForecastHours.innerHTML = '';
         if (this.elements.weatherForecastDays) this.elements.weatherForecastDays.innerHTML = '';
     }
@@ -2613,7 +2632,30 @@ class ProtectApp {
         this.elements.maintenanceBody.setAttribute('aria-hidden', expanded ? 'true' : 'false');
     }
 
+    updateHeaderWeather(temp, desc, location) {
+        if (!this.elements.headerWeather || !this.elements.headerWeatherTemp || 
+            !this.elements.headerWeatherDesc || !this.elements.headerWeatherLocation) return;
+        
+        if (this.elements.headerWeatherTemp) {
+            this.elements.headerWeatherTemp.textContent = temp;
+        }
+        if (this.elements.headerWeatherDesc) {
+            this.elements.headerWeatherDesc.textContent = desc;
+        }
+        if (this.elements.headerWeatherLocation) {
+            this.elements.headerWeatherLocation.textContent = location;
+        }
+    }
+    
     toggleHeaderStatus(isHome) {
+        // Show/hide header weather based on tab
+        if (this.elements.headerWeather) {
+            if (isHome) {
+                this.elements.headerWeather.style.display = 'none';
+            } else {
+                this.elements.headerWeather.style.display = 'flex';
+            }
+        }
         if (!this.elements.networkStatus || !this.elements.timeDateDisplay) return;
         if (isHome) {
             this.elements.networkStatus.style.display = 'flex';
@@ -2656,6 +2698,10 @@ class ProtectApp {
                 this.weatherState.locationName = locName;
                 if (this.elements.weatherLocation) {
                     this.elements.weatherLocation.textContent = locName;
+                }
+                // Update header weather location
+                if (this.elements.headerWeatherLocation) {
+                    this.elements.headerWeatherLocation.textContent = locName;
                 }
             }
         } catch (e) {

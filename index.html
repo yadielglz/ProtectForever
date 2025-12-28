@@ -6,8 +6,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="StoreView">
-    <meta name="theme-color" content="#E20074">
-    <meta name="msapplication-TileColor" content="#E20074">
+    <meta name="theme-color" content="#DD7230">
+    <meta name="msapplication-TileColor" content="#DD7230">
     <meta name="msapplication-TileImage" content="icon-192x192.png">
     
     <title>StoreView - Daily Outlook</title>
@@ -97,10 +97,19 @@
             <div class="nav-content">
                 <div class="nav-left">
                     <div class="app-brand">
-                        <div class="brand-icon">
-                            <img src="https://i.ibb.co/ZpV0Xn3y/Chat-GPT-Image-Oct-19-2025-08-27-49-PM.png" alt="StoreView" class="header-icon">
-                        </div>
                         <span class="brand-text">StoreView</span>
+                    </div>
+                </div>
+                <div class="nav-center">
+                    <div id="headerWeather" class="header-weather" style="display: none;">
+                        <div class="header-weather-temp">
+                            <span id="headerWeatherTemp" class="header-temp-value">--</span>
+                            <span class="header-temp-unit">°</span>
+                        </div>
+                        <div class="header-weather-meta">
+                            <div id="headerWeatherDesc" class="header-weather-desc">--</div>
+                            <div id="headerWeatherLocation" class="header-weather-location">--</div>
+                        </div>
                     </div>
                 </div>
                 <div class="nav-right">
@@ -653,7 +662,7 @@
                 <div class="version-info">
                     <div class="version-text">
                         <i class="fas fa-info-circle"></i>
-                        <span id="appVersionText">Version 2.12.28.B5</span>
+                        <span id="appVersionText">Version 2.12.28.R5</span>
                     </div>
                     <div class="copyright-text">
                         Copyright © Glz Technical Services
