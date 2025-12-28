@@ -3001,9 +3001,10 @@ class ProtectApp {
             headers.forEach((h, idx) => {
                 obj[h] = row[idx] || '';
             });
-            // Basic required fields
-            if (obj['promo name'] || obj['offer id']) {
-                obj.__type = this.getPromoType(obj['requirements (lines / port / trade)'] || '');
+            // Basic required fields - check for new column names
+            if (obj['promo name'] || obj['promo id']) {
+                // Determine promo type from Activation Type field
+                obj.__type = this.getPromoType(obj['activation type'] || '');
                 promos.push(obj);
             }
         }
@@ -3033,18 +3034,26 @@ class ProtectApp {
 
         const cards = filtered.map(promo => {
             const name = promo['promo name'] || 'Unnamed Promo';
-            const segment = promo['segment'] || promo['category'] || '—';
-            const devices = promo['devices'] || 'Devices vary';
-            const value = promo['promo value / tiers'] || 'See details';
-            const requirements = promo['requirements (lines / port / trade)'] || 'See details';
-            const plans = promo['eligible rate plans'] || '—';
-            const notes = promo['not stackable / notes'] || '';
-            const status = promo['status/start-end'] || '';
-            const offerId = promo['offer id'] || '';
-            const mpCode = promo['mp code'] || '';
-            const payout = promo['max payout'] || '';
-            const redemptions = promo['max redemptions per ban'] || '';
+            const category = promo['category'] || '—';
+            const subcategory = promo['subcategory'] || '';
+            const device = promo['device'] || 'Devices vary';
+            const activationType = promo['activation type'] || '—';
+            const tradeRequired = promo['trade required'] || '—';
+            const tradeCondition = promo['trade condition'] || '';
+            const maxPromoValue = promo['max promo value'] || 'See details';
+            const tierValues = promo['tier values'] || '';
+            const ratePlanReq = promo['rate plan requirement'] || '—';
+            const eligibleSegments = promo['eligible segments'] || '—';
+            const stackableNotes = promo['stackable notes'] || '';
+            const promoStart = promo['promo start'] || '';
+            const promoEnd = promo['promo end'] || '';
+            const promoId = promo['promo id'] || '';
             const typeLabel = this.getPromoTypeLabel(promo.__type);
+            
+            // Build date range string
+            const dateRange = promoStart && promoEnd ? `${promoStart} - ${promoEnd}` : 
+                             promoStart ? `Starts: ${promoStart}` : 
+                             promoEnd ? `Ends: ${promoEnd}` : '—';
 
             return `
                 <div class="promo-card">
@@ -3053,17 +3062,17 @@ class ProtectApp {
                         <div class="promo-chip">${typeLabel}</div>
                     </div>
                     <div class="promo-meta">
-                        <div><strong>Status</strong>${status}</div>
-                        <div><strong>Offer ID</strong>${offerId}</div>
-                        <div><strong>MP Code</strong>${mpCode}</div>
-                        <div><strong>Devices</strong>${devices}</div>
-                        <div><strong>Value</strong>${value}</div>
-                        <div><strong>Requirements</strong>${requirements}</div>
-                        <div><strong>Eligible Plans</strong>${plans}</div>
-                        <div><strong>Max Payout</strong>${payout}</div>
-                        <div><strong>Max Redemptions</strong>${redemptions}</div>
+                        <div><strong>Promo ID</strong>${promoId}</div>
+                        <div><strong>Category</strong>${category}${subcategory ? ` - ${subcategory}` : ''}</div>
+                        <div><strong>Device</strong>${device}</div>
+                        <div><strong>Activation Type</strong>${activationType}</div>
+                        <div><strong>Max Promo Value</strong>${maxPromoValue}${tierValues ? ` (${tierValues})` : ''}</div>
+                        <div><strong>Trade Required</strong>${tradeRequired}${tradeCondition ? ` - ${tradeCondition}` : ''}</div>
+                        <div><strong>Rate Plan Requirement</strong>${ratePlanReq}</div>
+                        <div><strong>Eligible Segments</strong>${eligibleSegments}</div>
+                        <div><strong>Promo Period</strong>${dateRange}</div>
                     </div>
-                    ${notes ? `<div class="promo-notes">${notes}</div>` : ''}
+                    ${stackableNotes ? `<div class="promo-notes"><strong>Notes:</strong> ${stackableNotes}</div>` : ''}
                 </div>
             `;
         }).join('');
@@ -3086,10 +3095,10 @@ class ProtectApp {
         });
     }
 
-    getPromoType(reqText) {
-        const text = (reqText || '').toLowerCase();
+    getPromoType(activationType) {
+        const text = (activationType || '').toLowerCase();
         const hasPort = text.includes('port');
-        const hasNew = text.includes('new line') || text.includes('new-line') || text.includes('(y)');
+        const hasNew = text.includes('new line') || text.includes('new-line') || text.includes('new') || text.includes('(y)');
         const hasUpgrade = text.includes('upgrade');
 
         if (hasUpgrade) return 'upgrade';
