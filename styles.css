@@ -226,7 +226,7 @@
     --shadow-2xl: 0 12px 16px -3px rgba(0, 0, 0, 0.12);
     
     /* Typography */
-    --font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family: 'Helvetica Neue', Helvetica, 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-base: 1rem;
@@ -5069,5 +5069,105 @@ body {
     body {
         background: var(--bg-primary);
         color: var(--text-primary);
+    }
+}
+
+/* Unified dark theme overrides */
+:root {
+    color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark !important;
+        --bg-primary: #0b1623 !important;
+        --bg-secondary: #0f1d2d !important;
+        --bg-tertiary: #15263a !important;
+        --text-primary: #E5DADA !important;
+        --text-secondary: #B8C4D2 !important;
+        --text-tertiary: #8C98A6 !important;
+        --gray-50: #121a26 !important;
+        --gray-100: #1a2533 !important;
+        --gray-200: #233042 !important;
+        --gray-300: #2d3c51 !important;
+        --gray-400: #41526a !important;
+        --gray-500: #5c6b82 !important;
+        --gray-600: #7a8699 !important;
+        --gray-700: #a1acb8 !important;
+        --gray-800: #c5d0d8 !important;
+        --gray-900: #e8edf2 !important;
+    }
+
+    body {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+    }
+
+    .main-app {
+        background:
+            radial-gradient(circle at 20% 20%, rgba(229, 149, 0, 0.08), transparent 32%),
+            radial-gradient(circle at 80% 10%, rgba(0, 38, 66, 0.18), transparent 34%),
+            linear-gradient(180deg, #0b1623 0%, #02040f 100%) !important;
+    }
+
+    .nav-header {
+        background: rgba(2, 4, 15, 0.9);
+        border-bottom: 1px solid rgba(229, 149, 0, 0.2);
+        box-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .time-date-display,
+    .network-status,
+    .header-weather {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(229, 149, 0, 0.25);
+        color: var(--text-primary);
+    }
+
+    .weather-card,
+    .store-hours-card,
+    .promo-card,
+    .pulse-card,
+    .pulse-card-total,
+    .protection-card,
+    .contact-card,
+    .settings-menu,
+    .modal-content,
+    .device-modal .modal-container,
+    .brand-card,
+    .model-card {
+        background: var(--bg-secondary);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        color: var(--text-primary);
+    }
+
+    .promo-status,
+    .pulse-status {
+        background: var(--bg-secondary);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--text-primary);
+    }
+
+    .bottom-nav {
+        background: rgba(2, 4, 15, 0.95);
+        border-top: 1px solid rgba(229, 149, 0, 0.2);
+        box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .pulse-kpi,
+    .pulse-metric.primary {
+        background: var(--bg-tertiary);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .forecast-pill {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .forecast-pill:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(229, 149, 0, 0.25);
     }
 }
