@@ -3256,7 +3256,9 @@ class ProtectApp {
     }
     
     changeWeek(direction) {
-        this.currentWeekIndex = Math.max(0, Math.min(this.scheduleWeeks.length - 1, this.currentWeekIndex + direction));
+        if (!this.scheduleWeeks || this.scheduleWeeks.length === 0) return;
+        const total = this.scheduleWeeks.length;
+        this.currentWeekIndex = (this.currentWeekIndex + direction + total) % total;
         this.renderSchedule();
     }
     
@@ -3605,19 +3607,12 @@ class ProtectApp {
 
     updateShiftTrackVisibility() {
         if (!this.elements.shiftTrackSection) return;
-        const isWeekly = this.currentScheduleView === 'weekly';
-        this.elements.shiftTrackSection.style.display = isWeekly ? 'none' : '';
+        this.elements.shiftTrackSection.style.display = '';
         if (this.elements.shiftTrackBody) {
-            const shouldCollapse = isWeekly || this.currentScheduleView === 'daily';
-            this.elements.shiftTrackBody.classList.toggle('collapsed', shouldCollapse);
+            this.elements.shiftTrackBody.classList.remove('collapsed');
         }
         if (this.elements.shiftTrackToggle) {
-            const expanded = !isWeekly && this.currentScheduleView === 'daily' ? 'false' : 'false';
-            this.elements.shiftTrackToggle.setAttribute('aria-expanded', expanded);
-        }
-        if (isWeekly && this.elements.shiftTrackBody) {
-            this.elements.shiftTrackBody.classList.add('collapsed');
-            if (this.elements.shiftTrackToggle) this.elements.shiftTrackToggle.setAttribute('aria-expanded', 'false');
+            this.elements.shiftTrackToggle.setAttribute('aria-expanded', 'true');
         }
     }
     

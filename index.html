@@ -19,7 +19,7 @@
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- PWA Manifest -->
@@ -29,7 +29,7 @@
     <link rel="icon" type="image/svg+xml" href="logo.svg">
     <link rel="icon" href="logo.svg">
     <link rel="apple-touch-icon" href="logo.svg">
-    <link rel="mask-icon" href="logo.svg" color="#E59500">
+    <link rel="mask-icon" href="logo.svg" color="#7C3AED">
 </head>
 <body>
     <!-- Splash Screen -->
@@ -154,6 +154,33 @@
                                 <span id="storeStatus" class="store-status">Checking...</span>
                                 <span id="storeProgressLabel" class="store-progress-label">--%</span>
                             </div>
+
+                            <!-- Shift Track Widget (merged into Store Operations) -->
+                            <section class="shift-track-section embedded" id="shiftTrackSection">
+                                <div class="shift-track-header">
+                                    <button id="shiftTrackToggle" class="shift-track-toggle" aria-expanded="true">
+                                        <div>
+                                            <h3>Shift Track</h3>
+                                            <p id="shiftTrackSubtitle">Today's shifts</p>
+                                        </div>
+                                        <i class="fas fa-chevron-up"></i>
+                                    </button>
+                                    <button id="refreshShiftTrackBtn" class="shift-track-refresh" aria-label="Refresh shift progress">
+                                        <i class="fas fa-sync-alt"></i>
+                                        <span>Refresh</span>
+                                    </button>
+                                </div>
+                                <div id="shiftTrackBody" class="shift-track-body">
+                                    <div id="shiftTrackList" class="shift-track-list"></div>
+                                    <div id="shiftTrackEmpty" class="empty-state" style="display: none;">
+                                        <div class="empty-state-icon">
+                                            <i class="fas fa-users-slash"></i>
+                                        </div>
+                                        <div class="empty-state-title">No shifts for today</div>
+                                        <div class="shift-track-message">Check back later or refresh the schedule</div>
+                                    </div>
+                                </div>
+                            </section>
                         </section>
 
                         <section class="weather-card" id="weatherWidget">
@@ -186,6 +213,7 @@
                     </div>
                         </section>
                     </div>
+
                 </section>
             </div>
 
@@ -242,33 +270,6 @@
                             </div>
                             <div class="empty-state-title">No schedule available</div>
                             <div class="empty-state-message">Schedule data is loading or unavailable</div>
-                        </div>
-                    </div>
-
-                    <!-- Shift Track (collapsed in Daily, hidden in Weekly) -->
-                    <div class="shift-track-section" id="shiftTrackSection">
-                        <div class="shift-track-header">
-                            <button id="shiftTrackToggle" class="shift-track-toggle" aria-expanded="true">
-                                <div>
-                                    <h3>Shift Track</h3>
-                                    <p id="shiftTrackSubtitle">Today's shifts</p>
-                                </div>
-                                <i class="fas fa-chevron-up"></i>
-                            </button>
-                            <button id="refreshShiftTrackBtn" class="shift-track-refresh" aria-label="Refresh shift progress">
-                                <i class="fas fa-sync-alt"></i>
-                                <span>Refresh</span>
-                            </button>
-                        </div>
-                        <div id="shiftTrackBody" class="shift-track-body">
-                            <div id="shiftTrackList" class="shift-track-list"></div>
-                            <div id="shiftTrackEmpty" class="empty-state" style="display: none;">
-                                <div class="empty-state-icon">
-                                    <i class="fas fa-users-slash"></i>
-                                </div>
-                                <div class="empty-state-title">No shifts for today</div>
-                                <div class="shift-track-message">Check back later or refresh the schedule</div>
-                            </div>
                         </div>
                     </div>
                 </section>
@@ -660,7 +661,7 @@
                 <div class="version-info">
                     <div class="version-text">
                         <i class="fas fa-info-circle"></i>
-                        <span id="appVersionText">Version 2.12.28.R5</span>
+                        <span id="appVersionText">Version 3.012.28.RC1</span>
                     </div>
                     <div class="copyright-text">
                         Copyright © Glz Technical Services
