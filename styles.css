@@ -348,6 +348,24 @@ body {
     animation: rotateGradient 25s linear infinite reverse;
 }
 
+/* Mobile background animation for passcode */
+@keyframes passcodeDrift {
+    0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    50% { transform: translate3d(6%, 4%, 0) rotate(6deg); }
+    100% { transform: translate3d(-4%, 6%, 0) rotate(-6deg); }
+}
+
+@media (max-width: 640px) {
+    .passcode-background {
+        animation: passcodeDrift 24s ease-in-out infinite alternate;
+    }
+    
+    .passcode-background::before,
+    .passcode-background::after {
+        animation: passcodeDrift 18s ease-in-out infinite alternate-reverse;
+    }
+}
+
 @keyframes rotateGradient {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
@@ -398,9 +416,9 @@ body {
 .passcode-panel {
     width: 100%;
     background: rgba(255, 255, 255, 0.92);
-    border: 1px solid #E2E8F0;
-    box-shadow: 0 18px 48px -18px rgba(15, 23, 42, 0.35), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
-    border-radius: 20px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 24px 56px -24px rgba(15, 23, 42, 0.45);
+    border-radius: 28px;
     padding: var(--space-6);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
@@ -5235,7 +5253,8 @@ body {
 
     .passcode-subtitle-modern,
     .passcode-footnote {
-        color: var(--gray-200);
+        color: var(--text-inverse);
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
     }
 
     .passcode-input {
