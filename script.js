@@ -30,6 +30,9 @@ class ProtectApp {
         this.pulseData = [];
         this.pulseLoaded = false;
         this.pulseUpdatedAt = null;
+        this.refreshInFlight = false;
+        this.autoRefreshInterval = null;
+        this.lastDataSource = 'Unknown';
         
         // DOM Elements
         this.elements = {};
@@ -203,11 +206,13 @@ class ProtectApp {
             }
             
             await Promise.all([
-                this.loadData(),
-                this.loadScheduleData(),
+                this.loadData({ force: true }),
+                this.loadScheduleData(true),
                 this.loadPromos(true),
                 this.loadPulseData(true)
             ]);
+            this.updateDataStatusUI();
+            this.startAutoRefreshLoop();
             this.hideLoading();
             setTimeout(() => {
                 this.startTimeDateDisplay();
@@ -364,6 +369,14 @@ class ProtectApp {
         this.elements.settingsTimerBar = document.getElementById('settingsTimerBar');
         this.elements.settingsTimerCard = document.getElementById('settingsTimerCard');
         this.elements.showTimerInfoBtn = document.getElementById('showTimerInfoBtn');
+        this.elements.dataSourcesToggle = document.getElementById('dataSourcesToggle');
+        this.elements.dataSourcesBody = document.getElementById('dataSourcesBody');
+        this.elements.dataProtectSource = document.getElementById('dataProtectSource');
+        this.elements.dataProtectUpdated = document.getElementById('dataProtectUpdated');
+        this.elements.dataScheduleSource = document.getElementById('dataScheduleSource');
+        this.elements.dataScheduleUpdated = document.getElementById('dataScheduleUpdated');
+        this.elements.dataPromoSource = document.getElementById('dataPromoSource');
+        this.elements.dataPromoUpdated = document.getElementById('dataPromoUpdated');
         
         // Toast and loading
         this.elements.toastContainer = document.getElementById('toastContainer');
@@ -410,6 +423,9 @@ class ProtectApp {
         }
         if (this.elements.showTimerInfoBtn) {
             this.elements.showTimerInfoBtn.addEventListener('click', () => this.showTimerInfo());
+        }
+        if (this.elements.dataSourcesToggle) {
+            this.elements.dataSourcesToggle.addEventListener('click', () => this.toggleDataSources());
         }
         if (this.elements.settingsTimerCard) {
             this.elements.settingsTimerCard.addEventListener('click', () => this.showTimerInfo());
@@ -666,25 +682,29 @@ class ProtectApp {
         return Math.max(0, remaining);
     }
     
-    async loadData() {
+    async loadData(options = {}) {
+        const { force = false, silent = false } = options;
         try {
-            if (this.config.DEBUG_MODE) console.log('Starting data load...');
-            this.showLoading('Loading device data...');
+            if (this.config.DEBUG_MODE) console.log('Starting data load...', { force, silent });
+            if (!silent) this.showLoading('Loading device data...');
             
+            let useCache = !force;
             const cachedData = this.getCachedData();
             
-            if (cachedData && this.isCacheValid()) {
+            if (cachedData && this.isCacheValid() && useCache) {
                 this.deviceData = cachedData;
-                this.hideLoading();
+                this.updateDataStatusUI();
+                if (!silent) this.hideLoading();
                 return;
             }
             
             await this.loadFromGoogleSheets();
-            this.hideLoading();
+            if (!silent) this.hideLoading();
         } catch (error) {
             console.error('Failed to load data:', error);
-            this.hideLoading();
+            if (!silent) this.hideLoading();
             this.deviceData = this.getCachedData() || this.getFallbackData();
+            this.recordDataUpdate('Offline fallback');
             this.showToast('Using offline data', 'warning');
         }
     }
@@ -714,7 +734,8 @@ class ProtectApp {
             
             const csvText = await response.text();
             this.deviceData = this.parseCSVData(csvText);
-            this.cacheData(this.deviceData);
+            const sourceLabel = response.url ? `Protect · ${new URL(response.url).hostname}` : 'Protect · Google Sheets';
+            this.cacheData(this.deviceData, sourceLabel, 'protect');
         } catch (error) {
             console.error('Failed to load from Google Sheets:', error);
             throw error;
@@ -781,25 +802,88 @@ class ProtectApp {
         }
     }
 
-    cacheData(data) {
+    cacheData(data, sourceLabel = 'Google Sheets', sourceKey = 'protect') {
         try {
             localStorage.setItem(this.config.CACHE_KEY, JSON.stringify(data));
-            localStorage.setItem('lastDataUpdate', Date.now().toString());
-    } catch (error) {
+            this.recordDataUpdate(sourceKey, sourceLabel);
+        } catch (error) {
             console.error('Failed to cache data:', error);
         }
     }
 
     isCacheValid() {
         try {
-            const lastUpdate = localStorage.getItem('lastDataUpdate');
-            if (!lastUpdate) return false;
-            
-            const cacheAge = Date.now() - parseInt(lastUpdate);
+            const map = this.getDataUpdateMap();
+            const protectEntry = map.protect;
+            if (!protectEntry) return false;
+            const cacheAge = Date.now() - protectEntry.ts;
             return cacheAge < this.config.CACHE_DURATION;
         } catch (error) {
             return false;
         }
+    }
+
+    getDataUpdateMap() {
+        try {
+            const raw = localStorage.getItem('lastDataUpdates');
+            return raw ? JSON.parse(raw) : {};
+        } catch (error) {
+            return {};
+        }
+    }
+
+    setDataUpdateMap(map) {
+        try {
+            localStorage.setItem('lastDataUpdates', JSON.stringify(map));
+        } catch (error) {
+            console.error('Failed to persist data update map', error);
+        }
+    }
+
+    recordDataUpdate(sourceKey, sourceLabel = 'Google Sheets') {
+        try {
+            const now = Date.now();
+            const map = this.getDataUpdateMap();
+            map[sourceKey] = { ts: now, source: sourceLabel };
+            this.setDataUpdateMap(map);
+            this.lastDataSource = sourceLabel;
+            this.updateDataStatusUI();
+        } catch (error) {
+            console.error('Failed to record data update', error);
+        }
+    }
+
+    updateDataStatusUI() {
+        const map = this.getDataUpdateMap();
+        const entries = [
+            { key: 'protect', sourceEl: this.elements.dataProtectSource, timeEl: this.elements.dataProtectUpdated, label: 'Protect data' },
+            { key: 'schedule', sourceEl: this.elements.dataScheduleSource, timeEl: this.elements.dataScheduleUpdated, label: 'Schedule data' },
+            { key: 'promos', sourceEl: this.elements.dataPromoSource, timeEl: this.elements.dataPromoUpdated, label: 'Promotions' },
+        ];
+        entries.forEach(entry => {
+            if (!entry.sourceEl || !entry.timeEl) return;
+            const rec = map[entry.key];
+            if (rec && rec.ts) {
+                entry.sourceEl.textContent = rec.source || entry.label;
+                entry.timeEl.textContent = `Last updated: ${this.formatTimeAgo(rec.ts)}`;
+            } else {
+                entry.sourceEl.textContent = '—';
+                entry.timeEl.textContent = 'Last updated: --';
+            }
+        });
+    }
+
+    formatTimeAgo(timestamp) {
+        const diffMs = Date.now() - timestamp;
+        if (diffMs < 0) return 'just now';
+        const seconds = Math.floor(diffMs / 1000);
+        if (seconds < 60) return 'just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes} min${minutes === 1 ? '' : 's'} ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} hr${hours === 1 ? '' : 's'} ago`;
+        const days = Math.floor(hours / 24);
+        return `${days} day${days === 1 ? '' : 's'} ago`;
     }
     
     getFallbackData() {
@@ -825,14 +909,14 @@ class ProtectApp {
     
     // ========== SCHEDULE DATA LOADING ==========
     
-    async loadScheduleData() {
+    async loadScheduleData(force = false) {
         try {
             if (this.config.DEBUG_MODE) console.log('Starting schedule data load...');
             
             // Clear old cache format to avoid conflicts
             const cachedData = this.getCachedScheduleData();
             
-            if (cachedData && this.isScheduleCacheValid()) {
+            if (cachedData && this.isScheduleCacheValid() && !force) {
                 // Handle both old format (object) and new format (array)
                 if (Array.isArray(cachedData)) {
                     this.scheduleData = cachedData;
@@ -930,8 +1014,8 @@ class ProtectApp {
             
             // Parse the single CSV - get all schedule data
             this.scheduleData = this.parseScheduleCSV(csvText);
-            
-            this.cacheScheduleData(this.scheduleData);
+            const sourceLabel = response && response.url ? `Schedule · ${new URL(response.url).hostname}` : 'Schedule · Google Sheets';
+            this.cacheScheduleData(this.scheduleData, sourceLabel);
             
             if (this.config.DEBUG_MODE) {
                 console.log('Schedule data loaded:', this.scheduleData.length, 'shifts');
@@ -1122,10 +1206,10 @@ class ProtectApp {
         }
     }
     
-    cacheScheduleData(data) {
+    cacheScheduleData(data, sourceLabel = 'Schedule') {
         try {
             localStorage.setItem(this.config.SCHEDULE_CACHE_KEY, JSON.stringify(data));
-            localStorage.setItem('lastScheduleUpdate', Date.now().toString());
+            this.recordDataUpdate('schedule', sourceLabel);
         } catch (error) {
             console.error('Failed to cache schedule data:', error);
         }
@@ -2146,7 +2230,7 @@ class ProtectApp {
     
     refreshDeviceData() {
         this.closeDeviceModal();
-        this.loadData().then(() => {
+        this.loadData({ force: true, silent: true }).then(() => {
             this.showToast('Data refreshed', 'success');
         });
     }
@@ -2644,6 +2728,14 @@ class ProtectApp {
         this.elements.maintenanceBody.setAttribute('aria-hidden', expanded ? 'true' : 'false');
     }
 
+    toggleDataSources() {
+        if (!this.elements.dataSourcesToggle || !this.elements.dataSourcesBody) return;
+        const expanded = this.elements.dataSourcesToggle.getAttribute('aria-expanded') === 'true';
+        this.elements.dataSourcesToggle.setAttribute('aria-expanded', (!expanded).toString());
+        this.elements.dataSourcesBody.classList.toggle('show', !expanded);
+        this.elements.dataSourcesBody.setAttribute('aria-hidden', expanded ? 'true' : 'false');
+    }
+
     updateHeaderWeather(temp, desc, location) {
         if (!this.elements.headerWeather || !this.elements.headerWeatherTemp || 
             !this.elements.headerWeatherDesc || !this.elements.headerWeatherLocation) return;
@@ -2994,6 +3086,8 @@ class ProtectApp {
             const csvText = await res.text();
             this.promos = this.parsePromoCSV(csvText);
             this.promosLoaded = true;
+            const sourceLabel = res.url ? `Promos · ${new URL(res.url).hostname}` : 'Promos · Google Sheets';
+            this.recordDataUpdate('promos', sourceLabel);
             this.renderPromos();
         } catch (error) {
             console.error('Failed to load promos:', error);
@@ -3628,54 +3722,98 @@ class ProtectApp {
         }
     }
     
-    async refreshData() {
+    clearDataCaches() {
+        localStorage.removeItem(this.config.CACHE_KEY);
+        localStorage.removeItem('lastDataUpdate');
+        localStorage.removeItem('lastDataSource');
+        localStorage.removeItem('lastDataUpdates');
+        localStorage.removeItem(this.config.SCHEDULE_CACHE_KEY);
+        localStorage.removeItem('lastScheduleUpdate');
+    }
+
+    async refreshAllData({ force = false, silent = false, reason = 'manual' } = {}) {
+        if (this.refreshInFlight) {
+            if (this.config.DEBUG_MODE) console.log('Refresh skipped, already running');
+            return;
+        }
+        this.refreshInFlight = true;
+        if (!silent) this.showLoading('Refreshing data...');
+        if (force) this.clearDataCaches();
         try {
-            this.showLoading('Refreshing data...');
-            localStorage.removeItem(this.config.CACHE_KEY);
-            localStorage.removeItem('lastDataUpdate');
-            await this.loadFromGoogleSheets();
-            this.hideLoading();
+            await Promise.all([
+                this.loadData({ force: true, silent: true }),
+                this.loadScheduleData(true),
+                this.loadPromos(true),
+                this.loadPulseData(true)
+            ]);
+            this.updateDataStatusUI();
+            if (!silent) this.showToast('Data refreshed successfully', 'success');
             this.initializeDeviceFlow();
-            this.showToast('Data refreshed successfully', 'success');
-            this.closeSettings();
         } catch (error) {
-            this.hideLoading();
-            this.showToast('Failed to refresh data', 'error');
+            console.error('Failed to refresh data:', error);
+            if (!silent) this.showToast('Failed to refresh data', 'error');
+        } finally {
+            if (!silent) this.hideLoading();
+            this.refreshInFlight = false;
+            if (this.config.DEBUG_MODE) console.log('Refresh completed', { reason });
         }
     }
+
+    startAutoRefreshLoop() {
+        const interval = this.config.AUTO_REFRESH_INTERVAL_MS || 150000;
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+        }
+        this.autoRefreshInterval = setInterval(() => {
+            this.refreshAllData({ force: true, silent: true, reason: 'auto-interval' });
+        }, interval);
+    }
+
+    async refreshData() {
+        await this.refreshAllData({ force: true, silent: false, reason: 'manual' });
+        this.closeSettings();
+    }
     
+    async clearCachesAndStorage() {
+        // Clear all localStorage
+        localStorage.clear();
+        // Clear caches
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+        }
+        // Unregister service workers
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map(reg => reg.unregister()));
+        }
+    }
+
+    async forceUpdateReload() {
+        try {
+            await this.clearCachesAndStorage();
+        } catch (error) {
+            console.error('Failed to clear caches before reload', error);
+        }
+        // Force hard reload with cache bypass to get latest version
+        window.location.href = window.location.href.split('?')[0] + '?v=' + Date.now();
+        setTimeout(() => window.location.reload(true), 500);
+    }
+
+    async handleServiceWorkerUpdate() {
+        if (this.config.DEBUG_MODE) console.log('Service worker update detected');
+        this.showToast('App update found. Reloading...', 'info');
+        await this.forceUpdateReload();
+    }
+
     async updateApp() {
         try {
             this.showLoading('Updating app to latest version...');
-            
-            // Clear all localStorage
-            localStorage.clear();
-            
-            // Clear all caches
-            if ('caches' in window) {
-                const cacheNames = await caches.keys();
-                await Promise.all(cacheNames.map(name => caches.delete(name)));
-            }
-            
-            // Unregister all service workers
-            if ('serviceWorker' in navigator) {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                await Promise.all(registrations.map(reg => reg.unregister()));
-            }
-            
+            await this.clearCachesAndStorage();
             this.hideLoading();
             this.showToast('App updated. Reloading...', 'success');
             this.closeSettings();
-            
-            // Force hard reload with cache bypass to get latest version
-            setTimeout(() => {
-                // Use location.reload with forced reload or navigate to force refresh
-                window.location.href = window.location.href.split('?')[0] + '?v=' + Date.now();
-                // Fallback if above doesn't work
-                setTimeout(() => {
-                    window.location.reload(true);
-                }, 500);
-            }, 1000);
+            setTimeout(() => this.forceUpdateReload(), 500);
         } catch (error) {
             console.error('Failed to update app:', error);
             this.hideLoading();
@@ -3780,12 +3918,11 @@ if ('serviceWorker' in navigator) {
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // New service worker available, prompt user to reload
-                                if (window.app) {
-                                    window.app.showToast('App update available. Reloading...', 'info');
-                                    setTimeout(() => {
-                                        window.location.reload();
-                                    }, 1000);
+                                // New service worker available, force reload after clearing caches
+                                if (window.app && typeof window.app.handleServiceWorkerUpdate === 'function') {
+                                    window.app.handleServiceWorkerUpdate();
+                                } else {
+                                    window.location.reload();
                                 }
                             }
                         });

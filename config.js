@@ -35,7 +35,7 @@ const CONFIG = {
     
     // App settings
     APP_NAME: 'StoreView',
-    APP_VERSION: '3.012.28.RC1',
+    APP_VERSION: '3.1.1230',
 
     // Pulse dashboard (performance sheet)
     PULSE_SHEET_URL: 'https://docs.google.com/spreadsheets/d/1Xtib3XoA1gJ9OJWVL0pd9GFDqHQH5W_KoWFuxglXlMU/gviz/tq?tqx=out:csv&gid=0',
@@ -64,6 +64,7 @@ const CONFIG = {
     // Security settings
     PASSCODE: '6974',
     INACTIVITY_TIMEOUT: 20 * 1000, // 20 seconds in milliseconds
+    AUTO_REFRESH_INTERVAL_MS: 150 * 1000, // 2.5 minutes
     
     // Debug mode (shows console logs)
     DEBUG_MODE: true
