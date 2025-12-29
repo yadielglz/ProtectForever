@@ -189,12 +189,24 @@ class ProtectApp {
         
         this.showLoading('Initializing StoreView...');
             
+            // Force fresh data each start
             localStorage.removeItem(this.config.CACHE_KEY);
             localStorage.removeItem('lastDataUpdate');
+            localStorage.removeItem(this.config.SCHEDULE_CACHE_KEY);
+            localStorage.removeItem('lastScheduleUpdate');
+
+            // Nudge service worker to update if present
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(regs => {
+                    regs.forEach(reg => reg.update().catch(() => {}));
+                });
+            }
             
             await Promise.all([
                 this.loadData(),
-                this.loadScheduleData()
+                this.loadScheduleData(),
+                this.loadPromos(true),
+                this.loadPulseData(true)
             ]);
             this.hideLoading();
             setTimeout(() => {

@@ -52,6 +52,7 @@
     font-size: 2.5rem;
     font-weight: 700;
     margin-bottom: var(--space-2);
+    color: var(--text-inverse);
     text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     animation: splashTitleSlide 1s ease-out 0.3s both;
 }
@@ -61,6 +62,7 @@
     font-weight: 400;
     opacity: 0.9;
     margin-bottom: var(--space-8);
+    color: var(--text-inverse);
     animation: splashSubtitleSlide 1s ease-out 0.6s both;
 }
 
@@ -5254,5 +5256,11 @@ body {
     .passcode-panel .logo-icon-modern {
         background: rgba(124, 58, 237, 0.24);
         color: var(--text-inverse);
+    }
+
+    .splash-title,
+    .splash-subtitle {
+        color: var(--text-primary);
+        text-shadow: none;
     }
 }

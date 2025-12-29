@@ -1,5 +1,5 @@
 // Modern Service Worker for StoreView PWA
-const CACHE_NAME = 'storeview-v3';
+const CACHE_NAME = 'storeview-v4';
 const STATIC_CACHE_URLS = [
     '/',
     '/index.html',
@@ -8,7 +8,7 @@ const STATIC_CACHE_URLS = [
     '/config.js',
     '/manifest.json',
     '/sw.js',
-    'https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap',
+    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
 ];
 
@@ -20,7 +20,8 @@ const ICON_FILES = [
     '/favicon-16x16.png',
     '/favicon-32x32.png',
     '/favicon.ico',
-    '/favicon.png'
+    '/favicon.png',
+    '/logo.svg'
 ];
 
 // Install event - cache static assets
