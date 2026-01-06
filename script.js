@@ -5,6 +5,7 @@ class ProtectApp {
         this.deviceData = [];
         this.scheduleData = []; // All schedule shifts in one array
         this.scheduleWeeks = []; // Organized by week (calculated from dates)
+        this.scheduleByDate = new Map(); // Organized by day for fast lookup
         this.currentPasscode = '';
         this.selectedBrand = null;
         this.selectedModel = null;
@@ -1041,11 +1042,21 @@ class ProtectApp {
             return;
         }
         
+        this.scheduleByDate = new Map();
+
         // Group all shifts by week (Thursday to Wednesday)
         const weekMap = new Map();
         
         this.scheduleData.forEach(shift => {
             const date = new Date(shift.date);
+            date.setHours(0, 0, 0, 0);
+
+            const dateKey = this.getDateKey(date);
+            if (!this.scheduleByDate.has(dateKey)) {
+                this.scheduleByDate.set(dateKey, []);
+            }
+            this.scheduleByDate.get(dateKey).push(shift);
+
             // Get the Thursday of the week (week starts on Thursday)
             // Day 0 = Sunday, Day 4 = Thursday
             const dayOfWeek = date.getDay();
@@ -1318,6 +1329,13 @@ class ProtectApp {
             return false;
         }
     }
+
+    getDateKey(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
     
     getScheduleForWeek(weekIndex) {
         if (weekIndex >= 0 && weekIndex < this.scheduleWeeks.length) {
@@ -1329,11 +1347,16 @@ class ProtectApp {
     getScheduleForDate(date) {
         const targetDate = new Date(date);
         targetDate.setHours(0, 0, 0, 0);
+        const dateKey = this.getDateKey(targetDate);
         
+        if (this.scheduleByDate && this.scheduleByDate.size > 0) {
+            return this.scheduleByDate.get(dateKey) || [];
+        }
+
         return this.scheduleData.filter(shift => {
             const shiftDate = new Date(shift.date);
             shiftDate.setHours(0, 0, 0, 0);
-            return shiftDate.getTime() === targetDate.getTime();
+            return this.getDateKey(shiftDate) === dateKey;
         });
     }
     

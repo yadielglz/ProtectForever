@@ -1890,7 +1890,7 @@ body {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    max-height: calc(100vh - 400px);
+    max-height: calc(100vh - var(--header-height) - var(--bottom-bar-height) - 160px);
     flex: 1;
     min-height: 0;
 }
@@ -1989,6 +1989,17 @@ body {
 .employee-cell {
     font-weight: 600;
     color: var(--text-primary);
+}
+
+@media (min-width: 1024px) {
+    .schedule-section {
+        overflow: visible;
+    }
+
+    .schedule-table-container {
+        max-height: none;
+        overflow-y: visible;
+    }
 }
 
 /* Shift Track Tab */
