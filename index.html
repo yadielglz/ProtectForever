@@ -360,28 +360,17 @@
                         <div class="promo-title">
                             <i class="fas fa-tags"></i>
                             <div>
-                                <h3>Current Promotions</h3>
-                                <p>Current T-Mobile Promo</p>
+                                <h3>Promotions</h3>
+                                <p>Under construction</p>
                             </div>
                         </div>
-                        <button id="promoRefreshBtn" class="promo-refresh-btn" aria-label="Refresh promotions">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
                     </div>
-                <div class="promo-filters">
-                    <button class="promo-filter-btn active" data-filter="all">All</button>
-                    <button class="promo-filter-btn" data-filter="new">New line</button>
-                    <button class="promo-filter-btn" data-filter="new-port">New line + port</button>
-                    <button class="promo-filter-btn" data-filter="upgrade">Upgrade</button>
-                </div>
-                    <div id="promoStatus" class="promo-status">Loading...</div>
-                    <div id="promoList" class="promo-list"></div>
-                    <div id="promoEmpty" class="empty-state" style="display: none;">
+                    <div class="empty-state" style="margin-top: var(--space-6);">
                         <div class="empty-state-icon">
-                            <i class="fas fa-folder-open"></i>
+                            <i class="fas fa-hard-hat"></i>
                         </div>
-                        <div class="empty-state-title">No promotions found</div>
-                        <div class="empty-state-message">Check back soon for new offers</div>
+                        <div class="empty-state-title">Coming soon</div>
+                        <div class="empty-state-message">We’re rebuilding this experience. Please check back shortly.</div>
                     </div>
                 </section>
             </div>
@@ -417,12 +406,6 @@
                 </div>
                 <span class="nav-label">Home</span>
             </div>
-            <div class="nav-item" id="pulseTabBtn" data-tab="pulse">
-                <div class="nav-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <span class="nav-label">Pulse</span>
-            </div>
             <div class="nav-item" id="protectTabBtn" data-tab="protect">
                 <div class="nav-icon">
                     <i class="fas fa-shield-alt"></i>
@@ -435,17 +418,11 @@
                 </div>
                 <span class="nav-label">Promos</span>
             </div>
-            <div class="nav-item" id="scheduleTabBtn" data-tab="schedule">
-                <div class="nav-icon">
-                    <i class="fas fa-calendar-alt"></i>
-                </div>
-                <span class="nav-label">Schedule</span>
-            </div>
             <div class="nav-item" id="settingsTabBtn">
                 <div class="nav-icon">
-                    <i class="fas fa-cog"></i>
+                    <i class="fas fa-ellipsis-h"></i>
                 </div>
-                <span class="nav-label">Settings</span>
+                <span class="nav-label">More</span>
             </div>
         </nav>
     </div>
@@ -511,7 +488,7 @@
                 <button id="closeSettings" class="close-button back-button-icon" aria-label="Close settings">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <h3>Settings</h3>
+                <h3>More</h3>
             </div>
             <div class="settings-options">
                 <div class="settings-session-card" id="settingsTimerCard">
@@ -531,6 +508,20 @@
                     <div class="settings-session-bar">
                         <div class="settings-session-progress" id="settingsTimerBar"></div>
                     </div>
+                </div>
+                <div class="settings-subsection">
+                    <div class="settings-subsection-header">
+                        <i class="fas fa-bolt"></i>
+                        <span>Quick access</span>
+                    </div>
+                    <button class="settings-option" id="morePulseBtn">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Pulse</span>
+                    </button>
+                    <button class="settings-option" id="moreScheduleBtn">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Schedule</span>
+                    </button>
                 </div>
                 <div class="settings-collapsible">
                     <button class="settings-collapsible-header" id="dataSourcesToggle" aria-expanded="false">
@@ -563,18 +554,6 @@
                             </div>
                             <div class="settings-data-meta">
                                 <div class="settings-data-updated" id="dataScheduleUpdated">Last updated: --</div>
-                            </div>
-                        </div>
-                        <div class="settings-option settings-data-status" id="dataPromoCard">
-                            <div class="settings-input-label">
-                                <i class="fas fa-tags"></i>
-                                <div>
-                                    <div class="settings-input-title">Promotions</div>
-                                    <div class="settings-input-subtitle" id="dataPromoSource">--</div>
-                                </div>
-                            </div>
-                            <div class="settings-data-meta">
-                                <div class="settings-data-updated" id="dataPromoUpdated">Last updated: --</div>
                             </div>
                         </div>
                     </div>

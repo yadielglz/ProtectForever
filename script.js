@@ -209,7 +209,6 @@ class ProtectApp {
             await Promise.all([
                 this.loadData({ force: true }),
                 this.loadScheduleData(true),
-                this.loadPromos(true),
                 this.loadPulseData(true)
             ]);
             this.updateDataStatusUI();
@@ -261,11 +260,6 @@ class ProtectApp {
         this.elements.scheduleTab = document.getElementById('scheduleTab');
         this.elements.protectTab = document.getElementById('protectTab');
         this.elements.promoTab = document.getElementById('promoTab');
-        this.elements.promoList = document.getElementById('promoList');
-        this.elements.promoStatus = document.getElementById('promoStatus');
-        this.elements.promoEmpty = document.getElementById('promoEmpty');
-        this.elements.promoRefreshBtn = document.getElementById('promoRefreshBtn');
-        this.elements.promoFilters = document.querySelector('.promo-filters');
         this.elements.pulseGrid = document.getElementById('pulseGrid');
         this.elements.pulseStatus = document.getElementById('pulseStatus');
         this.elements.pulseRefreshBtn = document.getElementById('pulseRefreshBtn');
@@ -279,6 +273,8 @@ class ProtectApp {
         this.elements.networkSub = document.getElementById('networkSub');
         this.elements.timerNavBtn = document.getElementById('timerNavBtn');
         this.elements.timerNavLabel = document.getElementById('timerNavLabel');
+        this.elements.morePulseBtn = document.getElementById('morePulseBtn');
+        this.elements.moreScheduleBtn = document.getElementById('moreScheduleBtn');
         
         // Home tab elements
         this.elements.homeClock = document.getElementById('homeClock');
@@ -376,8 +372,6 @@ class ProtectApp {
         this.elements.dataProtectUpdated = document.getElementById('dataProtectUpdated');
         this.elements.dataScheduleSource = document.getElementById('dataScheduleSource');
         this.elements.dataScheduleUpdated = document.getElementById('dataScheduleUpdated');
-        this.elements.dataPromoSource = document.getElementById('dataPromoSource');
-        this.elements.dataPromoUpdated = document.getElementById('dataPromoUpdated');
         
         // Toast and loading
         this.elements.toastContainer = document.getElementById('toastContainer');
@@ -408,16 +402,24 @@ class ProtectApp {
         
         // Bottom navigation - Tab switching
         this.elements.homeTabBtn.addEventListener('click', () => this.switchTab('home'));
-        if (this.elements.pulseTabBtn) {
-            this.elements.pulseTabBtn.addEventListener('click', () => this.switchTab('pulse'));
-        }
-        this.elements.scheduleTabBtn.addEventListener('click', () => this.switchTab('schedule'));
         this.elements.protectTabBtn.addEventListener('click', () => this.switchTab('protect'));
         if (this.elements.promoTabBtn) {
             this.elements.promoTabBtn.addEventListener('click', () => this.switchTab('promo'));
         }
         if (this.elements.settingsTabBtn) {
             this.elements.settingsTabBtn.addEventListener('click', () => this.toggleSettings());
+        }
+        if (this.elements.morePulseBtn) {
+            this.elements.morePulseBtn.addEventListener('click', () => {
+                this.closeSettings();
+                this.switchTab('pulse');
+            });
+        }
+        if (this.elements.moreScheduleBtn) {
+            this.elements.moreScheduleBtn.addEventListener('click', () => {
+                this.closeSettings();
+                this.switchTab('schedule');
+            });
         }
         if (this.elements.timerNavBtn) {
             this.elements.timerNavBtn.addEventListener('click', () => this.showTimerInfo());
@@ -859,7 +861,6 @@ class ProtectApp {
         const entries = [
             { key: 'protect', sourceEl: this.elements.dataProtectSource, timeEl: this.elements.dataProtectUpdated, label: 'Protect data' },
             { key: 'schedule', sourceEl: this.elements.dataScheduleSource, timeEl: this.elements.dataScheduleUpdated, label: 'Schedule data' },
-            { key: 'promos', sourceEl: this.elements.dataPromoSource, timeEl: this.elements.dataPromoUpdated, label: 'Promotions' },
         ];
         entries.forEach(entry => {
             if (!entry.sourceEl || !entry.timeEl) return;
@@ -2307,8 +2308,6 @@ class ProtectApp {
         
         // Remove active class from all nav items
         if (this.elements.homeTabBtn) this.elements.homeTabBtn.classList.remove('active');
-        if (this.elements.pulseTabBtn) this.elements.pulseTabBtn.classList.remove('active');
-        if (this.elements.scheduleTabBtn) this.elements.scheduleTabBtn.classList.remove('active');
         if (this.elements.protectTabBtn) this.elements.protectTabBtn.classList.remove('active');
         if (this.elements.promoTabBtn) this.elements.promoTabBtn.classList.remove('active');
         
@@ -2389,9 +2388,6 @@ class ProtectApp {
             this.elements.promoTabBtn.classList.add('active');
         }
         this.toggleHeaderStatus(false);
-        if (!this.promosLoaded) {
-            this.loadPromos(false);
-        }
     }
     
     // ========== HOME TAB CLOCK ==========
@@ -3093,135 +3089,10 @@ class ProtectApp {
     }
 
     // ========== PROMOTIONS ==========
-    async loadPromos(forceRefresh = false) {
-        if (!this.elements.promoList || !this.elements.promoStatus) return;
-
-        if (this.promosLoaded && !forceRefresh) return;
-
-        this.elements.promoStatus.textContent = 'Loading promotions...';
-        this.elements.promoStatus.style.display = 'block';
-        this.elements.promoEmpty.style.display = 'none';
-        this.elements.promoList.innerHTML = '';
-
-        try {
-            const res = await fetch(this.config.PROMO_SHEET_URL, { cache: 'no-store' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const csvText = await res.text();
-            this.promos = this.parsePromoCSV(csvText);
-            this.promosLoaded = true;
-            const sourceLabel = res.url ? `Promos · ${new URL(res.url).hostname}` : 'Promos · Google Sheets';
-            this.recordDataUpdate('promos', sourceLabel);
-            this.renderPromos();
-        } catch (error) {
-            console.error('Failed to load promos:', error);
-            this.elements.promoStatus.textContent = 'Failed to load promotions';
-        }
-    }
-
-    parsePromoCSV(csvText) {
-        const lines = csvText.split(/\r?\n/).filter(l => l.trim());
-        if (lines.length < 2) return [];
-        const headers = this.parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
-        const promos = [];
-        for (let i = 1; i < lines.length; i++) {
-            const row = this.parseCSVLine(lines[i]);
-            if (!row.length) continue;
-            const obj = {};
-            headers.forEach((h, idx) => {
-                obj[h] = row[idx] || '';
-            });
-            // Basic required fields - check for new column names
-            if (obj['promo name'] || obj['promo id']) {
-                // Determine promo type from Activation Type field
-                obj.__type = this.getPromoType(obj['activation type'] || '');
-                promos.push(obj);
-            }
-        }
-        return promos;
-    }
-
-    renderPromos() {
-        const listEl = this.elements.promoList;
-        const statusEl = this.elements.promoStatus;
-        const emptyEl = this.elements.promoEmpty;
-        if (!listEl || !statusEl || !emptyEl) return;
-
-        const filtered = (this.promos || []).filter(p => {
-            if (this.promoFilter === 'all') return true;
-            return p.__type === this.promoFilter;
-        });
-
-        if (!filtered || filtered.length === 0) {
-            statusEl.style.display = 'none';
-            emptyEl.style.display = 'block';
-            listEl.innerHTML = '';
-            return;
-        }
-
-        statusEl.style.display = 'none';
-        emptyEl.style.display = 'none';
-
-        const cards = filtered.map(promo => {
-            const name = promo['promo name'] || 'Unnamed Promo';
-            const category = promo['category'] || '—';
-            const subcategory = promo['subcategory'] || '';
-            const device = promo['device'] || 'Devices vary';
-            const activationType = promo['activation type'] || '—';
-            const tradeRequired = promo['trade required'] || '—';
-            const tradeCondition = promo['trade condition'] || '';
-            const maxPromoValue = promo['max promo value'] || 'See details';
-            const tierValues = promo['tier values'] || '';
-            const ratePlanReq = promo['rate plan requirement'] || '—';
-            const eligibleSegments = promo['eligible segments'] || '—';
-            const stackableNotes = promo['stackable notes'] || '';
-            const promoStart = promo['promo start'] || '';
-            const promoEnd = promo['promo end'] || '';
-            const promoId = promo['promo id'] || '';
-            const typeLabel = this.getPromoTypeLabel(promo.__type);
-            
-            // Build date range string
-            const dateRange = promoStart && promoEnd ? `${promoStart} - ${promoEnd}` : 
-                             promoStart ? `Starts: ${promoStart}` : 
-                             promoEnd ? `Ends: ${promoEnd}` : '—';
-
-            return `
-                <div class="promo-card">
-                    <div class="promo-card-header">
-                        <div class="promo-name">${name}</div>
-                        <div class="promo-chip">${typeLabel}</div>
-                    </div>
-                    <div class="promo-meta">
-                        <div><strong>Promo ID</strong>${promoId}</div>
-                        <div><strong>Category</strong>${category}${subcategory ? ` - ${subcategory}` : ''}</div>
-                        <div><strong>Device</strong>${device}</div>
-                        <div><strong>Activation Type</strong>${activationType}</div>
-                        <div><strong>Max Promo Value</strong>${maxPromoValue}${tierValues ? ` (${tierValues})` : ''}</div>
-                        <div><strong>Trade Required</strong>${tradeRequired}${tradeCondition ? ` - ${tradeCondition}` : ''}</div>
-                        <div><strong>Rate Plan Requirement</strong>${ratePlanReq}</div>
-                        <div><strong>Eligible Segments</strong>${eligibleSegments}</div>
-                        <div><strong>Promo Period</strong>${dateRange}</div>
-                    </div>
-                    ${stackableNotes ? `<div class="promo-notes"><strong>Notes:</strong> ${stackableNotes}</div>` : ''}
-                </div>
-            `;
-        }).join('');
-
-        listEl.innerHTML = cards;
-        this.updatePromoFilterUI();
-    }
-
-    setPromoFilter(filter) {
-        this.promoFilter = filter || 'all';
-        this.renderPromos();
-    }
-
-    updatePromoFilterUI() {
-        if (!this.elements.promoFilters) return;
-        const buttons = this.elements.promoFilters.querySelectorAll('.promo-filter-btn');
-        buttons.forEach(btn => {
-            const f = btn.dataset.filter || 'all';
-            btn.classList.toggle('active', f === this.promoFilter);
-        });
+    async loadPromos() {
+        // Promotions disabled / under construction
+        this.promosLoaded = true;
+        this.promos = [];
     }
 
     getPromoType(activationType) {
@@ -3766,7 +3637,6 @@ class ProtectApp {
             await Promise.all([
                 this.loadData({ force: true, silent: true }),
                 this.loadScheduleData(true),
-                this.loadPromos(true),
                 this.loadPulseData(true)
             ]);
             this.updateDataStatusUI();

@@ -4075,6 +4075,7 @@ body {
     font-weight: 700;
     color: var(--text-primary);
     padding: 0 var(--space-1);
+    text-transform: none;
 }
 
 .settings-input-label {
