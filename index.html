@@ -6,8 +6,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="StoreView">
-    <meta name="theme-color" content="#E59500">
-    <meta name="msapplication-TileColor" content="#E59500">
+    <meta name="theme-color" content="#89c2ff">
+    <meta name="msapplication-TileColor" content="#89c2ff">
     <meta name="msapplication-TileImage" content="logo.svg">
     
     <title>StoreView - Daily Outlook</title>
@@ -29,7 +29,7 @@
     <link rel="icon" type="image/svg+xml" href="logo.svg">
     <link rel="icon" href="logo.svg">
     <link rel="apple-touch-icon" href="logo.svg">
-    <link rel="mask-icon" href="logo.svg" color="#7C3AED">
+    <link rel="mask-icon" href="logo.svg" color="#89c2ff">
 </head>
 <body>
     <!-- Splash Screen -->
@@ -48,31 +48,29 @@
 
     <!-- Passcode Screen -->
     <div id="passcodeScreen" class="passcode-screen">
-        <div class="passcode-background"></div>
         <div class="passcode-container">
             <div class="passcode-panel">
-                <!-- Header Section -->
-                <div class="passcode-header-modern">
-                    <div class="app-logo-modern">
-                        <div class="logo-icon-modern">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <h1 class="app-title-modern">StoreView</h1>
+                <div class="passcode-hero">
+                    <div class="passcode-clock">
+                        <div id="passcodeTime" class="passcode-time">12:00 PM</div>
+                        <div id="passcodeDate" class="passcode-date">Mon, Jan 1</div>
                     </div>
-                    <p class="passcode-subtitle-modern">Enter your access code</p>
-                    
-                    <!-- Passcode Display -->
-                    <div class="passcode-display-modern">
-                        <div class="passcode-dots-modern">
-                            <div class="dot-modern"></div>
-                            <div class="dot-modern"></div>
-                            <div class="dot-modern"></div>
-                            <div class="dot-modern"></div>
-                        </div>
-                        <div id="passcodeError" class="passcode-error-modern">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <span>Invalid code</span>
-                        </div>
+                    <div class="passcode-welcome">
+                        <h1 class="passcode-title">Welcome back</h1>
+                        <p class="passcode-subtitle">Enter your passcode to continue</p>
+                    </div>
+                </div>
+
+                <div class="passcode-display">
+                    <div class="passcode-dots-modern">
+                        <div class="dot-modern"></div>
+                        <div class="dot-modern"></div>
+                        <div class="dot-modern"></div>
+                        <div class="dot-modern"></div>
+                    </div>
+                    <div id="passcodeError" class="passcode-error-modern">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Invalid code</span>
                     </div>
                 </div>
 
@@ -80,10 +78,7 @@
                     <input id="passcodeInput" class="passcode-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" placeholder="••••" aria-label="Enter passcode" />
                 </div>
 
-                <p class="passcode-footnote">
-                    <i class="fas fa-lock"></i>
-                    Staff access only. Need help? Contact your developer.
-                </p>
+                <p class="passcode-footnote">Staff access only.</p>
             </div>
         </div>
     </div>
@@ -91,11 +86,17 @@
     <!-- Main App -->
     <div id="mainApp" class="main-app">
         <!-- Navigation Header -->
-        <nav class="nav-header">
+        <nav class="nav-header" aria-label="Primary">
             <div class="nav-content">
                 <div class="nav-left">
-                    <div class="app-brand">
-                        <span class="brand-text">StoreView</span>
+                    <div class="nav-title-group">
+                        <div class="app-brand">
+                            <span class="brand-text">StoreView</span>
+                        </div>
+                        <div id="timeDateDisplay" class="time-date-display nav-clock">
+                            <div id="currentTime" class="current-time">12:00 PM</div>
+                            <div id="currentDate" class="current-date">Jan 1, 2024</div>
+                        </div>
                     </div>
                 </div>
                 <div class="nav-center">
@@ -118,26 +119,29 @@
                             <div id="networkSub" class="network-sub">Connected</div>
                         </div>
                     </div>
-                    <div id="timeDateDisplay" class="time-date-display">
-                        <div id="currentTime" class="current-time">12:00 PM</div>
-                        <div id="currentDate" class="current-date">Jan 1, 2024</div>
-                    </div>
                 </div>
+            </div>
+            <div class="top-tabs" role="tablist" aria-label="Primary tabs">
+                <button class="nav-item active" id="homeTabBtn" data-tab="home" role="tab" aria-selected="true">
+                    <span class="nav-label">Home</span>
+                </button>
+                <button class="nav-item" id="protectTabBtn" data-tab="protect" role="tab" aria-selected="false">
+                    <span class="nav-label">Protect</span>
+                </button>
+                <button class="nav-item" id="promoTabBtn" data-tab="promo" role="tab" aria-selected="false">
+                    <span class="nav-label">Promos</span>
+                </button>
+                <button class="nav-item" id="settingsTabBtn" type="button">
+                    <span class="nav-label">More</span>
+                </button>
             </div>
         </nav>
 
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content" role="main">
             <!-- Home Tab -->
             <div id="homeTab" class="tab-content active">
                 <section class="home-section">
-                    <div class="home-clock-container">
-                        <div id="homeClock" class="home-clock">
-                            <div class="clock-time" id="clockTime">12:00</div>
-                            <div class="clock-period" id="clockPeriod">PM</div>
-                        </div>
-                        <div id="homeDate" class="home-date">Monday, January 1, 2024</div>
-                    </div>
                     <div class="home-widgets">
                         <section class="store-hours-card" id="storeHoursWidget">
                             <div class="store-hours-header">
@@ -398,33 +402,6 @@
 
         </main>
 
-        <!-- Bottom Navigation -->
-        <nav class="bottom-nav">
-            <div class="nav-item active" id="homeTabBtn" data-tab="home">
-                <div class="nav-icon">
-                    <i class="fas fa-home"></i>
-                </div>
-                <span class="nav-label">Home</span>
-            </div>
-            <div class="nav-item" id="protectTabBtn" data-tab="protect">
-                <div class="nav-icon">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <span class="nav-label">Protect</span>
-            </div>
-            <div class="nav-item" id="promoTabBtn" data-tab="promo">
-                <div class="nav-icon">
-                    <i class="fas fa-tags"></i>
-                </div>
-                <span class="nav-label">Promos</span>
-            </div>
-            <div class="nav-item" id="settingsTabBtn">
-                <div class="nav-icon">
-                    <i class="fas fa-ellipsis-h"></i>
-                </div>
-                <span class="nav-label">More</span>
-            </div>
-        </nav>
     </div>
 
     <!-- Device Results Modal -->

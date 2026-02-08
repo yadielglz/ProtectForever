@@ -235,6 +235,8 @@ class ProtectApp {
         this.elements.passcodeDots = document.querySelectorAll('.dot-modern');
         this.elements.passcodeError = document.getElementById('passcodeError');
         this.elements.passcodeInput = document.getElementById('passcodeInput');
+        this.elements.passcodeTime = document.getElementById('passcodeTime');
+        this.elements.passcodeDate = document.getElementById('passcodeDate');
         
         // Main app
         this.elements.mainApp = document.getElementById('mainApp');
@@ -1422,19 +1424,35 @@ class ProtectApp {
     }
     
     updateTimeDate() {
-        if (!this.elements.currentTime || !this.elements.currentDate) return;
-        
         const now = new Date();
-        this.elements.currentTime.textContent = now.toLocaleTimeString('en-US', {
+        const timeString = now.toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true
         });
-        this.elements.currentDate.textContent = now.toLocaleDateString('en-US', {
+        const dateString = now.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric'
         });
+        const passcodeDateString = now.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric'
+        });
+
+        if (this.elements.currentTime) {
+            this.elements.currentTime.textContent = timeString;
+        }
+        if (this.elements.currentDate) {
+            this.elements.currentDate.textContent = dateString;
+        }
+        if (this.elements.passcodeTime) {
+            this.elements.passcodeTime.textContent = timeString;
+        }
+        if (this.elements.passcodeDate) {
+            this.elements.passcodeDate.textContent = passcodeDateString;
+        }
     }
     
     handleKeypadInput(key, keyElement) {
@@ -2310,6 +2328,9 @@ class ProtectApp {
         if (this.elements.homeTabBtn) this.elements.homeTabBtn.classList.remove('active');
         if (this.elements.protectTabBtn) this.elements.protectTabBtn.classList.remove('active');
         if (this.elements.promoTabBtn) this.elements.promoTabBtn.classList.remove('active');
+        if (this.elements.homeTabBtn) this.elements.homeTabBtn.setAttribute('aria-selected', 'false');
+        if (this.elements.protectTabBtn) this.elements.protectTabBtn.setAttribute('aria-selected', 'false');
+        if (this.elements.promoTabBtn) this.elements.promoTabBtn.setAttribute('aria-selected', 'false');
         
         // Show selected tab and activate nav button
         switch(tabName) {
@@ -2337,6 +2358,7 @@ class ProtectApp {
         }
         if (this.elements.homeTabBtn) {
             this.elements.homeTabBtn.classList.add('active');
+            this.elements.homeTabBtn.setAttribute('aria-selected', 'true');
         }
         this.updateHomeClock();
         this.toggleHeaderStatus(true);
@@ -2371,6 +2393,7 @@ class ProtectApp {
         }
         if (this.elements.protectTabBtn) {
             this.elements.protectTabBtn.classList.add('active');
+            this.elements.protectTabBtn.setAttribute('aria-selected', 'true');
         }
         this.toggleHeaderStatus(false);
         
@@ -2386,6 +2409,7 @@ class ProtectApp {
         }
         if (this.elements.promoTabBtn) {
             this.elements.promoTabBtn.classList.add('active');
+            this.elements.promoTabBtn.setAttribute('aria-selected', 'true');
         }
         this.toggleHeaderStatus(false);
     }
