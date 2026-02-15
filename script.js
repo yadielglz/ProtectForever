@@ -408,6 +408,12 @@ class ProtectApp {
         if (this.elements.promoTabBtn) {
             this.elements.promoTabBtn.addEventListener('click', () => this.switchTab('promo'));
         }
+        if (this.elements.scheduleTabBtn) {
+            this.elements.scheduleTabBtn.addEventListener('click', () => this.switchTab('schedule'));
+        }
+        if (this.elements.pulseTabBtn) {
+            this.elements.pulseTabBtn.addEventListener('click', () => this.switchTab('pulse'));
+        }
         if (this.elements.settingsTabBtn) {
             this.elements.settingsTabBtn.addEventListener('click', () => this.toggleSettings());
         }
@@ -2328,9 +2334,13 @@ class ProtectApp {
         if (this.elements.homeTabBtn) this.elements.homeTabBtn.classList.remove('active');
         if (this.elements.protectTabBtn) this.elements.protectTabBtn.classList.remove('active');
         if (this.elements.promoTabBtn) this.elements.promoTabBtn.classList.remove('active');
+        if (this.elements.scheduleTabBtn) this.elements.scheduleTabBtn.classList.remove('active');
+        if (this.elements.pulseTabBtn) this.elements.pulseTabBtn.classList.remove('active');
         if (this.elements.homeTabBtn) this.elements.homeTabBtn.setAttribute('aria-selected', 'false');
         if (this.elements.protectTabBtn) this.elements.protectTabBtn.setAttribute('aria-selected', 'false');
         if (this.elements.promoTabBtn) this.elements.promoTabBtn.setAttribute('aria-selected', 'false');
+        if (this.elements.scheduleTabBtn) this.elements.scheduleTabBtn.setAttribute('aria-selected', 'false');
+        if (this.elements.pulseTabBtn) this.elements.pulseTabBtn.setAttribute('aria-selected', 'false');
         
         // Show selected tab and activate nav button
         switch(tabName) {
@@ -2370,6 +2380,7 @@ class ProtectApp {
         }
         if (this.elements.pulseTabBtn) {
             this.elements.pulseTabBtn.classList.add('active');
+            this.elements.pulseTabBtn.setAttribute('aria-selected', 'true');
         }
         this.toggleHeaderStatus(false);
         this.loadPulseData(false);
@@ -2381,6 +2392,7 @@ class ProtectApp {
         }
         if (this.elements.scheduleTabBtn) {
             this.elements.scheduleTabBtn.classList.add('active');
+            this.elements.scheduleTabBtn.setAttribute('aria-selected', 'true');
         }
         this.toggleHeaderStatus(false);
         // Render schedule with current week

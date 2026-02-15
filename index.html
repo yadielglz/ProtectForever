@@ -85,106 +85,143 @@
 
     <!-- Main App -->
     <div id="mainApp" class="main-app">
-        <!-- Navigation Header -->
-        <nav class="nav-header" aria-label="Primary">
-            <div class="nav-content">
-                <div class="nav-left">
-                    <div class="nav-title-group">
-                        <div class="app-brand">
-                            <span class="brand-text">StoreView</span>
-                        </div>
-                        <div id="timeDateDisplay" class="time-date-display nav-clock">
+        <div class="app-shell">
+            <aside class="app-rail" aria-label="Primary">
+                <div class="rail-brand">
+                    <div class="brand-badge">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <div class="brand-text">StoreView</div>
+                    <div class="brand-pill">Daily Outlook</div>
+                </div>
+                <div class="rail-nav" role="tablist" aria-label="Primary tabs">
+                    <button class="rail-item active" id="homeTabBtn" data-tab="home" role="tab" aria-selected="true">
+                        <i class="fas fa-house"></i>
+                        <span class="nav-label">Home</span>
+                    </button>
+                    <button class="rail-item" id="protectTabBtn" data-tab="protect" role="tab" aria-selected="false">
+                        <i class="fas fa-shield"></i>
+                        <span class="nav-label">Protect</span>
+                    </button>
+                    <button class="rail-item" id="promoTabBtn" data-tab="promo" role="tab" aria-selected="false">
+                        <i class="fas fa-tags"></i>
+                        <span class="nav-label">Promos</span>
+                    </button>
+                    <button class="rail-item" id="scheduleTabBtn" data-tab="schedule" role="tab" aria-selected="false">
+                        <i class="fas fa-calendar-check"></i>
+                        <span class="nav-label">Schedule</span>
+                    </button>
+                    <button class="rail-item" id="pulseTabBtn" data-tab="pulse" role="tab" aria-selected="false">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="nav-label">Pulse</span>
+                    </button>
+                </div>
+                <div class="rail-footer">
+                    <button class="rail-item rail-settings" id="settingsTabBtn" type="button">
+                        <i class="fas fa-ellipsis"></i>
+                        <span class="nav-label">More</span>
+                    </button>
+                </div>
+            </aside>
+            <div class="app-body">
+                <header class="app-topbar">
+                    <div class="topbar-left">
+                        <div id="timeDateDisplay" class="time-date-display topbar-clock">
                             <div id="currentTime" class="current-time">12:00 PM</div>
                             <div id="currentDate" class="current-date">Jan 1, 2024</div>
                         </div>
                     </div>
-                </div>
-                <div class="nav-center">
-                    <div id="headerWeather" class="header-weather" style="display: none;">
-                        <div class="header-weather-temp">
-                            <span id="headerWeatherTemp" class="header-temp-value">--</span>
-                            <span class="header-temp-unit">°</span>
-                        </div>
-                        <div class="header-weather-meta">
-                            <div id="headerWeatherDesc" class="header-weather-desc">--</div>
-                            <div id="headerWeatherLocation" class="header-weather-location">--</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="nav-right">
-                    <div id="networkStatus" class="network-status">
-                        <i class="fas fa-signal"></i>
-                        <div class="network-text">
-                            <div id="networkLabel" class="network-label">Online</div>
-                            <div id="networkSub" class="network-sub">Connected</div>
+                    <div class="topbar-center">
+                        <div id="headerWeather" class="header-weather" style="display: none;">
+                            <div class="header-weather-temp">
+                                <span id="headerWeatherTemp" class="header-temp-value">--</span>
+                                <span class="header-temp-unit">°</span>
+                            </div>
+                            <div class="header-weather-meta">
+                                <div id="headerWeatherDesc" class="header-weather-desc">--</div>
+                                <div id="headerWeatherLocation" class="header-weather-location">--</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="top-tabs" role="tablist" aria-label="Primary tabs">
-                <button class="nav-item active" id="homeTabBtn" data-tab="home" role="tab" aria-selected="true">
-                    <span class="nav-label">Home</span>
-                </button>
-                <button class="nav-item" id="protectTabBtn" data-tab="protect" role="tab" aria-selected="false">
-                    <span class="nav-label">Protect</span>
-                </button>
-                <button class="nav-item" id="promoTabBtn" data-tab="promo" role="tab" aria-selected="false">
-                    <span class="nav-label">Promos</span>
-                </button>
-                <button class="nav-item" id="settingsTabBtn" type="button">
-                    <span class="nav-label">More</span>
-                </button>
-            </div>
-        </nav>
+                    <div class="topbar-right">
+                        <div id="networkStatus" class="network-status">
+                            <i class="fas fa-signal"></i>
+                            <div class="network-text">
+                                <div id="networkLabel" class="network-label">Online</div>
+                                <div id="networkSub" class="network-sub">Connected</div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
 
-        <!-- Main Content -->
-        <main class="main-content" role="main">
+                <!-- Main Content -->
+                <main class="main-content" role="main">
             <!-- Home Tab -->
             <div id="homeTab" class="tab-content active">
                 <section class="home-section">
-                    <div class="home-widgets">
-                        <section class="store-hours-card" id="storeHoursWidget">
+                    <div class="home-header">
+                        <div>
+                            <h2>Operations Overview</h2>
+                            <p>Live store status, staffing, and environment pulse.</p>
+                        </div>
+                        <div class="home-badges">
+                            <span class="home-badge">Live</span>
+                            <span class="home-badge soft">StoreView Ops</span>
+                        </div>
+                    </div>
+
+                    <div class="home-dashboard">
+                        <section class="store-hours-card ops-hero" id="storeHoursWidget">
                             <div class="store-hours-header">
                                 <div class="store-title">
                                     <i class="fas fa-store"></i>
                                     <span>Store Operations</span>
                                 </div>
-                                <div id="storeHoursRange" class="store-range">--</div>
+                                <span class="pill-status">Today</span>
+                            </div>
+                            <div class="ops-hero-grid">
+                                <div class="ops-stat">
+                                    <div class="ops-label">Status</div>
+                                    <div id="storeStatus" class="store-status">Checking...</div>
+                                </div>
+                                <div class="ops-stat">
+                                    <div class="ops-label">Day progress</div>
+                                    <div id="storeProgressLabel" class="ops-value">--%</div>
+                                </div>
+                                <div class="ops-stat">
+                                    <div class="ops-label">Hours</div>
+                                    <div id="storeHoursRange" class="ops-value">--</div>
+                                </div>
                             </div>
                             <div class="store-progress">
                                 <div id="storeProgressBar" class="store-progress-bar"></div>
                             </div>
-                            <div class="store-status-row">
-                                <span id="storeStatus" class="store-status">Checking...</span>
-                                <span id="storeProgressLabel" class="store-progress-label">--%</span>
-                            </div>
+                        </section>
 
-                            <!-- Shift Track Widget (merged into Store Operations) -->
-                            <section class="shift-track-section embedded" id="shiftTrackSection">
-                                <div class="shift-track-header">
-                                    <button id="shiftTrackToggle" class="shift-track-toggle" aria-expanded="true">
-                                        <div>
-                                            <h3>Shift Track</h3>
-                                            <p id="shiftTrackSubtitle">Today's shifts</p>
-                                        </div>
-                                        <i class="fas fa-chevron-up"></i>
-                                    </button>
-                                    <button id="refreshShiftTrackBtn" class="shift-track-refresh" aria-label="Refresh shift progress">
-                                        <i class="fas fa-sync-alt"></i>
-                                        <span>Refresh</span>
-                                    </button>
-                                </div>
-                                <div id="shiftTrackBody" class="shift-track-body">
-                                    <div id="shiftTrackList" class="shift-track-list"></div>
-                                    <div id="shiftTrackEmpty" class="empty-state" style="display: none;">
-                                        <div class="empty-state-icon">
-                                            <i class="fas fa-users-slash"></i>
-                                        </div>
-                                        <div class="empty-state-title">No shifts for today</div>
-                                        <div class="shift-track-message">Check back later or refresh the schedule</div>
+                        <section class="shift-track-section card-surface" id="shiftTrackSection">
+                            <div class="shift-track-header">
+                                <button id="shiftTrackToggle" class="shift-track-toggle" aria-expanded="true">
+                                    <div>
+                                        <h3>Shift Track</h3>
+                                        <p id="shiftTrackSubtitle">Today's shifts</p>
                                     </div>
+                                    <i class="fas fa-chevron-up"></i>
+                                </button>
+                                <button id="refreshShiftTrackBtn" class="shift-track-refresh" aria-label="Refresh shift progress">
+                                    <i class="fas fa-sync-alt"></i>
+                                    <span>Refresh</span>
+                                </button>
+                            </div>
+                            <div id="shiftTrackBody" class="shift-track-body">
+                                <div id="shiftTrackList" class="shift-track-list"></div>
+                                <div id="shiftTrackEmpty" class="empty-state" style="display: none;">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-users-slash"></i>
+                                    </div>
+                                    <div class="empty-state-title">No shifts for today</div>
+                                    <div class="shift-track-message">Check back later or refresh the schedule</div>
                                 </div>
-                            </section>
+                            </div>
                         </section>
 
                         <section class="weather-card" id="weatherWidget">
@@ -205,19 +242,35 @@
                                     <div id="weatherUpdated" class="weather-updated">—</div>
                                 </div>
                             </div>
-                    <div class="weather-forecast" id="weatherForecast">
-                        <div class="forecast-row">
-                            <div class="forecast-row-title">Next hours</div>
-                            <div class="forecast-grid" id="weatherForecastHours"></div>
-                        </div>
-                        <div class="forecast-row">
-                            <div class="forecast-row-title">Next days</div>
-                            <div class="forecast-grid" id="weatherForecastDays"></div>
-                        </div>
-                    </div>
+                            <div class="weather-forecast" id="weatherForecast">
+                                <div class="forecast-row">
+                                    <div class="forecast-row-title">Next hours</div>
+                                    <div class="forecast-grid" id="weatherForecastHours"></div>
+                                </div>
+                                <div class="forecast-row">
+                                    <div class="forecast-row-title">Next days</div>
+                                    <div class="forecast-grid" id="weatherForecastDays"></div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="ops-alerts card-surface">
+                            <div class="ops-alerts-header">
+                                <div>
+                                    <h3>Operational Alerts</h3>
+                                    <p>Monitor priorities and keep the floor ready.</p>
+                                </div>
+                                <span class="pill-status subtle">All clear</span>
+                            </div>
+                            <div class="ops-alerts-empty">
+                                <i class="fas fa-check-circle"></i>
+                                <div>
+                                    <div class="ops-alerts-title">No active alerts</div>
+                                    <div class="ops-alerts-sub">Systems and staffing look stable.</div>
+                                </div>
+                            </div>
                         </section>
                     </div>
-
                 </section>
             </div>
 
@@ -282,34 +335,41 @@
             <!-- Protect Tab (Device Selection Flow) -->
             <div id="protectTab" class="tab-content">
                 <section class="protect-section">
-                    <!-- Welcome Section -->
-                    <section class="welcome-section">
-                        <div class="welcome-content">
-                            <h2 class="welcome-title">Find Your Device Protection</h2>
-                            <p class="welcome-subtitle">Select your device to view available protection options</p>
+                    <div class="protect-header">
+                        <div>
+                            <h2>Protection Catalog</h2>
+                            <p>Browse devices by brand and model with quick filters.</p>
                         </div>
-                    </section>
+                        <div class="home-badges">
+                            <span class="home-badge">Catalog</span>
+                            <span class="home-badge soft">Protection ready</span>
+                        </div>
+                    </div>
 
-                    <!-- Device Selection Flow -->
-                    <section class="device-flow">
+                    <section class="protect-catalog">
                         <!-- Step 1: Brand Selection -->
                         <div id="brandStep" class="flow-step active">
-                            <div class="step-header">
-                                <div class="step-indicator">
-                                    <span class="step-number">1</span>
-                                    <span class="step-label">Choose Brand</span>
+                            <div class="catalog-toolbar">
+                                <div class="catalog-title">
+                                    <span class="pill-status">Step 1</span>
+                                    <h3>Choose Brand</h3>
+                                </div>
+                                <div class="search-container">
+                                    <div class="search-box">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" id="brandSearch" class="search-input" placeholder="Search brands..." aria-label="Search brands">
+                                        <button id="clearBrandSearch" class="search-clear" aria-label="Clear search" style="display: none;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="catalog-filters">
+                                    <span class="filter-chip">Top brands</span>
+                                    <span class="filter-chip">New arrivals</span>
+                                    <span class="filter-chip">Popular</span>
                                 </div>
                             </div>
-                            <div class="search-container">
-                                <div class="search-box">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" id="brandSearch" class="search-input" placeholder="Search brands..." aria-label="Search brands">
-                                    <button id="clearBrandSearch" class="search-clear" aria-label="Clear search" style="display: none;">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="brandGrid" class="brand-grid">
+                            <div id="brandGrid" class="brand-grid catalog-grid">
                                 <!-- Brand cards will be populated here -->
                             </div>
                             <div id="brandEmptyState" class="empty-state" style="display: none;">
@@ -323,26 +383,33 @@
 
                         <!-- Step 2: Model Selection -->
                         <div id="modelStep" class="flow-step">
-                            <div class="step-header">
-                                <div class="step-indicator">
-                                    <span class="step-number">2</span>
-                                    <span class="step-label">Choose Model</span>
-                                </div>
-                                <button id="backToBrands" class="back-button" aria-label="Back to brand selection">
-                                    <i class="fas fa-arrow-left"></i>
-                                    <span>Back</span>
-                                </button>
-                            </div>
-                            <div class="search-container">
-                                <div class="search-box">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" id="modelSearch" class="search-input" placeholder="Search models..." aria-label="Search models">
-                                    <button id="clearModelSearch" class="search-clear" aria-label="Clear search" style="display: none;">
-                                        <i class="fas fa-times"></i>
+                            <div class="catalog-toolbar">
+                                <div class="catalog-title with-back">
+                                    <button id="backToBrands" class="back-button" aria-label="Back to brand selection">
+                                        <i class="fas fa-arrow-left"></i>
+                                        <span>Back</span>
                                     </button>
+                                    <div>
+                                        <span class="pill-status">Step 2</span>
+                                        <h3>Choose Model</h3>
+                                    </div>
+                                </div>
+                                <div class="search-container">
+                                    <div class="search-box">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" id="modelSearch" class="search-input" placeholder="Search models..." aria-label="Search models">
+                                        <button id="clearModelSearch" class="search-clear" aria-label="Clear search" style="display: none;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="catalog-filters">
+                                    <span class="filter-chip">Newest</span>
+                                    <span class="filter-chip">Trending</span>
+                                    <span class="filter-chip">All models</span>
                                 </div>
                             </div>
-                            <div id="modelGrid" class="model-grid">
+                            <div id="modelGrid" class="model-grid catalog-grid">
                                 <!-- Model cards will be populated here -->
                             </div>
                             <div id="modelEmptyState" class="empty-state" style="display: none;">
@@ -400,8 +467,9 @@
                 </section>
             </div>
 
-        </main>
-
+                </main>
+            </div>
+        </div>
     </div>
 
     <!-- Device Results Modal -->
