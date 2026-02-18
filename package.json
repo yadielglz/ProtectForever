@@ -16,7 +16,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@fortawesome/fontawesome-free": "^7.2.0",
     "live-server": "^1.2.2"
   }
 }
-

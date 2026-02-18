@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="StoreView">
-    <meta name="theme-color" content="#89c2ff">
-    <meta name="msapplication-TileColor" content="#89c2ff">
+    <meta name="theme-color" content="#fffbf7">
+    <meta name="msapplication-TileColor" content="#ea580c">
     <meta name="msapplication-TileImage" content="logo.svg">
     
     <title>StoreView - Daily Outlook</title>
@@ -19,8 +19,7 @@
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
@@ -29,14 +28,14 @@
     <link rel="icon" type="image/svg+xml" href="logo.svg">
     <link rel="icon" href="logo.svg">
     <link rel="apple-touch-icon" href="logo.svg">
-    <link rel="mask-icon" href="logo.svg" color="#89c2ff">
+    <link rel="mask-icon" href="logo.svg" color="#ea580c">
 </head>
 <body>
     <!-- Splash Screen -->
     <div id="splashScreen" class="splash-screen">
         <div class="splash-container">
             <div class="splash-logo">
-                <img src="https://i.ibb.co/ZpV0Xn3y/Chat-GPT-Image-Oct-19-2025-08-27-49-PM.png" alt="StoreView" class="splash-icon">
+                <img src="logo.svg" alt="StoreView" class="splash-icon">
             </div>
             <div class="splash-title">StoreView</div>
             <div class="splash-subtitle">Daily Outlook</div>
@@ -332,116 +331,47 @@
                 </section>
             </div>
 
-            <!-- Protect Tab (Device Selection Flow) -->
+            <!-- Protect Tab (new applet: single search + device list) -->
             <div id="protectTab" class="tab-content">
-                <section class="protect-section">
-                    <div class="protect-header">
-                        <div>
-                            <h2>Protection Catalog</h2>
-                            <p>Browse devices by brand and model with quick filters.</p>
-                        </div>
-                        <div class="home-badges">
-                            <span class="home-badge">Catalog</span>
-                            <span class="home-badge soft">Protection ready</span>
+                <section class="protect-section protect-applet">
+                    <div class="protect-applet-header">
+                        <h2>Protection Catalog</h2>
+                        <p>Search by brand or model. Tap a device for UPCs and verified MDNs.</p>
+                    </div>
+                    <div class="protect-search-wrap">
+                        <div class="protect-search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="protectSearch" class="protect-search-input" placeholder="Search brand or model..." aria-label="Search devices" autocomplete="off">
+                            <button id="clearProtectSearch" class="protect-search-clear" aria-label="Clear search" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     </div>
-
-                    <section class="protect-catalog">
-                        <!-- Step 1: Brand Selection -->
-                        <div id="brandStep" class="flow-step active">
-                            <div class="catalog-toolbar">
-                                <div class="catalog-title">
-                                    <span class="pill-status">Step 1</span>
-                                    <h3>Choose Brand</h3>
-                                </div>
-                                <div class="search-container">
-                                    <div class="search-box">
-                                        <i class="fas fa-search"></i>
-                                        <input type="text" id="brandSearch" class="search-input" placeholder="Search brands..." aria-label="Search brands">
-                                        <button id="clearBrandSearch" class="search-clear" aria-label="Clear search" style="display: none;">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="catalog-filters">
-                                    <span class="filter-chip">Top brands</span>
-                                    <span class="filter-chip">New arrivals</span>
-                                    <span class="filter-chip">Popular</span>
-                                </div>
-                            </div>
-                            <div id="brandGrid" class="brand-grid catalog-grid">
-                                <!-- Brand cards will be populated here -->
-                            </div>
-                            <div id="brandEmptyState" class="empty-state" style="display: none;">
-                                <div class="empty-state-icon">
-                                    <i class="fas fa-search"></i>
-                                </div>
-                                <div class="empty-state-title">No brands found</div>
-                                <div class="empty-state-message">Try adjusting your search</div>
-                            </div>
-                        </div>
-
-                        <!-- Step 2: Model Selection -->
-                        <div id="modelStep" class="flow-step">
-                            <div class="catalog-toolbar">
-                                <div class="catalog-title with-back">
-                                    <button id="backToBrands" class="back-button" aria-label="Back to brand selection">
-                                        <i class="fas fa-arrow-left"></i>
-                                        <span>Back</span>
-                                    </button>
-                                    <div>
-                                        <span class="pill-status">Step 2</span>
-                                        <h3>Choose Model</h3>
-                                    </div>
-                                </div>
-                                <div class="search-container">
-                                    <div class="search-box">
-                                        <i class="fas fa-search"></i>
-                                        <input type="text" id="modelSearch" class="search-input" placeholder="Search models..." aria-label="Search models">
-                                        <button id="clearModelSearch" class="search-clear" aria-label="Clear search" style="display: none;">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="catalog-filters">
-                                    <span class="filter-chip">Newest</span>
-                                    <span class="filter-chip">Trending</span>
-                                    <span class="filter-chip">All models</span>
-                                </div>
-                            </div>
-                            <div id="modelGrid" class="model-grid catalog-grid">
-                                <!-- Model cards will be populated here -->
-                            </div>
-                            <div id="modelEmptyState" class="empty-state" style="display: none;">
-                                <div class="empty-state-icon">
-                                    <i class="fas fa-search"></i>
-                                </div>
-                                <div class="empty-state-title">No models found</div>
-                                <div class="empty-state-message">Try adjusting your search</div>
-                            </div>
-                        </div>
-                    </section>
+                    <div id="protectDeviceList" class="protect-device-list" role="list">
+                        <!-- Device cards populated by script -->
+                    </div>
+                    <div id="protectEmptyState" class="protect-empty-state" style="display: none;">
+                        <i class="fas fa-search"></i>
+                        <span class="protect-empty-title">No devices found</span>
+                        <span class="protect-empty-msg">Try a different search term</span>
+                    </div>
                 </section>
             </div>
 
             <!-- Promotions Tab -->
             <div id="promoTab" class="tab-content">
-                <section class="promo-section">
-                    <div class="promo-header">
+                <section class="promo-section promo-applet">
+                    <div class="promo-applet-header">
                         <div class="promo-title">
                             <i class="fas fa-tags"></i>
                             <div>
                                 <h3>Promotions</h3>
-                                <p>Under construction</p>
+                                <p>Current offers by category</p>
                             </div>
                         </div>
                     </div>
-                    <div class="empty-state" style="margin-top: var(--space-6);">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-hard-hat"></i>
-                        </div>
-                        <div class="empty-state-title">Coming soon</div>
-                        <div class="empty-state-message">We’re rebuilding this experience. Please check back shortly.</div>
+                    <div id="promoContainer" class="promo-container" role="list">
+                        <!-- Category sections and cards populated by script -->
                     </div>
                 </section>
             </div>
@@ -472,57 +402,34 @@
         </div>
     </div>
 
-    <!-- Device Results Modal -->
-    <div id="deviceModal" class="device-modal">
-        <div class="modal-backdrop"></div>
-        <div class="modal-container">
-            <div class="modal-content">
-                <!-- Modal Header -->
-                <div class="modal-header">
-                    <div class="device-info">
-                        <div class="device-icon-wrapper">
-                            <div class="device-icon" id="deviceIcon">
-                                <i class="fas fa-mobile-alt"></i>
-                            </div>
-                        </div>
-                        <div class="device-details">
-                            <h3 id="deviceName">Device Name</h3>
-                            <div id="deviceModel" class="device-model-info">Model Information</div>
-                        </div>
-                    </div>
-                    <button id="closeModal" class="close-button" aria-label="Close modal">
-                        <i class="fas fa-times"></i>
-                    </button>
+    <!-- Protect detail sheet (device UPCs & MDNs) -->
+    <div id="protectDetailSheet" class="protect-detail-sheet" aria-hidden="true">
+        <div class="protect-detail-backdrop" id="protectDetailBackdrop"></div>
+        <div class="protect-detail-panel" id="protectDetailPanel">
+            <header class="protect-detail-header">
+                <div class="protect-detail-heading">
+                    <h3 id="protectDetailTitle">Device</h3>
+                    <p id="protectDetailSubtitle" class="protect-detail-subtitle">Model · Status</p>
                 </div>
-
-                <!-- Protection Options -->
-                <div class="protection-options">
-                    <div class="options-header">
-                        <div class="options-title-section">
-                            <h4 class="options-title">
-                                <i class="fas fa-shield-alt"></i>
-                                Protection Options
-                            </h4>
-                            <span id="optionsCount" class="options-count">0 options</span>
-                        </div>
-                    </div>
-                    <div id="optionsList" class="options-list">
-                        <!-- Protection options will be populated here -->
-                    </div>
-                </div>
-
-                <!-- Modal Actions -->
-                <div class="modal-actions">
-                    <button id="refreshBtn" class="action-button secondary">
-                        <i class="fas fa-sync-alt"></i>
-                        <span>Refresh</span>
-                    </button>
-                    <button id="newSearchBtn" class="action-button primary">
-                        <i class="fas fa-search"></i>
-                        <span>New Search</span>
-                    </button>
+                <button type="button" id="protectDetailClose" class="protect-detail-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </header>
+            <div class="protect-detail-body">
+                <div id="protectDetailOptions" class="protect-detail-options" role="list">
+                    <!-- Option cards populated by script -->
                 </div>
             </div>
+            <footer class="protect-detail-footer">
+                <button type="button" id="protectDetailRefresh" class="protect-detail-btn secondary">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh data</span>
+                </button>
+                <button type="button" id="protectDetailNewSearch" class="protect-detail-btn primary">
+                    <i class="fas fa-search"></i>
+                    <span>Search again</span>
+                </button>
+            </footer>
         </div>
     </div>
 

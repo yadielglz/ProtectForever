@@ -58,9 +58,6 @@ const CONFIG = {
     // Weather defaults
     WEATHER_DEFAULT_ZIP: '34759',
 
-    // Promotions Google Sheet (CSV export URL)
-    PROMO_SHEET_URL: 'https://docs.google.com/spreadsheets/d/1aHZ2p4KK3Kho75aT8wjOFMlvhrgFSITj9VG7te2Apyk/export?format=csv',
-    
     // Security settings
     PASSCODE: '6974',
     INACTIVITY_TIMEOUT: 20 * 1000, // 20 seconds in milliseconds

@@ -25,9 +25,6 @@ class ProtectApp {
             locationName: null,
             reverseLookupPending: false
         };
-        this.promos = [];
-        this.promosLoaded = false;
-        this.promoFilter = 'all';
         this.pulseData = [];
         this.pulseLoaded = false;
         this.pulseUpdatedAt = null;
@@ -253,8 +250,8 @@ class ProtectApp {
         this.elements.pulseTabBtn = document.getElementById('pulseTabBtn');
         this.elements.scheduleTabBtn = document.getElementById('scheduleTabBtn');
         this.elements.protectTabBtn = document.getElementById('protectTabBtn');
-        this.elements.settingsTabBtn = document.getElementById('settingsTabBtn');
         this.elements.promoTabBtn = document.getElementById('promoTabBtn');
+        this.elements.settingsTabBtn = document.getElementById('settingsTabBtn');
         
         // Tab content
         this.elements.homeTab = document.getElementById('homeTab');
@@ -262,6 +259,7 @@ class ProtectApp {
         this.elements.scheduleTab = document.getElementById('scheduleTab');
         this.elements.protectTab = document.getElementById('protectTab');
         this.elements.promoTab = document.getElementById('promoTab');
+        this.elements.promoContainer = document.getElementById('promoContainer');
         this.elements.pulseGrid = document.getElementById('pulseGrid');
         this.elements.pulseStatus = document.getElementById('pulseStatus');
         this.elements.pulseRefreshBtn = document.getElementById('pulseRefreshBtn');
@@ -329,33 +327,23 @@ class ProtectApp {
         this.elements.shiftTrackToggle = document.getElementById('shiftTrackToggle');
         this.elements.shiftTrackBody = document.getElementById('shiftTrackBody');
         
-        // Device flow
-        this.elements.brandStep = document.getElementById('brandStep');
-        this.elements.modelStep = document.getElementById('modelStep');
-        this.elements.brandGrid = document.getElementById('brandGrid');
-        this.elements.modelGrid = document.getElementById('modelGrid');
-        this.elements.backToBrands = document.getElementById('backToBrands');
-        this.elements.brandSearch = document.getElementById('brandSearch');
-        this.elements.modelSearch = document.getElementById('modelSearch');
-        this.elements.clearBrandSearch = document.getElementById('clearBrandSearch');
-        this.elements.clearModelSearch = document.getElementById('clearModelSearch');
-        this.elements.brandEmptyState = document.getElementById('brandEmptyState');
-        this.elements.modelEmptyState = document.getElementById('modelEmptyState');
+        // Protect applet (new single-view catalog)
+        this.elements.protectSearch = document.getElementById('protectSearch');
+        this.elements.clearProtectSearch = document.getElementById('clearProtectSearch');
+        this.elements.protectDeviceList = document.getElementById('protectDeviceList');
+        this.elements.protectEmptyState = document.getElementById('protectEmptyState');
+        this.elements.protectDetailSheet = document.getElementById('protectDetailSheet');
+        this.elements.protectDetailBackdrop = document.getElementById('protectDetailBackdrop');
+        this.elements.protectDetailPanel = document.getElementById('protectDetailPanel');
+        this.elements.protectDetailClose = document.getElementById('protectDetailClose');
+        this.elements.protectDetailTitle = document.getElementById('protectDetailTitle');
+        this.elements.protectDetailSubtitle = document.getElementById('protectDetailSubtitle');
+        this.elements.protectDetailOptions = document.getElementById('protectDetailOptions');
+        this.elements.protectDetailRefresh = document.getElementById('protectDetailRefresh');
+        this.elements.protectDetailNewSearch = document.getElementById('protectDetailNewSearch');
         
-        // Store original brand and model lists for filtering
-        this.allBrands = [];
-        this.allModels = [];
-        
-        // Device modal
-        this.elements.deviceModal = document.getElementById('deviceModal');
-        this.elements.closeModal = document.getElementById('closeModal');
-        this.elements.deviceIcon = document.getElementById('deviceIcon');
-        this.elements.deviceName = document.getElementById('deviceName');
-        this.elements.deviceModel = document.getElementById('deviceModel');
-        this.elements.optionsList = document.getElementById('optionsList');
-        this.elements.optionsCount = document.getElementById('optionsCount');
-        this.elements.refreshBtn = document.getElementById('refreshBtn');
-        this.elements.newSearchBtn = document.getElementById('newSearchBtn');
+        // Flat list of { brand, model } for catalog (same data source)
+        this.flatDeviceList = [];
         
         // Settings
         this.elements.settingsNavBtn = this.elements.settingsTabBtn;
@@ -516,9 +504,6 @@ class ProtectApp {
         if (this.elements.weatherUnitC) {
             this.elements.weatherUnitC.addEventListener('click', () => this.setWeatherUnit('celsius'));
         }
-        if (this.elements.promoRefreshBtn) {
-            this.elements.promoRefreshBtn.addEventListener('click', () => this.loadPromos(true));
-        }
         if (this.elements.maintenanceToggle) {
             this.elements.maintenanceToggle.addEventListener('click', () => this.toggleMaintenance());
         }
@@ -527,44 +512,32 @@ class ProtectApp {
         }
         window.addEventListener('online', () => this.updateNetworkStatus());
         window.addEventListener('offline', () => this.updateNetworkStatus());
-        if (this.elements.promoFilters) {
-            this.elements.promoFilters.addEventListener('click', (e) => {
-                const btn = e.target.closest('.promo-filter-btn');
-                if (!btn) return;
-                const filter = btn.dataset.filter || 'all';
-                this.setPromoFilter(filter);
+        // Protect applet: search and detail sheet
+        if (this.elements.protectSearch) {
+            this.elements.protectSearch.addEventListener('input', (e) => this.filterProtectDevices(e.target.value));
+        }
+        if (this.elements.clearProtectSearch) {
+            this.elements.clearProtectSearch.addEventListener('click', () => {
+                if (this.elements.protectSearch) this.elements.protectSearch.value = '';
+                this.filterProtectDevices('');
+                this.elements.protectSearch?.focus();
             });
         }
-        
-        // Device flow
-        this.elements.backToBrands.addEventListener('click', () => this.showBrandStep());
-        
-        // Search functionality
-        this.elements.brandSearch.addEventListener('input', (e) => this.filterBrands(e.target.value));
-        this.elements.modelSearch.addEventListener('input', (e) => this.filterModels(e.target.value));
-        this.elements.clearBrandSearch.addEventListener('click', () => {
-            this.elements.brandSearch.value = '';
-            this.filterBrands('');
-        });
-        this.elements.clearModelSearch.addEventListener('click', () => {
-            this.elements.modelSearch.value = '';
-            this.filterModels('');
-        });
+        if (this.elements.protectDetailClose) {
+            this.elements.protectDetailClose.addEventListener('click', () => this.closeDeviceModal());
+        }
+        if (this.elements.protectDetailBackdrop) {
+            this.elements.protectDetailBackdrop.addEventListener('click', () => this.closeDeviceModal());
+        }
+        if (this.elements.protectDetailRefresh) {
+            this.elements.protectDetailRefresh.addEventListener('click', () => this.refreshDeviceData());
+        }
+        if (this.elements.protectDetailNewSearch) {
+            this.elements.protectDetailNewSearch.addEventListener('click', () => this.startNewSearch());
+        }
         
         // Keyboard navigation
         this.setupKeyboardNavigation();
-        
-        // Device modal
-        this.elements.closeModal.addEventListener('click', () => this.closeDeviceModal());
-        this.elements.refreshBtn.addEventListener('click', () => this.refreshDeviceData());
-        this.elements.newSearchBtn.addEventListener('click', () => this.startNewSearch());
-        
-        // Modal backdrop
-        this.elements.deviceModal.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-backdrop')) {
-                this.closeDeviceModal();
-            }
-        });
         
         // Settings backdrop
         this.elements.settingsMenu.addEventListener('click', (e) => {
@@ -594,10 +567,10 @@ class ProtectApp {
             
             // Swipe down to close modals
             if (Math.abs(diffY) > Math.abs(diffX) && diffY < -50) {
-                if (this.elements.deviceModal.classList.contains('show')) {
+                if (this.elements.protectDetailSheet?.classList.contains('show')) {
                     this.closeDeviceModal();
                 }
-                if (this.elements.settingsMenu.classList.contains('show')) {
+                if (this.elements.settingsMenu?.classList.contains('show')) {
                     this.closeSettings();
                 }
             }
@@ -802,7 +775,6 @@ class ProtectApp {
         return values;
     }
 
-    
     getCachedData() {
         try {
             const cached = localStorage.getItem(this.config.CACHE_KEY);
@@ -1531,103 +1503,83 @@ class ProtectApp {
         if (this.config.DEBUG_MODE) {
             console.log('Initializing device flow, data length:', this.deviceData.length);
         }
-        this.populateBrands();
-        this.showBrandStep();
+        this.flatDeviceList = this.getFlatDeviceList();
+        this.filterProtectDevices(this.elements.protectSearch?.value || '');
     }
-    
-    populateBrands() {
-        const getBrand = (device) => this.getField(device, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
+
+    getFlatDeviceList() {
+        const getBrand = (d) => this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
+        const getModel = (d) => this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
         const brands = [...new Set(this.deviceData.map(getBrand))].filter(Boolean);
-        
-        if (this.config.DEBUG_MODE && this.deviceData.length > 0) {
-            console.log('Available columns:', Object.keys(this.deviceData[0]));
-            console.log('Extracted brands:', brands);
-        }
-        
-        this.allBrands = brands.length === 0 ? ['Samsung', 'Apple', 'Google', 'OnePlus'] : brands;
-        this.filterBrands(this.elements.brandSearch?.value || '');
-    }
-    
-    filterBrands(searchTerm) {
-        const term = searchTerm.toLowerCase().trim();
-        const filtered = term === '' 
-            ? this.allBrands 
-            : this.allBrands.filter(brand => brand.toLowerCase().includes(term));
-        
-        this.elements.brandGrid.innerHTML = '';
-        
-        if (filtered.length === 0) {
-            this.elements.brandEmptyState.style.display = 'block';
-            this.elements.brandGrid.style.display = 'none';
-        } else {
-            this.elements.brandEmptyState.style.display = 'none';
-            this.elements.brandGrid.style.display = 'grid';
-            filtered.forEach(brand => {
-                this.elements.brandGrid.appendChild(this.createBrandCard(brand));
+        if (brands.length === 0) return [];
+        const seen = new Set();
+        const list = [];
+        brands.forEach(brand => {
+            const brandDevices = this.deviceData.filter(d => getBrand(d) === brand);
+            const modelsWithUpcAndVerifiedMdns = new Set();
+            brandDevices.forEach(device => {
+                const model = getModel(device);
+                if (!model) return;
+                const hasUpc = this.getField(device, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
+                const hasMdn = this.getField(device, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
+                const isVerified = hasMdn && this.isMdnVerified(device);
+                if (hasUpc && isVerified) modelsWithUpcAndVerifiedMdns.add(model);
             });
-        }
-        
-        // Show/hide clear button
-        this.elements.clearBrandSearch.style.display = term ? 'flex' : 'none';
-    }
-    
-    showFallbackBrands() {
-        ['Samsung', 'Apple', 'Google', 'OnePlus'].forEach(brand => {
-            this.elements.brandGrid.appendChild(this.createBrandCard(brand));
+            const models = Array.from(modelsWithUpcAndVerifiedMdns).sort((a, b) =>
+                this.getModelSortOrder(brand, b) - this.getModelSortOrder(brand, a)
+            );
+            models.forEach(model => {
+                const key = `${brand}|${model}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                list.push({ brand, model });
+            });
         });
+        return list;
     }
-    
-    createBrandCard(brand) {
+
+    filterProtectDevices(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        const filtered = term === ''
+            ? this.flatDeviceList
+            : this.flatDeviceList.filter(({ brand, model }) =>
+                brand.toLowerCase().includes(term) || model.toLowerCase().includes(term)
+            );
+        if (!this.elements.protectDeviceList) return;
+        this.elements.protectDeviceList.innerHTML = '';
+        if (!this.elements.protectEmptyState) return;
+        if (filtered.length === 0) {
+            this.elements.protectEmptyState.style.display = 'flex';
+            this.elements.protectDeviceList.style.display = 'none';
+        } else {
+            this.elements.protectEmptyState.style.display = 'none';
+            this.elements.protectDeviceList.style.display = 'grid';
+            filtered.forEach(item => this.elements.protectDeviceList.appendChild(this.createProtectDeviceCard(item)));
+        }
+        if (this.elements.clearProtectSearch) {
+            this.elements.clearProtectSearch.style.display = term ? 'flex' : 'none';
+        }
+    }
+
+    createProtectDeviceCard({ brand, model }) {
         const card = document.createElement('div');
-        card.className = 'brand-card';
+        card.className = 'protect-device-card';
         card.setAttribute('tabindex', '0');
         card.setAttribute('role', 'button');
-        card.setAttribute('aria-label', `Select ${brand} brand`);
-        const logoPath = this.getBrandLogo(brand);
-        
+        card.setAttribute('aria-label', `Open ${brand} ${model}`);
         card.innerHTML = `
-            <div class="brand-icon">
-                <img src="${logoPath}" alt="${brand}" class="brand-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="brand-logo-fallback" style="display: none;"><i class="fas fa-mobile-alt"></i></div>
-            </div>
-            <div class="brand-name">${brand}</div>
+            <span class="protect-device-brand">${brand}</span>
+            <span class="protect-device-model">${model}</span>
+            <i class="fas fa-chevron-right protect-device-arrow"></i>
         `;
-        
-        card.addEventListener('click', () => this.selectBrand(brand));
+        card.addEventListener('click', () => this.selectModel(model, brand));
         card.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                this.selectBrand(brand);
+                this.selectModel(model, brand);
             }
         });
         return card;
-    }
-
-    getBrandLogo(brand) {
-        const logoMap = {
-            'Apple': 'apple-logo.png',
-            'Samsung': 'samsung-logo.png',
-            'Google': 'google-logo.png',
-            'Motorola': 'motorola-logo.png',
-            'T-Mobile': 'tmobile-logo.png',
-            'Revvl': 'revvl-logo.png'
-        };
-        
-        return logoMap[brand] || 'app-icon.png';
-    }
-
-    selectBrand(brand) {
-        this.selectedBrand = brand;
-        this.populateModels(brand);
-        this.showModelStep();
-        
-        const brandCards = document.querySelectorAll('.brand-card');
-        brandCards.forEach(card => {
-            if (card.querySelector('.brand-name').textContent === brand) {
-                card.style.transform = 'scale(0.95)';
-                setTimeout(() => card.style.transform = '', 150);
-            }
-        });
     }
     
     getModelSortOrder(brand, model) {
@@ -1688,188 +1640,27 @@ class ProtectApp {
         return 0;
     }
     
-    populateModels(brand) {
-        const getBrand = (d) => this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
-        const getModel = (d) => this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
-        
-        // Get all devices for this brand
-        const brandDevices = this.deviceData.filter(d => getBrand(d) === brand);
-        
-        // Filter to only include models that have:
-        // 1. A UPC code
-        // 2. At least one verified MDN
-        const modelsWithUpcAndVerifiedMdns = new Set();
-        
-        brandDevices.forEach(device => {
-            const model = getModel(device);
-            if (model) {
-                // Check if this device entry has a UPC
-                const hasUpc = this.getField(device, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
-                
-                // Check if this device entry has a verified MDN
-                const hasMdn = this.getField(device, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
-                const isVerified = hasMdn && this.isMdnVerified(device);
-                
-                // Only include models that have UPC AND verified MDN
-                if (hasUpc && isVerified) {
-                    modelsWithUpcAndVerifiedMdns.add(model);
-                }
-            }
-        });
-        
-        // Only show models that have both UPC and verified MDN
-        const models = Array.from(modelsWithUpcAndVerifiedMdns);
-        
-        const sortedModels = models.sort((a, b) => {
-            return this.getModelSortOrder(brand, b) - this.getModelSortOrder(brand, a);
-        });
-        
-        this.allModels = sortedModels;
-        this.filterModels(this.elements.modelSearch?.value || '');
-    }
-    
-    filterModels(searchTerm) {
-        const term = searchTerm.toLowerCase().trim();
-        const filtered = term === '' 
-            ? this.allModels 
-            : this.allModels.filter(model => model.toLowerCase().includes(term));
-        
-        this.elements.modelGrid.innerHTML = '';
-        
-        if (filtered.length === 0) {
-            this.elements.modelEmptyState.style.display = 'block';
-            this.elements.modelGrid.style.display = 'none';
-        } else {
-            this.elements.modelEmptyState.style.display = 'none';
-            this.elements.modelGrid.style.display = 'grid';
-            filtered.forEach(model => {
-                this.elements.modelGrid.appendChild(this.createModelCard(model, this.selectedBrand));
-            });
-        }
-        
-        // Show/hide clear button
-        this.elements.clearModelSearch.style.display = term ? 'flex' : 'none';
-    }
-    
-    createModelCard(model, brand) {
-        const getBrand = (d) => this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
-        const getModel = (d) => this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
-        
-        const device = this.deviceData.find(d => 
-            getBrand(d) === brand && getModel(d) === model
-        );
-        
-        let isAvailable = true;
-        
-        if (device) {
-            const getAvailable = (d) => this.getField(d, ['Available', 'AVAILABLE', 'available', 'Availability', 'In Stock', 'in_stock', 'Status', 'status']);
-            const availableValue = getAvailable(device);
-            
-            if (availableValue) {
-                const normalizedValue = availableValue.toString().toLowerCase().trim();
-                
-                // Explicitly check for positive values
-                const positiveIndicators = ['yes', 'y', 'true', '1', 'available', 'in stock', '✅', '✓', '✔'];
-                const negativeIndicators = ['no', 'n', 'false', '0', 'unavailable', 'out of stock', 'discontinued', '❌', '✗', '×'];
-                
-                if (positiveIndicators.some(indicator => normalizedValue === indicator)) {
-                    isAvailable = true;
-                } else if (negativeIndicators.some(indicator => normalizedValue === indicator)) {
-                    isAvailable = false;
-                } else {
-                    // Default to available if unclear
-                    isAvailable = true;
-                }
-                
-                if (this.config.DEBUG_MODE && this.debugAvailabilityCount < 5) {
-                    if (!this.debugAvailabilityCount) this.debugAvailabilityCount = 0;
-                    console.log(`Model: ${model}, Brand: ${brand}, Available: "${availableValue}" → ${isAvailable}`);
-                    this.debugAvailabilityCount++;
-                }
-            }
-        }
-        
-        const card = document.createElement('div');
-        card.className = 'model-card';
-        card.setAttribute('tabindex', '0');
-        card.setAttribute('role', 'button');
-        card.setAttribute('aria-label', `Select ${model} model`);
-        card.innerHTML = `<div class="model-name">${model}</div>`;
-        
-        card.addEventListener('click', () => this.selectModel(model, brand));
-        card.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                this.selectModel(model, brand);
-            }
-        });
-        
-        return card;
-    }
-
     selectModel(model, brand) {
         this.selectedModel = model;
         this.selectedBrand = brand;
         this.showDeviceModal();
-        
-        const modelCards = document.querySelectorAll('.model-card');
-        modelCards.forEach(card => {
-            if (card.querySelector('.model-name').textContent === model) {
-                card.style.transform = 'scale(0.95)';
-                setTimeout(() => card.style.transform = '', 150);
-            }
-        });
     }
 
-    showBrandStep() {
-        this.elements.brandStep.classList.add('active');
-        this.elements.modelStep.classList.remove('active');
-        this.selectedBrand = null;
-        this.selectedModel = null;
-        
-        // Clear model search when going back
-        if (this.elements.modelSearch) {
-            this.elements.modelSearch.value = '';
-            this.elements.clearModelSearch.style.display = 'none';
-        }
-        
-        // Focus brand search if present
-        if (this.elements.brandSearch) {
-            setTimeout(() => this.elements.brandSearch.focus(), 100);
-        }
-    }
-    
-    showModelStep() {
-        this.elements.brandStep.classList.remove('active');
-        this.elements.modelStep.classList.add('active');
-        
-        // Focus model search
-        if (this.elements.modelSearch) {
-            setTimeout(() => this.elements.modelSearch.focus(), 100);
-        }
-    }
-    
     setupKeyboardNavigation() {
-        // ESC key to go back or close modals
+        // ESC key to close modals
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                if (this.elements.deviceModal?.classList.contains('show')) {
+                if (this.elements.protectDetailSheet?.classList.contains('show')) {
                     this.closeDeviceModal();
                 } else if (this.elements.settingsMenu?.classList.contains('show')) {
                     this.closeSettings();
-                } else if (this.elements.modelStep?.classList.contains('active')) {
-                    this.showBrandStep();
                 }
             }
         });
         
-        // Keyboard navigation for brand/model cards
-        this.elements.brandGrid?.addEventListener('keydown', (e) => {
-            this.handleCardNavigation(e, '.brand-card');
-        });
-        
-        this.elements.modelGrid?.addEventListener('keydown', (e) => {
-            this.handleCardNavigation(e, '.model-card');
+        // Keyboard navigation for device cards
+        this.elements.protectDeviceList?.addEventListener('keydown', (e) => {
+            this.handleCardNavigation(e, '.protect-device-card');
         });
     }
     
@@ -1906,77 +1697,96 @@ class ProtectApp {
             const model = this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
             return brand === this.selectedBrand && model === this.selectedModel;
         });
-        
         if (!device) {
             this.showToast('Device not found', 'error');
-        return;
+            return;
+        }
+        this.populateProtectDetailSheet(device);
+        if (this.elements.protectDetailSheet) {
+            this.elements.protectDetailSheet.classList.add('show');
+            this.elements.protectDetailSheet.setAttribute('aria-hidden', 'false');
+        }
     }
-    
-        this.populateDeviceModal(device);
-        this.elements.deviceModal.classList.add('show');
-        setTimeout(() => {
-            this.elements.deviceModal.querySelector('.modal-container').style.transform = 'scale(1)';
-        }, 10);
-    }
-    
-    populateDeviceModal(device) {
+
+    populateProtectDetailSheet(device) {
         const deviceBrand = this.getField(device, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
         const deviceModel = this.getField(device, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
-        
-        const getAvailable = (d) => this.getField(d, ['Available', 'AVAILABLE', 'available', 'Availability', 'In Stock', 'in_stock', 'Status', 'status']);
-        const availableValue = getAvailable(device);
-        
-        let isAvailable = true;
-        if (availableValue) {
-            const normalizedValue = availableValue.toString().toLowerCase().trim();
-            const positiveIndicators = ['yes', 'y', 'true', '1', 'available', 'in stock', '✅', '✓', '✔'];
-            const negativeIndicators = ['no', 'n', 'false', '0', 'unavailable', 'out of stock', 'discontinued', '❌', '✗', '×'];
-            
-            if (positiveIndicators.some(indicator => normalizedValue === indicator)) {
-                isAvailable = true;
-            } else if (negativeIndicators.some(indicator => normalizedValue === indicator)) {
-                isAvailable = false;
-            }
-        }
-        
-        this.elements.deviceName.textContent = `${deviceBrand} ${deviceModel}`;
-        
-        // Filter options to only include entries that have a UPC AND a verified MDN
         const options = this.deviceData.filter(d => {
             const dBrand = this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
             const dModel = this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
             const hasUpc = this.getField(d, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
             const hasMdn = this.getField(d, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
             const isVerified = hasMdn && this.isMdnVerified(d);
-            
-            // Only include if brand/model matches AND has a UPC AND verified MDN
             return dBrand === deviceBrand && dModel === deviceModel && hasUpc && isVerified;
         });
-        
-        // Check if any entries have verified MDNs
         const hasVerifiedMdns = options.some(opt => {
             const hasMdn = this.getField(opt, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
             return hasMdn && this.isMdnVerified(opt);
         });
-        
-        const availabilityBadge = hasVerifiedMdns 
-            ? '<span class="availability-badge available"><i class="fas fa-check-circle"></i> MDN Verified Available</span>'
-            : '<span class="availability-badge unavailable"><i class="fas fa-exclamation-circle"></i> MDN Not Verified</span>';
-        
-        this.elements.deviceModel.innerHTML = `
-            <span class="model-text">${deviceModel}</span>
-            ${availabilityBadge}
-        `;
-        
+        if (this.elements.protectDetailTitle) {
+            this.elements.protectDetailTitle.textContent = `${deviceBrand} ${deviceModel}`;
+        }
+        if (this.elements.protectDetailSubtitle) {
+            this.elements.protectDetailSubtitle.textContent = hasVerifiedMdns
+                ? 'MDN verified · Ready for activation'
+                : 'Verify MDN in sheet';
+        }
         const groupedOptions = this.groupByProtectionType(options);
-        
-        this.elements.optionsCount.textContent = `${options.length} UPC option${options.length !== 1 ? 's' : ''}`;
-        
-        this.elements.optionsList.innerHTML = '';
+        if (!this.elements.protectDetailOptions) return;
+        this.elements.protectDetailOptions.innerHTML = '';
         groupedOptions.forEach(group => {
-            const optionCard = this.createProtectionTypeCard(group, device['Device Model']);
-            this.elements.optionsList.appendChild(optionCard);
+            const card = this.createProtectDetailOptionCard(group, deviceModel);
+            this.elements.protectDetailOptions.appendChild(card);
         });
+    }
+
+    createProtectDetailOptionCard(group, deviceModel) {
+        const card = document.createElement('div');
+        card.className = 'protect-detail-option-card';
+        const verifiedMdns = Array.from(group.verifiedMdns);
+        const verifiedUpcs = [...new Set(group.entries.map(e =>
+            this.getField(e, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE'])
+        ).filter(Boolean))];
+        const showMdnButton = verifiedUpcs.length > 0 && verifiedMdns.length > 0;
+        card.innerHTML = `
+            <div class="protect-option-head">
+                <span class="protect-option-type">${group.type}</span>
+                <span class="protect-option-count">${verifiedUpcs.length} UPC${verifiedUpcs.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div class="protect-option-upcs">
+                ${verifiedUpcs.map(upc => `
+                    <div class="protect-upc-row">
+                        <code class="protect-upc-value" data-upc="${upc}">${upc}</code>
+                        <button type="button" class="protect-upc-copy" aria-label="Copy UPC"><i class="fas fa-copy"></i></button>
+                    </div>
+                `).join('')}
+            </div>
+            ${verifiedUpcs.length > 1 ? `
+                <button type="button" class="protect-copy-all-upcs" data-upcs="${verifiedUpcs.join(',')}">
+                    <i class="fas fa-copy"></i> Copy all ${verifiedUpcs.length} UPCs
+                </button>
+            ` : ''}
+            ${showMdnButton ? `
+                <button type="button" class="protect-reveal-mdn mdn-hold-button" data-brand="${group.brand}" data-type="${group.type}" data-device="${deviceModel}" aria-label="Hold to reveal MDNs">
+                    <i class="fas fa-phone-alt"></i> Hold to reveal MDN${verifiedMdns.length > 1 ? 's' : ''} (${verifiedMdns.length})
+                </button>
+            ` : ''}
+        `;
+        card.querySelectorAll('.protect-upc-copy').forEach(btn => {
+            const row = btn.closest('.protect-upc-row');
+            const upc = row?.querySelector('.protect-upc-value')?.getAttribute('data-upc');
+            if (upc) btn.addEventListener('click', () => this.copyUPC(upc));
+        });
+        const copyAllBtn = card.querySelector('.protect-copy-all-upcs');
+        if (copyAllBtn) {
+            const upcs = copyAllBtn.getAttribute('data-upcs').split(',').map(u => u.trim()).filter(Boolean);
+            copyAllBtn.addEventListener('click', () => this.copyAllUPCs(upcs));
+        }
+        const mdnBtn = card.querySelector('.mdn-hold-button');
+        if (mdnBtn) {
+            this.attachMdnHoldHandlers(mdnBtn, group.brand, group.type, deviceModel);
+        }
+        return card;
     }
     
     groupByProtectionType(options) {
@@ -2094,7 +1904,10 @@ class ProtectApp {
     }
     
     closeDeviceModal() {
-        this.elements.deviceModal.classList.remove('show');
+        if (this.elements.protectDetailSheet) {
+            this.elements.protectDetailSheet.classList.remove('show');
+            this.elements.protectDetailSheet.setAttribute('aria-hidden', 'true');
+        }
     }
     
     attachMdnHoldHandlers(button, brand, type, deviceModel) {
@@ -2279,13 +2092,19 @@ class ProtectApp {
     refreshDeviceData() {
         this.closeDeviceModal();
         this.loadData({ force: true, silent: true }).then(() => {
+            this.flatDeviceList = this.getFlatDeviceList();
+            this.filterProtectDevices(this.elements.protectSearch?.value || '');
             this.showToast('Data refreshed', 'success');
         });
     }
     
     startNewSearch() {
         this.closeDeviceModal();
-        this.showBrandStep();
+        if (this.elements.protectSearch) {
+            this.elements.protectSearch.value = '';
+            this.elements.protectSearch.focus();
+        }
+        this.filterProtectDevices('');
     }
     
     toggleSettings() {
@@ -2305,7 +2124,7 @@ class ProtectApp {
     
     goToHome() {
         // Close any open modals
-        if (this.elements.deviceModal.classList.contains('show')) {
+        if (this.elements.protectDetailSheet?.classList.contains('show')) {
             this.closeDeviceModal();
         }
         if (this.elements.settingsMenu.classList.contains('show')) {
@@ -2416,16 +2235,137 @@ class ProtectApp {
     }
 
     showPromoTab() {
-        if (this.elements.promoTab) {
-            this.elements.promoTab.classList.add('active');
-        }
+        if (this.elements.promoTab) this.elements.promoTab.classList.add('active');
         if (this.elements.promoTabBtn) {
             this.elements.promoTabBtn.classList.add('active');
             this.elements.promoTabBtn.setAttribute('aria-selected', 'true');
         }
         this.toggleHeaderStatus(false);
+        this.renderPromos();
     }
-    
+
+    getPromoData() {
+        return [
+            {
+                id: 'apple-iphone',
+                name: 'Apple – iPhone',
+                icon: 'fa-mobile-screen',
+                promos: [
+                    { title: 'iPhone 17 On Us', requirement: 'New line required (Y + P in most tiers)', eligible: 'iPhone 17 series, iPhone 16 series', ratePlan: 'Experience More / Experience Beyond / Go5G Next / Go5G Plus (incl. Business variants)', maxPayout: '$830', limit: '4 per account', notStackable: 'Keep & Switch, Essentials Saver, 4 for $25/line' },
+                    { title: '$630 Off iPhone 17', requirement: 'New line required (Y + P)', eligible: 'iPhone 17 & 16 series', ratePlan: '55+, Military, First Responder variants of premium plans', maxPayout: '$630', limit: '4' }
+                ]
+            },
+            {
+                id: 'apple-ipad',
+                name: 'Apple – iPad',
+                icon: 'fa-tablet-screen-button',
+                promos: [
+                    { title: '$99 iPad (A16)', requirement: 'New tablet line required', eligible: 'iPad A16', ratePlan: 'Requires $25+ Unlimited Plus Tablet Plan', maxPayout: '$400.99' }
+                ]
+            },
+            {
+                id: 'apple-watch',
+                name: 'Apple – Watch',
+                icon: 'fa-clock',
+                promos: [
+                    { title: '$300 Off Apple Watch', requirement: 'New watch line required', eligible: 'Apple Watch S11, SE3', ratePlan: 'Requires $15+ Apple Watch Plus Plan', maxPayout: '$300' },
+                    { title: 'Apple Watch BOGO', requirement: 'New lines required', eligible: 'Buy one, get one promo on select models', ratePlan: 'Ongoing promo' }
+                ]
+            },
+            {
+                id: 'samsung',
+                name: 'Samsung',
+                icon: 'fa-mobile-screen',
+                promos: [
+                    { title: 'Galaxy S25 On Us', requirement: 'New line required', eligible: 'S25 series, S24 series, Z Flip/Fold series', ratePlan: 'Requires premium Experience / Go5G plans', maxPayout: '$800', limit: '4', notStackable: 'Keep & Switch or discounted plan promos' }
+                ]
+            },
+            {
+                id: 'android',
+                name: 'Android (Multi-Brand)',
+                icon: 'fa-mobile-screen',
+                promos: [
+                    { title: '$600 Off Android Smartphones', requirement: 'New line required', eligible: 'Galaxy S25 series, Pixel 10 series, Moto Razr variants and others', maxPayout: '$600', limit: '4' }
+                ]
+            },
+            {
+                id: 'tablets',
+                name: 'Tablets',
+                icon: 'fa-tablet-screen-button',
+                promos: [
+                    { title: 'Samsung Tab A11+ 5G On Us', requirement: 'New tablet line required', eligible: 'Tab A11+ 5G, Tab A9+ 5G', ratePlan: 'Requires $10+ tablet plan', maxPayout: '$290', limit: '12' }
+                ]
+            },
+            {
+                id: 'service-line',
+                name: 'Service Line Promotions',
+                icon: 'fa-phone',
+                promos: [
+                    { title: 'BOGO Add-A-Line', requirement: 'Buy one voice line, get one free', limit: '1', ratePlan: 'Plan restrictions apply' },
+                    { title: '3rd Line Free', requirement: 'Available for new & existing accounts', limit: '1', notStackable: 'BOGO AAL' }
+                ]
+            },
+            {
+                id: 'switcher-internet',
+                name: 'Switcher & Internet',
+                icon: 'fa-wifi',
+                promos: [
+                    { title: 'Keep & Switch', requirement: 'Up to $800 reimbursement', limit: '4' },
+                    { title: 'HSI + Voice Discount', requirement: '$20 off HSI with qualifying $55+ voice line', limit: '1' },
+                    { title: 'HSI Rebate', requirement: 'Up to $300 rebate with new home internet', limit: '1' }
+                ]
+            }
+        ];
+    }
+
+    renderPromos() {
+        const container = this.elements.promoContainer;
+        if (!container) return;
+        container.innerHTML = '';
+        const categories = this.getPromoData();
+        categories.forEach(cat => {
+            const section = document.createElement('section');
+            section.className = 'promo-category';
+            section.setAttribute('aria-label', cat.name);
+            const heading = document.createElement('h4');
+            heading.className = 'promo-category-heading';
+            heading.innerHTML = `<i class="fas ${cat.icon || 'fa-tag'}"></i><span>${this.escapeHtml(cat.name)}</span>`;
+            section.appendChild(heading);
+            const grid = document.createElement('div');
+            grid.className = 'promo-grid';
+            cat.promos.forEach(p => grid.appendChild(this.createPromoCard(p)));
+            section.appendChild(grid);
+            container.appendChild(section);
+        });
+    }
+
+    createPromoCard(p) {
+        const card = document.createElement('article');
+        card.className = 'promo-card';
+        const parts = [];
+        if (p.requirement) parts.push({ label: 'Requirement', value: p.requirement });
+        if (p.eligible) parts.push({ label: 'Eligible', value: p.eligible });
+        if (p.ratePlan) parts.push({ label: 'Rate plan', value: p.ratePlan });
+        if (p.maxPayout) parts.push({ label: 'Max payout', value: p.maxPayout });
+        if (p.limit) parts.push({ label: 'Limit', value: p.limit });
+        if (p.notStackable) parts.push({ label: 'Not stackable', value: p.notStackable });
+        const rows = parts.map(({ label, value }) => `<div class="promo-field"><span class="promo-field-label">${this.escapeHtml(label)}</span><span class="promo-field-value">${this.escapeHtml(value)}</span></div>`).join('');
+        card.innerHTML = `
+            <div class="promo-card-header">
+                <span class="promo-name">${this.escapeHtml(p.title)}</span>
+            </div>
+            ${rows ? `<div class="promo-fields">${rows}</div>` : ''}
+        `;
+        return card;
+    }
+
+    escapeHtml(s) {
+        if (s == null) return '';
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+    }
+
     // ========== HOME TAB CLOCK ==========
     
     startHomeClock() {
@@ -3122,32 +3062,6 @@ class ProtectApp {
         if (value >= 100) return 'success';
         if (value >= 85) return 'warn';
         return 'alert';
-    }
-
-    // ========== PROMOTIONS ==========
-    async loadPromos() {
-        // Promotions disabled / under construction
-        this.promosLoaded = true;
-        this.promos = [];
-    }
-
-    getPromoType(activationType) {
-        const text = (activationType || '').toLowerCase();
-        const hasPort = text.includes('port');
-        const hasNew = text.includes('new line') || text.includes('new-line') || text.includes('new') || text.includes('(y)');
-        const hasUpgrade = text.includes('upgrade');
-
-        if (hasUpgrade) return 'upgrade';
-        if (hasNew && hasPort) return 'new-port';
-        if (hasNew) return 'new';
-        return 'other';
-    }
-
-    getPromoTypeLabel(type) {
-        if (type === 'upgrade') return 'Upgrade';
-        if (type === 'new-port') return 'New line + port';
-        if (type === 'new') return 'New line';
-        return 'Promo';
     }
 
     getWeatherLabel(code) {

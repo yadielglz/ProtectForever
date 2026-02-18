@@ -1,5 +1,5 @@
 // Modern Service Worker for StoreView PWA
-const CACHE_NAME = 'storeview-v4';
+const CACHE_NAME = 'storeview-v5';
 const STATIC_CACHE_URLS = [
     '/',
     '/index.html',
@@ -8,8 +8,8 @@ const STATIC_CACHE_URLS = [
     '/config.js',
     '/manifest.json',
     '/sw.js',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+    '/assets/fontawesome/css/all.min.css',
+    '/logo.svg'
 ];
 
 // Icons that should NOT be cached aggressively (cache bust on update)
@@ -101,9 +101,7 @@ self.addEventListener('fetch', event => {
     }
     
     // Skip requests to external domains that might cause issues
-    if (!event.request.url.startsWith(self.location.origin) && 
-        !event.request.url.includes('fonts.googleapis.com') &&
-        !event.request.url.includes('cdnjs.cloudflare.com')) {
+    if (!event.request.url.startsWith(self.location.origin)) {
         return;
     }
     
