@@ -5745,7 +5745,7 @@ body {
 
 .protect-device-card {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: var(--space-3);
     padding: var(--space-4);
     background: var(--bg-secondary);
@@ -5782,6 +5782,29 @@ body {
 }
 
 .protect-device-arrow {
+.protect-device-main {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.protect-device-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.protect-device-details {
+    width: 100%;
+    margin-top: var(--space-3);
+}
+
+.protect-device-no-options {
+    font-size: var(--font-size-sm);
+    color: var(--text-tertiary);
+}
+
     font-size: var(--font-size-sm);
     color: var(--text-tertiary);
 }

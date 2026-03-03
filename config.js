@@ -28,17 +28,9 @@ const CONFIG = {
     CACHE_DURATION: 5 * 60 * 1000, // 5 minutes in milliseconds
     CACHE_KEY: 'storeview_data_cache',
     
-    // Schedule Google Sheets URL (single sheet with 3 schedule tables: Week0, Week1, Week2)
-    SCHEDULE_SHEETS_URL: 'https://docs.google.com/spreadsheets/d/1RcMXkA2uaQK-ixK9K5EpOnszRAvzM_d3ZXVDsHsvOMw/export?format=csv',
-    SCHEDULE_CACHE_KEY: 'storeview_schedule_data_cache',
-    SCHEDULE_CACHE_DURATION: 60 * 60 * 1000, // 1 hour in milliseconds (schedules change less frequently)
-    
     // App settings
     APP_NAME: 'StoreView',
     APP_VERSION: '3.1.1230',
-
-    // Pulse dashboard (performance sheet)
-    PULSE_SHEET_URL: 'https://docs.google.com/spreadsheets/d/1Xtib3XoA1gJ9OJWVL0pd9GFDqHQH5W_KoWFuxglXlMU/gviz/tq?tqx=out:csv&gid=0',
 
     // Store hours (local time)
     STORE_HOURS: {

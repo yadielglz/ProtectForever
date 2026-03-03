@@ -3,15 +3,15 @@ class ProtectApp {
     constructor() {
         this.config = CONFIG;
         this.deviceData = [];
-        this.scheduleData = []; // All schedule shifts in one array
-        this.scheduleWeeks = []; // Organized by week (calculated from dates)
-        this.scheduleByDate = new Map(); // Organized by day for fast lookup
+        this.scheduleData = []; // (legacy) schedule data, no longer used
+        this.scheduleWeeks = []; // (legacy) schedule weeks, no longer used
+        this.scheduleByDate = new Map(); // (legacy) schedule map, no longer used
         this.currentPasscode = '';
         this.selectedBrand = null;
         this.selectedModel = null;
         this.inactivityTimer = null;
         this.isAuthenticated = false;
-        this.currentTab = 'home';
+        this.currentTab = null;
         this.currentScheduleView = 'daily';
         this.currentWeekIndex = 0; // Index into scheduleWeeks array
         this.currentSelectedDate = new Date(); // Selected date for daily view
@@ -146,8 +146,27 @@ class ProtectApp {
     
     // Helper method to get field value with fallback column names
     getField(item, possibleNames) {
+        if (!item || typeof item !== 'object') return '';
         for (const name of possibleNames) {
-            if (item[name]) return item[name];
+            if (item[name] !== undefined && item[name] !== null && String(item[name]).trim() !== '') {
+                return String(item[name]).trim();
+            }
+        }
+
+        // Fuzzy key fallback (case/spacing/punctuation/BOM insensitive)
+        const normalizedItemKeys = Object.keys(item).map((key) => ({
+            key,
+            norm: key.replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-z0-9]/g, '')
+        }));
+        for (const name of possibleNames) {
+            const target = String(name).toLowerCase().replace(/[^a-z0-9]/g, '');
+            const match = normalizedItemKeys.find((entry) => entry.norm === target);
+            if (match) {
+                const value = item[match.key];
+                if (value !== undefined && value !== null && String(value).trim() !== '') {
+                    return String(value).trim();
+                }
+            }
         }
         return '';
     }
@@ -190,11 +209,9 @@ class ProtectApp {
         
         this.showLoading('Initializing StoreView...');
             
-            // Force fresh data each start
+            // Force fresh Protect data each start
             localStorage.removeItem(this.config.CACHE_KEY);
             localStorage.removeItem('lastDataUpdate');
-            localStorage.removeItem(this.config.SCHEDULE_CACHE_KEY);
-            localStorage.removeItem('lastScheduleUpdate');
 
             // Nudge service worker to update if present
             if ('serviceWorker' in navigator) {
@@ -203,11 +220,7 @@ class ProtectApp {
                 });
             }
             
-            await Promise.all([
-                this.loadData({ force: true }),
-                this.loadScheduleData(true),
-                this.loadPulseData(true)
-            ]);
+            await this.loadData({ force: true });
             this.updateDataStatusUI();
             this.startAutoRefreshLoop();
             this.hideLoading();
@@ -391,8 +404,12 @@ class ProtectApp {
         this.elements.closeSettings.addEventListener('click', () => this.closeSettings());
         
         // Bottom navigation - Tab switching
-        this.elements.homeTabBtn.addEventListener('click', () => this.switchTab('home'));
-        this.elements.protectTabBtn.addEventListener('click', () => this.switchTab('protect'));
+        if (this.elements.homeTabBtn) {
+            this.elements.homeTabBtn.addEventListener('click', () => this.switchTab('home'));
+        }
+        if (this.elements.protectTabBtn) {
+            this.elements.protectTabBtn.addEventListener('click', () => this.switchTab('protect'));
+        }
         if (this.elements.promoTabBtn) {
             this.elements.promoTabBtn.addEventListener('click', () => this.switchTab('promo'));
         }
@@ -838,21 +855,16 @@ class ProtectApp {
 
     updateDataStatusUI() {
         const map = this.getDataUpdateMap();
-        const entries = [
-            { key: 'protect', sourceEl: this.elements.dataProtectSource, timeEl: this.elements.dataProtectUpdated, label: 'Protect data' },
-            { key: 'schedule', sourceEl: this.elements.dataScheduleSource, timeEl: this.elements.dataScheduleUpdated, label: 'Schedule data' },
-        ];
-        entries.forEach(entry => {
-            if (!entry.sourceEl || !entry.timeEl) return;
-            const rec = map[entry.key];
-            if (rec && rec.ts) {
-                entry.sourceEl.textContent = rec.source || entry.label;
-                entry.timeEl.textContent = `Last updated: ${this.formatTimeAgo(rec.ts)}`;
-            } else {
-                entry.sourceEl.textContent = '—';
-                entry.timeEl.textContent = 'Last updated: --';
-            }
-        });
+        const entry = { key: 'protect', sourceEl: this.elements.dataProtectSource, timeEl: this.elements.dataProtectUpdated, label: 'Protect data' };
+        if (!entry.sourceEl || !entry.timeEl) return;
+        const rec = map[entry.key];
+        if (rec && rec.ts) {
+            entry.sourceEl.textContent = rec.source || entry.label;
+            entry.timeEl.textContent = `Last updated: ${this.formatTimeAgo(rec.ts)}`;
+        } else {
+            entry.sourceEl.textContent = '—';
+            entry.timeEl.textContent = 'Last updated: --';
+        }
     }
 
     formatTimeAgo(timestamp) {
@@ -1390,8 +1402,8 @@ class ProtectApp {
             this.startHomeClock();
             this.updateTimerDisplay();
             this.startTimerCountdown();
-            // Show Home tab by default
-            this.switchTab('home');
+            // Show Protect tab by default
+            this.switchTab('protect');
             this.initHomeWidgets();
         }, 400);
     }
@@ -1503,51 +1515,92 @@ class ProtectApp {
         if (this.config.DEBUG_MODE) {
             console.log('Initializing device flow, data length:', this.deviceData.length);
         }
-        this.flatDeviceList = this.getFlatDeviceList();
+        this.buildProtectCatalog();
         this.filterProtectDevices(this.elements.protectSearch?.value || '');
     }
 
-    getFlatDeviceList() {
-        const getBrand = (d) => this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
-        const getModel = (d) => this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
-        const brands = [...new Set(this.deviceData.map(getBrand))].filter(Boolean);
-        if (brands.length === 0) return [];
-        const seen = new Set();
-        const list = [];
-        brands.forEach(brand => {
-            const brandDevices = this.deviceData.filter(d => getBrand(d) === brand);
-            const modelsWithUpcAndVerifiedMdns = new Set();
-            brandDevices.forEach(device => {
-                const model = getModel(device);
-                if (!model) return;
-                const hasUpc = this.getField(device, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
-                const hasMdn = this.getField(device, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
-                const isVerified = hasMdn && this.isMdnVerified(device);
-                if (hasUpc && isVerified) modelsWithUpcAndVerifiedMdns.add(model);
-            });
-            const models = Array.from(modelsWithUpcAndVerifiedMdns).sort((a, b) =>
-                this.getModelSortOrder(brand, b) - this.getModelSortOrder(brand, a)
-            );
-            models.forEach(model => {
-                const key = `${brand}|${model}`;
-                if (seen.has(key)) return;
-                seen.add(key);
-                list.push({ brand, model });
-            });
+    normalizeProtectRecord(row) {
+        const byName = (names) => this.getField(row, names);
+        let brand = byName(['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand', 'Manufacturer', 'OEM']);
+        let model = byName(['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model', 'Device', 'Phone Model']);
+        let type = byName(['Type', 'Protection Type', 'ProtectionType', 'TYPE', 'Protection', 'Plan', 'Tier']);
+        const upc = byName(['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE', 'Barcode']);
+        const mdn = byName(['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone', 'IMEI', 'ESN']);
+        const available = byName(['Available', 'AVAILABLE', 'available', 'Availability', 'In Stock', 'in_stock', 'Status', 'status']);
+
+        if (!brand || !model) {
+            const keys = Object.keys(row || {});
+            const keyBy = (pattern) => keys.find(k => pattern.test(k.toLowerCase().replace(/[^a-z0-9]/g, '')));
+            if (!brand) {
+                const brandKey = keyBy(/devicebrand|brand|manufacturer|oem/);
+                brand = brandKey ? String(row[brandKey] || '').trim() : brand;
+            }
+            if (!model) {
+                const modelKey = keyBy(/devicemodel|model|phonemodel|device/);
+                model = modelKey ? String(row[modelKey] || '').trim() : model;
+            }
+            if (!type) {
+                const typeKey = keyBy(/protectiontype|type|protection|plan|tier/);
+                type = typeKey ? String(row[typeKey] || '').trim() : type;
+            }
+        }
+
+        return {
+            brand: brand || 'Unknown Brand',
+            model: model || 'Unknown Model',
+            type: type || 'General',
+            upc: upc || '',
+            mdn: mdn || '',
+            available: available || ''
+        };
+    }
+
+    buildProtectCatalog() {
+        const grouped = new Map();
+        (this.deviceData || []).forEach(row => {
+            const normalized = this.normalizeProtectRecord(row);
+            const key = `${normalized.brand}|${normalized.model}`;
+            if (!grouped.has(key)) {
+                grouped.set(key, {
+                    key,
+                    brand: normalized.brand,
+                    model: normalized.model,
+                    rows: []
+                });
+            }
+            grouped.get(key).rows.push(normalized);
         });
-        return list;
+
+        this.flatDeviceList = Array.from(grouped.values())
+            .sort((a, b) => {
+                if (a.brand !== b.brand) return a.brand.localeCompare(b.brand);
+                return this.getModelSortOrder(a.brand, b.model) - this.getModelSortOrder(a.brand, a.model);
+            })
+            .map(item => ({
+                key: item.key,
+                brand: item.brand,
+                model: item.model,
+                rows: item.rows
+            }));
     }
 
     filterProtectDevices(searchTerm) {
-        const term = searchTerm.toLowerCase().trim();
+        const term = (searchTerm || '').toLowerCase().trim();
         const filtered = term === ''
             ? this.flatDeviceList
-            : this.flatDeviceList.filter(({ brand, model }) =>
-                brand.toLowerCase().includes(term) || model.toLowerCase().includes(term)
-            );
+            : this.flatDeviceList.filter(item => {
+                const haystack = [
+                    item.brand,
+                    item.model,
+                    ...item.rows.map(r => `${r.type} ${r.upc} ${r.mdn} ${r.available}`)
+                ].join(' ').toLowerCase();
+                return haystack.includes(term);
+            });
+
         if (!this.elements.protectDeviceList) return;
         this.elements.protectDeviceList.innerHTML = '';
         if (!this.elements.protectEmptyState) return;
+
         if (filtered.length === 0) {
             this.elements.protectEmptyState.style.display = 'flex';
             this.elements.protectDeviceList.style.display = 'none';
@@ -1556,27 +1609,28 @@ class ProtectApp {
             this.elements.protectDeviceList.style.display = 'grid';
             filtered.forEach(item => this.elements.protectDeviceList.appendChild(this.createProtectDeviceCard(item)));
         }
+
         if (this.elements.clearProtectSearch) {
             this.elements.clearProtectSearch.style.display = term ? 'flex' : 'none';
         }
     }
 
-    createProtectDeviceCard({ brand, model }) {
+    createProtectDeviceCard(item) {
         const card = document.createElement('div');
         card.className = 'protect-device-card';
         card.setAttribute('tabindex', '0');
         card.setAttribute('role', 'button');
-        card.setAttribute('aria-label', `Open ${brand} ${model}`);
+        card.setAttribute('aria-label', `Open ${item.brand} ${item.model}`);
         card.innerHTML = `
-            <span class="protect-device-brand">${brand}</span>
-            <span class="protect-device-model">${model}</span>
+            <span class="protect-device-brand">${item.brand}</span>
+            <span class="protect-device-model">${item.model}</span>
             <i class="fas fa-chevron-right protect-device-arrow"></i>
         `;
-        card.addEventListener('click', () => this.selectModel(model, brand));
+        card.addEventListener('click', () => this.selectModel(item.model, item.brand));
         card.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                this.selectModel(model, brand);
+                this.selectModel(item.model, item.brand);
             }
         });
         return card;
@@ -1692,11 +1746,9 @@ class ProtectApp {
     }
     
     showDeviceModal() {
-        const device = this.deviceData.find(d => {
-            const brand = this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
-            const model = this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
-            return brand === this.selectedBrand && model === this.selectedModel;
-        });
+        const device = (this.flatDeviceList || []).find(d =>
+            d.brand === this.selectedBrand && d.model === this.selectedModel
+        );
         if (!device) {
             this.showToast('Device not found', 'error');
             return;
@@ -1708,21 +1760,17 @@ class ProtectApp {
         }
     }
 
+    getVerifiedOptionsForDevice(deviceBrand, deviceModel) {
+        const item = (this.flatDeviceList || []).find(d => d.brand === deviceBrand && d.model === deviceModel);
+        const options = item ? item.rows : [];
+        const hasVerifiedMdns = options.some(opt => !!opt.mdn && this.isMdnVerified(opt));
+        return { options, hasVerifiedMdns };
+    }
+
     populateProtectDetailSheet(device) {
-        const deviceBrand = this.getField(device, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
-        const deviceModel = this.getField(device, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
-        const options = this.deviceData.filter(d => {
-            const dBrand = this.getField(d, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
-            const dModel = this.getField(d, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
-            const hasUpc = this.getField(d, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']);
-            const hasMdn = this.getField(d, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
-            const isVerified = hasMdn && this.isMdnVerified(d);
-            return dBrand === deviceBrand && dModel === deviceModel && hasUpc && isVerified;
-        });
-        const hasVerifiedMdns = options.some(opt => {
-            const hasMdn = this.getField(opt, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
-            return hasMdn && this.isMdnVerified(opt);
-        });
+        const deviceBrand = device.brand || this.getField(device, ['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'brand']);
+        const deviceModel = device.model || this.getField(device, ['Device Model', 'Model', 'DeviceModel', 'MODEL', 'model']);
+        const { options, hasVerifiedMdns } = this.getVerifiedOptionsForDevice(deviceBrand, deviceModel);
         if (this.elements.protectDetailTitle) {
             this.elements.protectDetailTitle.textContent = `${deviceBrand} ${deviceModel}`;
         }
@@ -1734,6 +1782,10 @@ class ProtectApp {
         const groupedOptions = this.groupByProtectionType(options);
         if (!this.elements.protectDetailOptions) return;
         this.elements.protectDetailOptions.innerHTML = '';
+        if (groupedOptions.length === 0) {
+            this.elements.protectDetailOptions.innerHTML = '<div class="protect-device-no-options">No options found for this device.</div>';
+            return;
+        }
         groupedOptions.forEach(group => {
             const card = this.createProtectDetailOptionCard(group, deviceModel);
             this.elements.protectDetailOptions.appendChild(card);
@@ -1744,32 +1796,35 @@ class ProtectApp {
         const card = document.createElement('div');
         card.className = 'protect-detail-option-card';
         const verifiedMdns = Array.from(group.verifiedMdns);
-        const verifiedUpcs = [...new Set(group.entries.map(e =>
-            this.getField(e, ['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE'])
-        ).filter(Boolean))];
-        const showMdnButton = verifiedUpcs.length > 0 && verifiedMdns.length > 0;
+        const allMdns = Array.from(group.mdns);
+        const upcs = [...new Set(group.entries.map(e => e.upc).filter(Boolean))];
         card.innerHTML = `
             <div class="protect-option-head">
                 <span class="protect-option-type">${group.type}</span>
-                <span class="protect-option-count">${verifiedUpcs.length} UPC${verifiedUpcs.length !== 1 ? 's' : ''}</span>
+                <span class="protect-option-count">${upcs.length} UPC${upcs.length !== 1 ? 's' : ''}</span>
             </div>
             <div class="protect-option-upcs">
-                ${verifiedUpcs.map(upc => `
+                ${upcs.map(upc => `
                     <div class="protect-upc-row">
                         <code class="protect-upc-value" data-upc="${upc}">${upc}</code>
                         <button type="button" class="protect-upc-copy" aria-label="Copy UPC"><i class="fas fa-copy"></i></button>
                     </div>
                 `).join('')}
             </div>
-            ${verifiedUpcs.length > 1 ? `
-                <button type="button" class="protect-copy-all-upcs" data-upcs="${verifiedUpcs.join(',')}">
-                    <i class="fas fa-copy"></i> Copy all ${verifiedUpcs.length} UPCs
+            ${upcs.length > 1 ? `
+                <button type="button" class="protect-copy-all-upcs" data-upcs="${upcs.join(',')}">
+                    <i class="fas fa-copy"></i> Copy all ${upcs.length} UPCs
                 </button>
             ` : ''}
-            ${showMdnButton ? `
-                <button type="button" class="protect-reveal-mdn mdn-hold-button" data-brand="${group.brand}" data-type="${group.type}" data-device="${deviceModel}" aria-label="Hold to reveal MDNs">
-                    <i class="fas fa-phone-alt"></i> Hold to reveal MDN${verifiedMdns.length > 1 ? 's' : ''} (${verifiedMdns.length})
-                </button>
+            ${(allMdns.length > 0 || verifiedMdns.length > 0) ? `
+                <div class="protect-option-upcs">
+                    ${(verifiedMdns.length > 0 ? verifiedMdns : allMdns).map(mdn => `
+                        <div class="protect-upc-row">
+                            <code class="protect-upc-value" data-mdn="${mdn}">${this.formatPhoneNumber(mdn)}</code>
+                            <button type="button" class="protect-upc-copy protect-mdn-copy" data-mdn="${mdn}" aria-label="Copy MDN"><i class="fas fa-copy"></i></button>
+                        </div>
+                    `).join('')}
+                </div>
             ` : ''}
         `;
         card.querySelectorAll('.protect-upc-copy').forEach(btn => {
@@ -1777,14 +1832,14 @@ class ProtectApp {
             const upc = row?.querySelector('.protect-upc-value')?.getAttribute('data-upc');
             if (upc) btn.addEventListener('click', () => this.copyUPC(upc));
         });
+        card.querySelectorAll('.protect-mdn-copy').forEach(btn => {
+            const mdn = btn.getAttribute('data-mdn');
+            if (mdn) btn.addEventListener('click', () => this.copyMdn(mdn));
+        });
         const copyAllBtn = card.querySelector('.protect-copy-all-upcs');
         if (copyAllBtn) {
             const upcs = copyAllBtn.getAttribute('data-upcs').split(',').map(u => u.trim()).filter(Boolean);
             copyAllBtn.addEventListener('click', () => this.copyAllUPCs(upcs));
-        }
-        const mdnBtn = card.querySelector('.mdn-hold-button');
-        if (mdnBtn) {
-            this.attachMdnHoldHandlers(mdnBtn, group.brand, group.type, deviceModel);
         }
         return card;
     }
@@ -1793,8 +1848,8 @@ class ProtectApp {
         const groups = {};
         
         options.forEach(option => {
-            const brand = this.getField(option, ['Brand', 'Device Brand', 'DeviceBrand', 'BRAND', 'brand']) || 'Unknown';
-            const type = this.getField(option, ['Type', 'Protection Type', 'ProtectionType', 'TYPE', 'Protection']) || 'Unknown';
+            const brand = option.brand || 'Unknown';
+            const type = option.type || 'General';
             const key = `${brand}-${type}`;
             
             if (!groups[key]) {
@@ -1802,14 +1857,15 @@ class ProtectApp {
                     brand: brand,
                     type: type,
                     entries: [],
-                    verifiedMdns: new Set() // Only store verified MDNs
+                    mdns: new Set(),
+                    verifiedMdns: new Set()
                 };
             }
             
             groups[key].entries.push(option);
             
-            // Only add MDN if it's verified (Availability = verified)
-            const mdn = this.getField(option, ['MDN', 'mdn', 'MDN Number', 'mdn_number', 'phone']);
+            const mdn = option.mdn;
+            if (mdn) groups[key].mdns.add(mdn);
             if (mdn && this.isMdnVerified(option)) {
                 groups[key].verifiedMdns.add(mdn);
             }
@@ -2092,7 +2148,7 @@ class ProtectApp {
     refreshDeviceData() {
         this.closeDeviceModal();
         this.loadData({ force: true, silent: true }).then(() => {
-            this.flatDeviceList = this.getFlatDeviceList();
+            this.buildProtectCatalog();
             this.filterProtectDevices(this.elements.protectSearch?.value || '');
             this.showToast('Data refreshed', 'success');
         });
@@ -2120,19 +2176,6 @@ class ProtectApp {
         const seconds = Math.floor(remainingTime / 1000);
         
         this.showToast(`Inactivity timer: ${seconds}s remaining`, 'info');
-    }
-    
-    goToHome() {
-        // Close any open modals
-        if (this.elements.protectDetailSheet?.classList.contains('show')) {
-            this.closeDeviceModal();
-        }
-        if (this.elements.settingsMenu.classList.contains('show')) {
-            this.closeSettings();
-        }
-        
-        // Switch to Home tab
-        this.switchTab('home');
     }
     
     // ========== TAB MANAGEMENT ==========
@@ -2163,20 +2206,8 @@ class ProtectApp {
         
         // Show selected tab and activate nav button
         switch(tabName) {
-            case 'home':
-                this.showHomeTab();
-                break;
-            case 'pulse':
-                this.showPulseTab();
-                break;
-            case 'schedule':
-                this.showScheduleTab();
-                break;
             case 'protect':
                 this.showProtectTab();
-                break;
-            case 'promo':
-                this.showPromoTab();
                 break;
         }
     }
@@ -2229,7 +2260,7 @@ class ProtectApp {
         this.toggleHeaderStatus(false);
         
         // Initialize device flow if not already done
-        if (!this.allBrands || this.allBrands.length === 0) {
+        if (!this.flatDeviceList || this.flatDeviceList.length === 0) {
             this.initializeDeviceFlow();
         }
     }
@@ -3571,8 +3602,6 @@ class ProtectApp {
         localStorage.removeItem('lastDataUpdate');
         localStorage.removeItem('lastDataSource');
         localStorage.removeItem('lastDataUpdates');
-        localStorage.removeItem(this.config.SCHEDULE_CACHE_KEY);
-        localStorage.removeItem('lastScheduleUpdate');
     }
 
     async refreshAllData({ force = false, silent = false, reason = 'manual' } = {}) {
@@ -3584,11 +3613,7 @@ class ProtectApp {
         if (!silent) this.showLoading('Refreshing data...');
         if (force) this.clearDataCaches();
         try {
-            await Promise.all([
-                this.loadData({ force: true, silent: true }),
-                this.loadScheduleData(true),
-                this.loadPulseData(true)
-            ]);
+            await this.loadData({ force: true, silent: true });
             this.updateDataStatusUI();
             if (!silent) this.showToast('Data refreshed successfully', 'success');
             this.initializeDeviceFlow();

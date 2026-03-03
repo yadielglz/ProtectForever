@@ -94,17 +94,9 @@
                     <div class="brand-pill">Daily Outlook</div>
                 </div>
                 <div class="rail-nav" role="tablist" aria-label="Primary tabs">
-                    <button class="rail-item active" id="homeTabBtn" data-tab="home" role="tab" aria-selected="true">
-                        <i class="fas fa-house"></i>
-                        <span class="nav-label">Home</span>
-                    </button>
-                    <button class="rail-item" id="protectTabBtn" data-tab="protect" role="tab" aria-selected="false">
+                    <button class="rail-item active" id="protectTabBtn" data-tab="protect" role="tab" aria-selected="true">
                         <i class="fas fa-shield"></i>
                         <span class="nav-label">Protect</span>
-                    </button>
-                    <button class="rail-item" id="promoTabBtn" data-tab="promo" role="tab" aria-selected="false">
-                        <i class="fas fa-tags"></i>
-                        <span class="nav-label">Promos</span>
                     </button>
                 </div>
                 <div class="rail-footer">
@@ -147,184 +139,8 @@
 
                 <!-- Main Content -->
                 <main class="main-content" role="main">
-            <!-- Home Tab -->
-            <div id="homeTab" class="tab-content active">
-                <section class="home-section">
-                    <div class="home-header">
-                        <div>
-                            <h2>Operations Overview</h2>
-                            <p>Live store status, staffing, and environment pulse.</p>
-                        </div>
-                        <div class="home-badges">
-                            <span class="home-badge">Live</span>
-                            <span class="home-badge soft">StoreView Ops</span>
-                        </div>
-                    </div>
-
-                    <div class="home-dashboard">
-                        <section class="store-hours-card ops-hero" id="storeHoursWidget">
-                            <div class="store-hours-header">
-                                <div class="store-title">
-                                    <i class="fas fa-store"></i>
-                                    <span>Store Operations</span>
-                                </div>
-                                <span class="pill-status">Today</span>
-                            </div>
-                            <div class="ops-hero-grid">
-                                <div class="ops-stat">
-                                    <div class="ops-label">Status</div>
-                                    <div id="storeStatus" class="store-status">Checking...</div>
-                                </div>
-                                <div class="ops-stat">
-                                    <div class="ops-label">Day progress</div>
-                                    <div id="storeProgressLabel" class="ops-value">--%</div>
-                                </div>
-                                <div class="ops-stat">
-                                    <div class="ops-label">Hours</div>
-                                    <div id="storeHoursRange" class="ops-value">--</div>
-                                </div>
-                            </div>
-                            <div class="store-progress">
-                                <div id="storeProgressBar" class="store-progress-bar"></div>
-                            </div>
-                        </section>
-
-                        <section class="shift-track-section card-surface" id="shiftTrackSection">
-                            <div class="shift-track-header">
-                                <button id="shiftTrackToggle" class="shift-track-toggle" aria-expanded="true">
-                                    <div>
-                                        <h3>Shift Track</h3>
-                                        <p id="shiftTrackSubtitle">Today's shifts</p>
-                                    </div>
-                                    <i class="fas fa-chevron-up"></i>
-                                </button>
-                                <button id="refreshShiftTrackBtn" class="shift-track-refresh" aria-label="Refresh shift progress">
-                                    <i class="fas fa-sync-alt"></i>
-                                    <span>Refresh</span>
-                                </button>
-                            </div>
-                            <div id="shiftTrackBody" class="shift-track-body">
-                                <div id="shiftTrackList" class="shift-track-list"></div>
-                                <div id="shiftTrackEmpty" class="empty-state" style="display: none;">
-                                    <div class="empty-state-icon">
-                                        <i class="fas fa-users-slash"></i>
-                                    </div>
-                                    <div class="empty-state-title">No shifts for today</div>
-                                    <div class="shift-track-message">Check back later or refresh the schedule</div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section class="weather-card" id="weatherWidget">
-                            <div class="weather-header">
-                                <div class="weather-title">
-                                    <i class="fas fa-cloud-sun"></i>
-                                    <span>Local Weather</span>
-                                </div>
-                                <div id="weatherLocation" class="weather-location">Locating...</div>
-                            </div>
-                            <div class="weather-current">
-                                <div class="weather-temp">
-                                    <span id="weatherTemp" class="temp-value">--</span>
-                                    <span class="temp-unit">°</span>
-                                </div>
-                                <div class="weather-meta">
-                                    <div id="weatherDesc" class="weather-desc">Awaiting data</div>
-                                    <div id="weatherUpdated" class="weather-updated">—</div>
-                                </div>
-                            </div>
-                            <div class="weather-forecast" id="weatherForecast">
-                                <div class="forecast-row">
-                                    <div class="forecast-row-title">Next hours</div>
-                                    <div class="forecast-grid" id="weatherForecastHours"></div>
-                                </div>
-                                <div class="forecast-row">
-                                    <div class="forecast-row-title">Next days</div>
-                                    <div class="forecast-grid" id="weatherForecastDays"></div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section class="ops-alerts card-surface">
-                            <div class="ops-alerts-header">
-                                <div>
-                                    <h3>Operational Alerts</h3>
-                                    <p>Monitor priorities and keep the floor ready.</p>
-                                </div>
-                                <span class="pill-status subtle">All clear</span>
-                            </div>
-                            <div class="ops-alerts-empty">
-                                <i class="fas fa-check-circle"></i>
-                                <div>
-                                    <div class="ops-alerts-title">No active alerts</div>
-                                    <div class="ops-alerts-sub">Systems and staffing look stable.</div>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Schedule Tab -->
-            <div id="scheduleTab" class="tab-content">
-                <section class="schedule-section">
-                    <div class="schedule-header">
-                        <div class="schedule-view-toggle">
-                            <button id="dailyViewBtn" class="view-toggle-btn active" data-view="daily">
-                                <i class="fas fa-calendar-day"></i>
-                                <span>Daily</span>
-                            </button>
-                            <button id="weeklyViewBtn" class="view-toggle-btn" data-view="weekly">
-                                <i class="fas fa-calendar-week"></i>
-                                <span>Weekly</span>
-                            </button>
-                        </div>
-                        <div class="week-selector">
-                            <button id="prevWeekBtn" class="week-nav-btn" aria-label="Previous week">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <span id="weekLabel" class="week-label">This Week</span>
-                            <button id="nextWeekBtn" class="week-nav-btn" aria-label="Next week">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Daily View -->
-                    <div id="dailyScheduleView" class="schedule-daily active">
-                        <div class="daily-header">
-                            <h3 id="dailyDate" class="daily-date-title">Today, January 1, 2024</h3>
-                        </div>
-                        <div id="dailyScheduleList" class="daily-schedule-list">
-                            <!-- Daily schedule items will be populated here -->
-                        </div>
-                        <div id="dailyEmptyState" class="empty-state" style="display: none;">
-                            <div class="empty-state-icon">
-                                <i class="fas fa-calendar-times"></i>
-                            </div>
-                            <div class="empty-state-title">No shifts scheduled</div>
-                            <div class="empty-state-message">No employees are scheduled for this day</div>
-                        </div>
-                    </div>
-
-                    <!-- Weekly View -->
-                    <div id="weeklyScheduleView" class="schedule-weekly">
-                        <div id="weeklyScheduleTable" class="schedule-table-container">
-                            <!-- Weekly schedule table will be populated here -->
-                        </div>
-                        <div id="weeklyEmptyState" class="empty-state" style="display: none;">
-                            <div class="empty-state-icon">
-                                <i class="fas fa-calendar-times"></i>
-                            </div>
-                            <div class="empty-state-title">No schedule available</div>
-                            <div class="empty-state-message">Schedule data is loading or unavailable</div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
             <!-- Protect Tab (new applet: single search + device list) -->
-            <div id="protectTab" class="tab-content">
+            <div id="protectTab" class="tab-content active">
                 <section class="protect-section protect-applet">
                     <div class="protect-applet-header">
                         <h2>Protection Catalog</h2>
@@ -347,45 +163,6 @@
                         <span class="protect-empty-title">No devices found</span>
                         <span class="protect-empty-msg">Try a different search term</span>
                     </div>
-                </section>
-            </div>
-
-            <!-- Promotions Tab -->
-            <div id="promoTab" class="tab-content">
-                <section class="promo-section promo-applet">
-                    <div class="promo-applet-header">
-                        <div class="promo-title">
-                            <i class="fas fa-tags"></i>
-                            <div>
-                                <h3>Promotions</h3>
-                                <p>Current offers by category</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="promoContainer" class="promo-container" role="list">
-                        <!-- Category sections and cards populated by script -->
-                    </div>
-                </section>
-            </div>
-
-            <!-- Pulse Tab -->
-            <div id="pulseTab" class="tab-content">
-                <section class="pulse-section">
-                    <div class="pulse-header">
-                        <div class="pulse-title-group">
-                            <h3>Pulse</h3>
-                            <p>Performance snapshot across all stores</p>
-                        </div>
-                        <div class="pulse-actions">
-                            <button id="pulseRefreshBtn" class="pulse-refresh-btn" aria-label="Refresh pulse data">
-                                <i class="fas fa-sync-alt"></i>
-                                <span>Refresh</span>
-                            </button>
-                            <div id="pulseUpdatedAt" class="pulse-updated">Waiting for data...</div>
-                        </div>
-                    </div>
-                    <div id="pulseStatus" class="pulse-status">Loading pulse data...</div>
-                    <div id="pulseGrid" class="pulse-grid"></div>
                 </section>
             </div>
 
@@ -453,20 +230,6 @@
                         <div class="settings-session-progress" id="settingsTimerBar"></div>
                     </div>
                 </div>
-                <div class="settings-subsection">
-                    <div class="settings-subsection-header">
-                        <i class="fas fa-bolt"></i>
-                        <span>Quick access</span>
-                    </div>
-                    <button class="settings-option" id="morePulseBtn">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Pulse</span>
-                    </button>
-                    <button class="settings-option" id="moreScheduleBtn">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Schedule</span>
-                    </button>
-                </div>
                 <div class="settings-collapsible">
                     <button class="settings-collapsible-header" id="dataSourcesToggle" aria-expanded="false">
                         <span>
@@ -486,18 +249,6 @@
                             </div>
                             <div class="settings-data-meta">
                                 <div class="settings-data-updated" id="dataProtectUpdated">Last updated: --</div>
-                            </div>
-                        </div>
-                        <div class="settings-option settings-data-status" id="dataScheduleCard">
-                            <div class="settings-input-label">
-                                <i class="fas fa-calendar-alt"></i>
-                                <div>
-                                    <div class="settings-input-title">Schedule data</div>
-                                    <div class="settings-input-subtitle" id="dataScheduleSource">--</div>
-                                </div>
-                            </div>
-                            <div class="settings-data-meta">
-                                <div class="settings-data-updated" id="dataScheduleUpdated">Last updated: --</div>
                             </div>
                         </div>
                     </div>
