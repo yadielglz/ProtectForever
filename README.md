@@ -20,18 +20,21 @@ npm run preview   # Local test of production build
 
 ## Deploy (GitHub Pages)
 
-1. **Enable GitHub Pages**
+**Important:** The live site must serve the **gh-pages** branch (built app), not **main** (source). If you see a MIME error for `main.jsx`, the site is still using **main** — switch to **gh-pages** below.
+
+1. **Set Pages to use the built app**
    - Repo **Settings → Pages**
-   - **Source:** Deploy from a branch
-   - **Branch:** `gh-pages` / `(root)`
+   - Under **Build and deployment**, set **Source** to **Deploy from a branch**
+   - **Branch:** choose **gh-pages** (not main), folder **/ (root)**
    - Save
 
-2. **Deploy the app**
-   - Push to `main` (or run **Actions → "Build and push to gh-pages"** manually)
-   - The workflow builds the React app and pushes the built files to the `gh-pages` branch
-   - GitHub Pages serves that branch, so the live site is the app you test locally (dark theme, 4.0)
+2. **Build and push the app to gh-pages**
+   - Push to `main` (triggers the workflow), or **Actions** tab → **Build and push to gh-pages** → **Run workflow**
+   - Wait for the workflow to finish (green check). It builds the React app and pushes the result to the **gh-pages** branch.
 
-3. **Live site:** `https://<your-username>.github.io/ProtectForever/`
+3. **Open the site**
+   - **https://yadielglz.github.io/ProtectForever/**
+   - Hard refresh (Ctrl+Shift+R or Cmd+Shift+R) to avoid cached old content.
 
 ## 🚀 Features
 
