@@ -18,23 +18,16 @@ npm run build
 npm run preview   # Local test of production build
 ```
 
-## Deploy (GitHub Pages)
+## Deploy (Netlify)
 
-**Important:** The live site must serve the **gh-pages** branch (built app), not **main** (source). If you see a MIME error for `main.jsx`, the site is still using **main** — switch to **gh-pages** below.
+The app is deployed on **Netlify** via the GitHub repo. Netlify builds the React app and serves the **dist/** output (so you get the 4.0 dark-theme app, not the repo source).
 
-1. **Set Pages to use the built app**
-   - Repo **Settings → Pages**
-   - Under **Build and deployment**, set **Source** to **Deploy from a branch**
-   - **Branch:** choose **gh-pages** (not main), folder **/ (root)**
-   - Save
+**Config:** `netlify.toml` in the repo sets:
+- **Build command:** `npm run build`
+- **Publish directory:** `dist`
+- **Redirects:** SPA rule so all routes serve `index.html`
 
-2. **Build and push the app to gh-pages**
-   - Push to `main` (triggers the workflow), or **Actions** tab → **Build and push to gh-pages** → **Run workflow**
-   - Wait for the workflow to finish (green check). It builds the React app and pushes the result to the **gh-pages** branch.
-
-3. **Open the site**
-   - **https://yadielglz.github.io/ProtectForever/**
-   - Hard refresh (Ctrl+Shift+R or Cmd+Shift+R) to avoid cached old content.
+**In Netlify:** Site → **Build & deploy** → ensure **Build command** is `npm run build` and **Publish directory** is `dist` (or leave blank to use `netlify.toml`). Each push to **main** triggers a new build and deploy.
 
 ## 🚀 Features
 

@@ -1,0 +1,10 @@
+# Netlify build config (app is built from this repo; deploy the built output)
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# SPA: serve index.html for all routes so the app loads correctly
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
