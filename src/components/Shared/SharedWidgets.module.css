@@ -1,0 +1,70 @@
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.kpiCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.kpiLabel {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.kpiValue {
+  margin-top: var(--space-1);
+  font-weight: 700;
+  font-size: var(--font-size-xl);
+}
+
+.filterBar {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.chip {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+}
+
+.chipActive {
+  color: var(--text-primary);
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.actionBar {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.actionBtn {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+
+.actionBtnPrimary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}

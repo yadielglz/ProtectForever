@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CONFIG } from '../../config';
+import { buildModuleKpis, exportModuleSnapshot, getSyncInfo, rememberExport } from '../../utils/moduleStorage';
 import styles from './Settings.module.css';
 
 const HELPDESK_STORES = [
@@ -19,6 +20,8 @@ export default function Settings({ onClose, remainingMs, showToast }) {
   const [zip, setZip] = useState(() => localStorage.getItem('weatherZip') || CONFIG.WEATHER_DEFAULT_ZIP);
   const [dataSource, setDataSource] = useState('--');
   const [dataUpdated, setDataUpdated] = useState('--');
+  const [moduleKpis, setModuleKpis] = useState(() => buildModuleKpis());
+  const [syncInfo, setSyncInfo] = useState(() => getSyncInfo());
 
   useEffect(() => {
     const map = JSON.parse(localStorage.getItem('lastDataUpdates') || '{}');
@@ -64,6 +67,24 @@ export default function Settings({ onClose, remainingMs, showToast }) {
   };
 
   const reloadApp = () => window.location.reload();
+
+  const exportModuleBackup = () => {
+    const content = exportModuleSnapshot();
+    const date = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([content], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `modules_backup_${date}.json`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    rememberExport();
+    setSyncInfo(getSyncInfo());
+    setModuleKpis(buildModuleKpis());
+    showToast('Module backup exported', 'success');
+  };
 
   return (
     <div className={styles.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -116,6 +137,37 @@ export default function Settings({ onClose, remainingMs, showToast }) {
               <i className="fas fa-redo"></i>
               <span>Reload App</span>
             </button>
+          </Collapsible>
+
+          <Collapsible title="Modules & Sync" icon="fa-layer-group">
+            <div className={styles.option}>
+              <div className={styles.optionLabel}>
+                <i className="fas fa-chart-line"></i>
+                <div>
+                  <div>Operational KPIs</div>
+                  <div className={styles.optionSub}>Live local metrics from Appointments + CRM</div>
+                </div>
+              </div>
+              <div className={styles.optionMeta}>
+                Today appts: {moduleKpis.apptsToday} · Overdue leads: {moduleKpis.overdueLeads} · Won leads: {moduleKpis.wonLeads}
+              </div>
+            </div>
+            <button className={styles.menuBtn} onClick={exportModuleBackup}>
+              <i className="fas fa-cloud-download-alt"></i>
+              <span>Export module backup (JSON)</span>
+            </button>
+            <div className={styles.option}>
+              <div className={styles.optionLabel}>
+                <i className="fas fa-sync-alt"></i>
+                <div>
+                  <div>Sync state</div>
+                  <div className={styles.optionSub}>Optional sync/export readiness</div>
+                </div>
+              </div>
+              <div className={styles.optionMeta}>
+                Last export: {syncInfo.lastExportTs ? formatTimeAgo(new Date(syncInfo.lastExportTs).getTime()) : 'never'}
+              </div>
+            </div>
           </Collapsible>
 
           <Collapsible title="Weather" icon="fa-cloud-sun">

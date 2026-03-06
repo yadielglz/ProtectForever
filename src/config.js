@@ -1,6 +1,7 @@
 // Configuration for StoreView / ProtectForever
 export const CONFIG = {
   GOOGLE_SHEETS_URL: 'https://docs.google.com/spreadsheets/d/1nj6k7ouNzxImks-9CEuYvkSkFQfgOeR43Py2c2XH2eU/export?format=csv&gid=0',
+  PORTABILITY_SHEETS_URL: 'https://docs.google.com/spreadsheets/d/17Te2EX3qgePmEKQmrdFT4SOAyaO3bql_RqcXA7lvjYE/edit?usp=sharing',
   CORS_PROXIES: [
     'https://api.allorigins.win/raw?url=',
     'https://corsproxy.io/?',
@@ -11,7 +12,7 @@ export const CONFIG = {
   CACHE_DURATION: 5 * 60 * 1000,
   CACHE_KEY: 'storeview_data_cache',
   APP_NAME: 'StoreView',
-  APP_VERSION: '4.0 Build Z0305',
+  APP_VERSION: '4.1 Build A0306',
   STORE_HOURS: {
     DEFAULT: {
       MON_SAT: { OPEN: '10:00', CLOSE: '21:00' },
