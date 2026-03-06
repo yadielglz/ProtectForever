@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="StoreView">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#002642"/>
+      <stop offset="100%" stop-color="#02040F"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E59500"/>
+      <stop offset="100%" stop-color="#840032"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <g transform="translate(48 48)">
+    <rect x="0" y="80" width="160" height="40" rx="20" fill="#E5DADA" opacity="0.14"/>
+    <circle cx="80" cy="80" r="52" fill="#E5DADA" opacity="0.18"/>
+    <path d="M32 140L124 24c3.5-4.3 9.9-5 14.2-1.5l15.3 12.5c4.7 3.8 5.5 10.7 1.9 15.5L63 166.5c-3.6 4.8-10.5 5.8-15.4 2.1l-17.6-13.2c-5.4-4-6.2-11.8-1.4-16.4Z" fill="url(#mark)"/>
+    <circle cx="80" cy="80" r="26" fill="#E5DADA"/>
+    <circle cx="80" cy="80" r="16" fill="#E59500"/>
+  </g>
+</svg>
+

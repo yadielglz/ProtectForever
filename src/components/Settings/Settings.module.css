@@ -1,0 +1,294 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: var(--z-modal);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.panel {
+  width: 100%;
+  max-width: 400px;
+  height: 100%;
+  background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--gray-200);
+  flex-shrink: 0;
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  padding: var(--space-2);
+  cursor: pointer;
+}
+
+.header h3 {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  margin: 0;
+}
+
+.content {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-4);
+}
+
+.timerCard {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.timerMeta {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.timerMeta i {
+  color: var(--primary);
+}
+
+.timerLabel {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.timerSub {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.timerValue {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.timerBar {
+  height: 6px;
+  background: var(--gray-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.timerProgress {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.2s ease;
+}
+
+.collapsible {
+  margin-bottom: var(--space-4);
+}
+
+.collapseHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.collapseHeader i:first-child {
+  margin-right: var(--space-2);
+  color: var(--primary);
+}
+
+.collapseHeader .fa-chevron-down {
+  margin-left: auto;
+  transition: transform 0.2s;
+}
+
+.collapseHeader .fa-chevron-down.open {
+  transform: rotate(180deg);
+}
+
+.collapseBody {
+  padding: var(--space-2);
+  border: 1px solid var(--gray-200);
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.option {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.option:last-child {
+  border-bottom: none;
+}
+
+.optionLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.optionLabel i {
+  color: var(--primary);
+}
+
+.optionSub {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.optionMeta {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.inputRow {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.inputRow input {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.inputRow button {
+  padding: var(--space-2) var(--space-4);
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.unitToggle {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.unitToggle button {
+  flex: 1;
+  padding: var(--space-2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.unitToggle button.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.menuBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.menuBtn i {
+  color: var(--primary);
+}
+
+.helpSection {
+  margin-bottom: var(--space-4);
+}
+
+.helpSection h4 {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  margin: 0 0 var(--space-2);
+}
+
+.helpCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.helpCard a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.footer {
+  padding: var(--space-4);
+  border-top: 1px solid var(--gray-200);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.version {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.copyright {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-2);
+}
+
+.contact {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--primary);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+}

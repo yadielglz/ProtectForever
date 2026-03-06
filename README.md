@@ -1,6 +1,30 @@
-# Protect & Serve - Device Protection UPC Lookup
+# StoreView / ProtectForever
 
-A modern web application for looking up device protection UPC codes and MDN numbers from Google Sheets data.
+A modern React PWA for looking up device protection UPC codes and MDN numbers from Google Sheets data. Dark theme, passcode lock, clock & weather.
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:5173
+
+## Build
+
+```bash
+npm run build
+npm run preview   # Local test of production build
+```
+
+## Deploy (GitHub Pages)
+
+Pushes to `main` trigger an automatic build and deploy via GitHub Actions.
+
+1. In the repo: **Settings → Pages** → Source: **GitHub Actions**.
+2. Push to `main` (or run the "Deploy to GitHub Pages" workflow manually).
+3. Live site: **https://yadielglz.github.io/ProtectForever/**
 
 ## 🚀 Features
 
@@ -17,7 +41,7 @@ A modern web application for looking up device protection UPC codes and MDN numb
 
 1. **Open `config.js`** and verify your Google Sheets URL is correct
 2. **Make sure your Google Sheet is set to "Anyone with the link can view"**
-3. **Open `index.html`** in your browser - that's it!
+3. **Run `npm run dev`** and open http://localhost:5173
 
 The app will automatically try multiple CORS proxies to fetch your data.
 
@@ -55,10 +79,11 @@ Your Google Sheet should have these columns:
 
 ## 🔧 Configuration
 
-Edit `config.js` to customize:
+Edit `src/config.js` to customize:
 
 ```javascript
-const PROTECT_SERVE_CONFIG = {
+// In src/config.js
+export const CONFIG = {
     // Your Google Sheets URL
     GOOGLE_SHEETS_URL: 'https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit?usp=sharing',
     
@@ -112,13 +137,13 @@ If you see CORS errors in the console:
 - **Layout**: Modify the HTML structure in `index.html`
 - **Functionality**: Extend the JavaScript in `script.js`
 
-## 📄 Files
+## 📄 Project Structure
 
-- `index.html` - Main application interface
-- `styles.css` - Styling and responsive design
-- `script.js` - Application logic and Google Sheets integration
-- `config.js` - Configuration settings
-- `README.md` - This documentation
+- `src/` - React components, hooks, utils
+- `src/config.js` - Configuration (passcode, sheets URL, weather ZIP)
+- `src/components/` - PasscodeScreen, ProtectApp, Topbar, Settings, etc.
+- `public/` - Static assets (logo.svg)
+- `index.html` - Entry point
 
 ## 🔒 Privacy & Security
 
