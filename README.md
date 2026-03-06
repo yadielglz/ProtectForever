@@ -20,11 +20,18 @@ npm run preview   # Local test of production build
 
 ## Deploy (GitHub Pages)
 
-Pushes to `main` trigger an automatic build and deploy via GitHub Actions.
+1. **Enable GitHub Pages**
+   - Repo **Settings → Pages**
+   - **Source:** Deploy from a branch
+   - **Branch:** `gh-pages` / `(root)`
+   - Save
 
-1. In the repo: **Settings → Pages** → Source: **GitHub Actions**.
-2. Push to `main` (or run the "Deploy to GitHub Pages" workflow manually).
-3. Live site: **https://yadielglz.github.io/ProtectForever/**
+2. **Deploy the app**
+   - Push to `main` (or run **Actions → "Build and push to gh-pages"** manually)
+   - The workflow builds the React app and pushes the built files to the `gh-pages` branch
+   - GitHub Pages serves that branch, so the live site is the app you test locally (dark theme, 4.0)
+
+3. **Live site:** `https://<your-username>.github.io/ProtectForever/`
 
 ## 🚀 Features
 
