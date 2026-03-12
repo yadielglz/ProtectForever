@@ -5,10 +5,10 @@ export default function SplashScreen() {
     <div className={styles.splash}>
       <div className={styles.container}>
         <div className={styles.logo}>
-          <img src="/logo.svg" alt="StoreView" className={styles.icon} />
+          <img src="/logo.svg" alt="ProtectForever" className={styles.icon} />
         </div>
-        <div className={styles.title}>StoreView</div>
-        <div className={styles.subtitle}>Daily Outlook</div>
+        <div className={styles.title}>ProtectForever</div>
+        <div className={styles.subtitle}>Unified workspace</div>
         <div className={styles.loader}>
           <div className={styles.spinner}></div>
         </div>

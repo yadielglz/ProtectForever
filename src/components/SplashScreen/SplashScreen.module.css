@@ -10,10 +10,15 @@
   align-items: center;
   justify-content: center;
   z-index: 9999;
+  padding:
+    calc(env(safe-area-inset-top) + var(--space-4))
+    var(--space-4)
+    calc(env(safe-area-inset-bottom) + var(--space-4));
 }
 
 .container {
   text-align: center;
+  width: min(100%, 24rem);
 }
 
 .logo {
@@ -55,4 +60,20 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@media (max-width: 520px) {
+  .icon {
+    width: 96px;
+    height: 96px;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+    margin-bottom: var(--space-6);
+  }
 }

@@ -11,7 +11,7 @@ export const CONFIG = {
   GOOGLE_API_KEY: 'YOUR_GOOGLE_API_KEY_HERE',
   CACHE_DURATION: 5 * 60 * 1000,
   CACHE_KEY: 'storeview_data_cache',
-  APP_NAME: 'StoreView',
+  APP_NAME: 'ProtectForever',
   APP_VERSION: '4.1 Build A0306',
   STORE_HOURS: {
     DEFAULT: {

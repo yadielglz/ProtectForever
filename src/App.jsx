@@ -12,12 +12,52 @@ import NumberPortability from './components/NumberPortability/NumberPortability'
 import Settings from './components/Settings/Settings';
 import Toast from './components/Toast/Toast';
 
+const MODULES = [
+  {
+    id: 'protect',
+    label: 'Protect',
+    icon: 'fa-shield',
+    description: 'Lookup device protection options and verified inventory.',
+    component: ProtectApp,
+  },
+  {
+    id: 'appointments',
+    label: 'Appointments',
+    icon: 'fa-calendar-check',
+    description: 'Manage appointments and service flow for the day.',
+    component: AppointmentBoard,
+  },
+  {
+    id: 'crm',
+    label: 'CRM',
+    icon: 'fa-users',
+    description: 'Track lead follow-up, reminders, and outcomes.',
+    component: FollowUpCRM,
+  },
+  {
+    id: 'sales',
+    label: 'Sales',
+    icon: 'fa-chart-line',
+    description: 'Capture daily sales totals and supporting notes.',
+    component: SalesTracker,
+  },
+  {
+    id: 'portability',
+    label: 'Portability',
+    icon: 'fa-sim-card',
+    description: 'Reference number portability requirements by carrier.',
+    component: NumberPortability,
+  },
+];
+
 function App() {
   const [showSplash, setShowSplash] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [toast, setToast] = useState(null);
   const [activeModule, setActiveModule] = useState('protect');
+  const activeModuleConfig = MODULES.find((module) => module.id === activeModule) || MODULES[0];
+  const ActiveModuleComponent = activeModuleConfig.component;
 
   const lockApp = () => {
     setIsAuthenticated(false);
@@ -62,72 +102,50 @@ function App() {
       ) : (
         <div className="main-app" onMouseDown={resetInactivity} onTouchStart={resetInactivity} onKeyDown={resetInactivity}>
           <div className="app-shell">
-            <aside className="app-rail" aria-label="Primary">
-              <div className="rail-brand">
-                <div className="brand-badge">
-                  <i className="fas fa-store"></i>
+            <Topbar remainingMs={remainingMs} />
+
+            <div className="workspace-bar">
+              <div className="workspace-brand">
+                <div className="workspace-badge">PF</div>
+                <div className="workspace-copy">
+                  <span className="workspace-kicker">Unified workspace</span>
+                  <h1>{CONFIG.APP_NAME}</h1>
+                  <p>{activeModuleConfig.description}</p>
                 </div>
-                <div className="brand-text">Home</div>
               </div>
-              <div className="rail-nav" role="tablist">
-                <button
-                  className={`rail-item ${activeModule === 'protect' ? 'active' : ''}`}
-                  aria-selected={activeModule === 'protect'}
-                  onClick={() => setActiveModule('protect')}
-                >
-                  <i className="fas fa-shield"></i>
-                  <span className="nav-label">Protect</span>
-                </button>
-                <button
-                  className={`rail-item ${activeModule === 'appointments' ? 'active' : ''}`}
-                  aria-selected={activeModule === 'appointments'}
-                  onClick={() => setActiveModule('appointments')}
-                >
-                  <i className="fas fa-calendar-check"></i>
-                  <span className="nav-label">Appts</span>
-                </button>
-                <button
-                  className={`rail-item ${activeModule === 'crm' ? 'active' : ''}`}
-                  aria-selected={activeModule === 'crm'}
-                  onClick={() => setActiveModule('crm')}
-                >
-                  <i className="fas fa-users"></i>
-                  <span className="nav-label">CRM</span>
-                </button>
-                <button
-                  className={`rail-item ${activeModule === 'sales' ? 'active' : ''}`}
-                  aria-selected={activeModule === 'sales'}
-                  onClick={() => setActiveModule('sales')}
-                >
-                  <i className="fas fa-chart-line"></i>
-                  <span className="nav-label">Sales</span>
-                </button>
-                <button
-                  className={`rail-item ${activeModule === 'portability' ? 'active' : ''}`}
-                  aria-selected={activeModule === 'portability'}
-                  onClick={() => setActiveModule('portability')}
-                >
-                  <i className="fas fa-sim-card"></i>
-                  <span className="nav-label">Port</span>
+
+              <div className="workspace-actions">
+                <div className="workspace-active">
+                  <span>Active page</span>
+                  <strong>{activeModuleConfig.label}</strong>
+                </div>
+                <button className="workspace-settingsBtn" type="button" onClick={() => setShowSettings(true)}>
+                  <i className="fas fa-sliders-h"></i>
+                  <span>Settings</span>
                 </button>
               </div>
-              <div className="rail-footer">
-                <button className="rail-item rail-settings" type="button" onClick={() => setShowSettings(true)}>
-                  <i className="fas fa-ellipsis"></i>
-                  <span className="nav-label">More</span>
-                </button>
-              </div>
-            </aside>
-            <div className="app-body">
-              <Topbar remainingMs={remainingMs} />
-              <main className="main-content" role="main">
-                {activeModule === 'protect' && <ProtectApp showToast={showToast} />}
-                {activeModule === 'appointments' && <AppointmentBoard showToast={showToast} />}
-                {activeModule === 'crm' && <FollowUpCRM showToast={showToast} />}
-                {activeModule === 'sales' && <SalesTracker showToast={showToast} />}
-                {activeModule === 'portability' && <NumberPortability showToast={showToast} />}
-              </main>
             </div>
+
+            <nav className="module-tabs" aria-label="Primary">
+              {MODULES.map((module) => (
+                <button
+                  key={module.id}
+                  type="button"
+                  className={`module-tab ${activeModule === module.id ? 'active' : ''}`}
+                  aria-selected={activeModule === module.id}
+                  onClick={() => setActiveModule(module.id)}
+                >
+                  <i className={`fas ${module.icon}`}></i>
+                  <span>{module.label}</span>
+                </button>
+              ))}
+            </nav>
+
+            <main className="main-content" role="main">
+              <div className="page-shell">
+                <ActiveModuleComponent key={activeModuleConfig.id} showToast={showToast} />
+              </div>
+            </main>
           </div>
         </div>
       )}

@@ -2,9 +2,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--gray-200);
+  background: rgba(6, 10, 22, 0.84);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  backdrop-filter: blur(16px);
   min-height: var(--header-height);
   flex-shrink: 0;
 }
@@ -24,10 +26,12 @@
   flex: 1;
   justify-content: center;
   padding: 0 var(--space-4);
+  min-width: 0;
 }
 
 .right {
   min-width: 0;
+  justify-content: flex-end;
 }
 
 .clock {
@@ -53,6 +57,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .temp {
@@ -83,11 +88,12 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background: var(--bg-tertiary);
+  background: rgba(15, 23, 42, 0.76);
   border-radius: var(--radius-full);
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--primary);
+  border: 1px solid rgba(249, 115, 22, 0.2);
 }
 
 .timer.warning {
@@ -102,4 +108,67 @@
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .left,
+  .right {
+    flex: 1 1 auto;
+  }
+
+  .center {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0;
+  }
+
+  .weather {
+    width: 100%;
+    padding-top: var(--space-1);
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar {
+    padding:
+      calc(0.65rem + env(safe-area-inset-top))
+      var(--space-3)
+      0.7rem;
+    gap: var(--space-2);
+  }
+
+  .weatherMeta {
+    overflow: hidden;
+  }
+
+  .weatherDesc,
+  .weatherLocation {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .timer {
+    padding-inline: 0.8rem;
+  }
+
+  .time {
+    font-size: 1rem;
+  }
+
+  .date,
+  .weatherDesc,
+  .weatherLocation {
+    font-size: 0.72rem;
+  }
+
+  .temp {
+    font-size: 1rem;
+  }
 }

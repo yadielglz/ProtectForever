@@ -1,6 +1,6 @@
-# StoreView / ProtectForever
+# ProtectForever
 
-A modern React PWA for looking up device protection UPC codes and MDN numbers from Google Sheets data. Dark theme, passcode lock, clock & weather.
+A React + Vite PWA for device protection lookup, appointment tracking, follow-up CRM, sales capture, and number portability reference data.
 
 ## Development
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173
+Open `http://localhost:5173`
 
 ## Build
 
@@ -136,9 +136,9 @@ If you see CORS errors in the console:
 
 ## 🎨 Customization
 
-- **Colors**: Edit the CSS variables in `styles.css`
-- **Layout**: Modify the HTML structure in `index.html`
-- **Functionality**: Extend the JavaScript in `script.js`
+- **Theme and layout**: edit `src/index.css`
+- **Shell and navigation**: edit `src/App.jsx`
+- **Module UIs**: edit the matching files in `src/components/`
 
 ## 📄 Project Structure
 
@@ -146,7 +146,7 @@ If you see CORS errors in the console:
 - `src/config.js` - Configuration (passcode, sheets URL, weather ZIP)
 - `src/components/` - PasscodeScreen, ProtectApp, Topbar, Settings, etc.
 - `public/` - Static assets (logo.svg)
-- `index.html` - Entry point
+- `index.html` - HTML shell for the Vite app
 
 ## 🔒 Privacy & Security
 

@@ -1,6 +1,7 @@
 .section {
   max-width: var(--content-max-width);
   margin: 0 auto;
+  padding: 0.5rem;
 }
 
 .header {
@@ -49,7 +50,7 @@
 .card {
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
-  background: var(--bg-secondary);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.7));
   box-shadow: var(--shadow-sm);
   padding: var(--space-3);
 }
@@ -199,4 +200,27 @@
   background: var(--bg-tertiary);
   position: sticky;
   top: 0;
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 0;
+  }
+
+  .toolbar,
+  .topRow,
+  .portToolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .input,
+  .select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .form {
+    grid-template-columns: 1fr;
+  }
 }

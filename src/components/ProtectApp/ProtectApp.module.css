@@ -2,8 +2,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
+  padding: 0.5rem;
 }
 
 .header h2 {
@@ -17,6 +17,7 @@
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
   margin: 0;
+  max-width: 42rem;
 }
 
 .searchWrap {
@@ -28,9 +29,10 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  background: var(--bg-tertiary);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.76));
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .searchBox i {
@@ -86,7 +88,7 @@
   letter-spacing: 0.05em;
   padding: var(--space-3) var(--space-4);
   margin: 0 0 var(--space-2);
-  background: var(--bg-tertiary);
+  background: rgba(15, 23, 42, 0.82);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
   cursor: pointer;
@@ -134,7 +136,7 @@
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  background: var(--bg-tertiary);
+  background: rgba(15, 23, 42, 0.78);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
 }
@@ -360,6 +362,82 @@
   background: var(--bg-secondary);
   border-radius: var(--radius-md);
   border-left: 3px solid transparent;
+}
+
+@media (min-width: 900px) {
+  .sheet {
+    align-items: center;
+    padding: var(--space-6);
+  }
+
+  .panel {
+    width: min(880px, 100%);
+    max-height: min(82vh, 920px);
+    border-radius: var(--radius-2xl);
+  }
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 0;
+  }
+
+  .modelRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .getInfoBtn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .sheet {
+    align-items: flex-end;
+  }
+
+  .panel {
+    max-height: 96dvh;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  }
+
+  .sheetHeader {
+    padding-top: calc(var(--space-4) + env(safe-area-inset-top) * 0.2);
+  }
+
+  .sheetBody {
+    padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  }
+
+  .sheetFooter {
+    padding:
+      var(--space-3)
+      var(--space-4)
+      calc(var(--space-3) + env(safe-area-inset-bottom));
+    flex-direction: column;
+  }
+
+  .footerBtnSecondary,
+  .footerBtnPrimary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .valueRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .valueRowActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .mdnModal {
+    width: min(100%, 32rem);
+    max-height: 82dvh;
+  }
 }
 
 .valueRow.verified {
