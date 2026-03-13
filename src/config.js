@@ -1,4 +1,4 @@
-// Configuration for StoreView / ProtectForever
+// Configuration for ProtectForever
 export const CONFIG = {
   GOOGLE_SHEETS_URL: 'https://docs.google.com/spreadsheets/d/1nj6k7ouNzxImks-9CEuYvkSkFQfgOeR43Py2c2XH2eU/export?format=csv&gid=0',
   PORTABILITY_SHEETS_URL: 'https://docs.google.com/spreadsheets/d/17Te2EX3qgePmEKQmrdFT4SOAyaO3bql_RqcXA7lvjYE/edit?usp=sharing',
@@ -10,7 +10,7 @@ export const CONFIG = {
   USE_GOOGLE_API: false,
   GOOGLE_API_KEY: 'YOUR_GOOGLE_API_KEY_HERE',
   CACHE_DURATION: 5 * 60 * 1000,
-  CACHE_KEY: 'storeview_data_cache',
+  CACHE_KEY: 'pf_protect_data_cache',
   APP_NAME: 'ProtectForever',
   APP_VERSION: '4.1 Build A0306',
   STORE_HOURS: {

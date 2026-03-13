@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { downloadCsv } from '../../utils/download';
 import {
   buildModuleKpis,
   exportLeadsCsv,
@@ -51,19 +52,7 @@ function formatStage(stage) {
   return STAGE_LABELS[stage] || stage;
 }
 
-function downloadCsv(filename, content) {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', filename);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
-export default function FollowUpCRM({ showToast }) {
+export default function FollowUpCRM({ showToast, showConfirm }) {
   const [leads, setLeads] = useState(() => listLeads());
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -143,6 +132,25 @@ export default function FollowUpCRM({ showToast }) {
     showToast('Leads CSV exported', 'success');
   };
 
+  const handleDeleteLead = (id) => {
+    const performDelete = () => {
+      removeLead(id);
+      refresh();
+      showToast('Lead removed', 'success');
+    };
+    if (!showConfirm) {
+      performDelete();
+      return;
+    }
+    showConfirm({
+      title: 'Delete lead?',
+      message: 'This lead and its follow-up history will be removed from local storage.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+      onConfirm: performDelete,
+    });
+  };
+
   return (
     <section className={styles.section}>
       <div className={styles.header}>
@@ -205,12 +213,7 @@ export default function FollowUpCRM({ showToast }) {
                   <button
                     type="button"
                     className={`${styles.btn} ${styles.btnDanger}`}
-                    onClick={() => {
-                      if (!window.confirm('Delete this lead?')) return;
-                      removeLead(lead.id);
-                      refresh();
-                      showToast('Lead removed', 'success');
-                    }}
+                    onClick={() => handleDeleteLead(lead.id)}
                   >
                     Delete
                   </button>

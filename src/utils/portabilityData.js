@@ -1,7 +1,7 @@
 import { CONFIG } from '../config';
 import { parseCSVData } from './dataLoader';
+import { PORTABILITY_CACHE_KEY } from './cacheMaintenance';
 
-const PORT_CACHE_KEY = 'pf_portability_cache';
 const PORT_CACHE_TTL_MS = 10 * 60 * 1000;
 
 function toCsvExportUrl(url) {
@@ -36,7 +36,7 @@ function normalizePortabilityRow(row) {
 
 function readCache() {
   try {
-    const raw = localStorage.getItem(PORT_CACHE_KEY);
+    const raw = localStorage.getItem(PORTABILITY_CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed?.ts || Date.now() - parsed.ts > PORT_CACHE_TTL_MS) return null;
@@ -48,7 +48,7 @@ function readCache() {
 
 function writeCache(rows) {
   try {
-    localStorage.setItem(PORT_CACHE_KEY, JSON.stringify({ ts: Date.now(), rows }));
+    localStorage.setItem(PORTABILITY_CACHE_KEY, JSON.stringify({ ts: Date.now(), rows }));
   } catch {
     // ignore cache failures
   }

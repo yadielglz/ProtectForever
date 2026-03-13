@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { CONFIG } from '../../config';
+import { clearDataCaches } from '../../utils/cacheMaintenance';
+import { downloadJson } from '../../utils/download';
+import { readJsonPreference, readPreference, writePreference } from '../../utils/preferences';
 import { buildModuleKpis, exportModuleSnapshot, getSyncInfo, rememberExport } from '../../utils/moduleStorage';
 import styles from './Settings.module.css';
 
@@ -16,15 +19,16 @@ const HELPDESK_SUPPORT = [
   { label: 'Retail Sales Support Line', tel: '8883108369' },
 ];
 
-export default function Settings({ onClose, remainingMs, showToast }) {
-  const [zip, setZip] = useState(() => localStorage.getItem('weatherZip') || CONFIG.WEATHER_DEFAULT_ZIP);
+export default function Settings({ onClose, remainingMs, showToast, onRefreshData, onRefreshWeather }) {
+  const [zip, setZip] = useState(() => readPreference('weatherZip', CONFIG.WEATHER_DEFAULT_ZIP));
+  const [weatherUnit, setWeatherUnitState] = useState(() => readPreference('weatherUnit', 'fahrenheit'));
   const [dataSource, setDataSource] = useState('--');
   const [dataUpdated, setDataUpdated] = useState('--');
   const [moduleKpis, setModuleKpis] = useState(() => buildModuleKpis());
   const [syncInfo, setSyncInfo] = useState(() => getSyncInfo());
 
   useEffect(() => {
-    const map = JSON.parse(localStorage.getItem('lastDataUpdates') || '{}');
+    const map = readJsonPreference('lastDataUpdates', {});
     const e = map.protect;
     if (e) {
       setDataSource(e.source || '--');
@@ -41,27 +45,43 @@ export default function Settings({ onClose, remainingMs, showToast }) {
       showToast('Please enter a ZIP', 'warning');
       return;
     }
-    localStorage.setItem('weatherZip', v);
+    setZip(v);
+    writePreference('weatherZip', v);
+    onRefreshWeather?.();
     showToast('ZIP saved', 'success');
   };
 
   const setWeatherUnit = (unit) => {
-    localStorage.setItem('weatherUnit', unit);
+    setWeatherUnitState(unit);
+    writePreference('weatherUnit', unit);
+    onRefreshWeather?.();
     showToast(`Units set to ${unit === 'celsius' ? '°C' : '°F'}`, 'success');
-    window.location.reload();
   };
 
   const refreshData = () => {
-    localStorage.removeItem(CONFIG.CACHE_KEY);
-    showToast('Data will refresh on next load', 'success');
-    window.location.reload();
+    clearDataCaches();
+    onRefreshData?.();
+    showToast('Fresh data requested', 'success');
   };
 
-  const clearCache = () => {
-    if ('caches' in window) {
-      caches.keys().then((names) => names.forEach((n) => caches.delete(n)));
+  const clearCache = async () => {
+    try {
+      localStorage.clear();
+    } catch {
+      clearDataCaches();
     }
-    localStorage.removeItem(CONFIG.CACHE_KEY);
+
+    if ('caches' in window) {
+      const names = await caches.keys();
+      await Promise.all(names.map((name) => caches.delete(name)));
+    }
+
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+
+    clearDataCaches();
     showToast('Cache cleared. Reloading...', 'success');
     setTimeout(() => window.location.reload(), 1000);
   };
@@ -71,15 +91,7 @@ export default function Settings({ onClose, remainingMs, showToast }) {
   const exportModuleBackup = () => {
     const content = exportModuleSnapshot();
     const date = new Date().toISOString().slice(0, 10);
-    const blob = new Blob([content], { type: 'application/json;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `modules_backup_${date}.json`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    downloadJson(`modules_backup_${date}.json`, content);
     rememberExport();
     setSyncInfo(getSyncInfo());
     setModuleKpis(buildModuleKpis());
@@ -202,14 +214,14 @@ export default function Settings({ onClose, remainingMs, showToast }) {
                 <button
                   type="button"
                   onClick={() => setWeatherUnit('fahrenheit')}
-                  className={localStorage.getItem('weatherUnit') !== 'celsius' ? styles.active : ''}
+                  className={weatherUnit !== 'celsius' ? styles.active : ''}
                 >
                   °F
                 </button>
                 <button
                   type="button"
                   onClick={() => setWeatherUnit('celsius')}
-                  className={localStorage.getItem('weatherUnit') === 'celsius' ? styles.active : ''}
+                  className={weatherUnit === 'celsius' ? styles.active : ''}
                 >
                   °C
                 </button>

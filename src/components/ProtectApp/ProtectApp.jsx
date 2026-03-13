@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useProtectData } from '../../hooks/useProtectData';
 import {
   groupByProtectionType,
@@ -8,7 +8,7 @@ import {
 } from '../../utils/protectLogic';
 import styles from './ProtectApp.module.css';
 
-export default function ProtectApp({ showToast }) {
+export default function ProtectApp({ showToast, dataRefreshToken = 0 }) {
   const { flatDeviceList, loading, refresh } = useProtectData();
   const [search, setSearch] = useState('');
   const [selectedDevice, setSelectedDevice] = useState(null);
@@ -72,6 +72,12 @@ export default function ProtectApp({ showToast }) {
       showToast('Failed to copy', 'error');
     }
   }, [showToast]);
+
+  useEffect(() => {
+    if (dataRefreshToken > 0) {
+      refresh();
+    }
+  }, [dataRefreshToken, refresh]);
 
   return (
     <section className={styles.section}>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { downloadCsv } from '../../utils/download';
 import {
   buildModuleKpis,
   exportSalesCsv,
@@ -27,19 +28,7 @@ const EMPTY_SALE = {
   notes: '',
 };
 
-function downloadCsv(filename, content) {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', filename);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
-export default function SalesTracker({ showToast }) {
+export default function SalesTracker({ showToast, showConfirm }) {
   const [rows, setRows] = useState(() => listSalesEntries());
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -78,10 +67,22 @@ export default function SalesTracker({ showToast }) {
   };
 
   const onDeleteSale = (id) => {
-    if (!window.confirm('Delete this sale entry?')) return;
-    removeSalesEntry(id);
-    refresh();
-    showToast('Sale deleted', 'success');
+    const performDelete = () => {
+      removeSalesEntry(id);
+      refresh();
+      showToast('Sale deleted', 'success');
+    };
+    if (!showConfirm) {
+      performDelete();
+      return;
+    }
+    showConfirm({
+      title: 'Delete sale entry?',
+      message: 'This daily sales record will be removed from the tracker.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+      onConfirm: performDelete,
+    });
   };
 
   const onExportSales = () => {

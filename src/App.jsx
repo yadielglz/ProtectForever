@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { CONFIG } from './config';
 import { useInactivityTimer } from './hooks/useInactivityTimer';
+import { clearDataCaches } from './utils/cacheMaintenance';
+import { readPreference, writePreference } from './utils/preferences';
 import SplashScreen from './components/SplashScreen/SplashScreen';
 import PasscodeScreen from './components/PasscodeScreen/PasscodeScreen';
 import Topbar from './components/Topbar/Topbar';
@@ -11,6 +13,7 @@ import SalesTracker from './components/SalesTracker/SalesTracker';
 import NumberPortability from './components/NumberPortability/NumberPortability';
 import Settings from './components/Settings/Settings';
 import Toast from './components/Toast/Toast';
+import ConfirmDialog from './components/ConfirmDialog/ConfirmDialog';
 
 const MODULES = [
   {
@@ -55,7 +58,11 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [toast, setToast] = useState(null);
-  const [activeModule, setActiveModule] = useState('protect');
+  const [activeModule, setActiveModule] = useState(() => readPreference('pf_active_module', 'protect'));
+  const [dataRefreshToken, setDataRefreshToken] = useState(0);
+  const [weatherRefreshToken, setWeatherRefreshToken] = useState(0);
+  const [confirmState, setConfirmState] = useState(null);
+  const toastTimerRef = useRef(null);
   const activeModuleConfig = MODULES.find((module) => module.id === activeModule) || MODULES[0];
   const ActiveModuleComponent = activeModuleConfig.component;
 
@@ -70,21 +77,53 @@ function App() {
   });
 
   useEffect(() => {
-    const hasLoaded = localStorage.getItem('appHasLoaded');
+    const hasLoaded = readPreference('appHasLoaded');
     if (!hasLoaded) {
       setShowSplash(true);
       const t = setTimeout(() => {
         setShowSplash(false);
-        localStorage.setItem('appHasLoaded', 'true');
+        writePreference('appHasLoaded', 'true');
       }, 3000);
       return () => clearTimeout(t);
     }
   }, []);
 
-  const showToast = (message, type = 'info') => {
+  useEffect(() => {
+    writePreference('pf_active_module', activeModuleConfig.id);
+  }, [activeModuleConfig.id]);
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
+
+  const showToast = useCallback((message, type = 'info') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const showConfirm = useCallback((config) => {
+    setConfirmState(config);
+  }, []);
+
+  const dismissConfirm = useCallback(() => {
+    setConfirmState(null);
+  }, []);
+
+  const handleConfirm = useCallback(() => {
+    const nextAction = confirmState?.onConfirm;
+    setConfirmState(null);
+    nextAction?.();
+  }, [confirmState]);
+
+  const handleDataRefresh = useCallback(() => {
+    clearDataCaches();
+    setDataRefreshToken((value) => value + 1);
+  }, []);
+
+  const handleWeatherRefresh = useCallback(() => {
+    setWeatherRefreshToken((value) => value + 1);
+  }, []);
 
   const handleUnlock = () => {
     setIsAuthenticated(true);
@@ -102,7 +141,7 @@ function App() {
       ) : (
         <div className="main-app" onMouseDown={resetInactivity} onTouchStart={resetInactivity} onKeyDown={resetInactivity}>
           <div className="app-shell">
-            <Topbar remainingMs={remainingMs} />
+            <Topbar remainingMs={remainingMs} weatherRefreshToken={weatherRefreshToken} />
 
             <div className="workspace-bar">
               <div className="workspace-brand">
@@ -143,7 +182,12 @@ function App() {
 
             <main className="main-content" role="main">
               <div className="page-shell">
-                <ActiveModuleComponent key={activeModuleConfig.id} showToast={showToast} />
+                <ActiveModuleComponent
+                  key={activeModuleConfig.id}
+                  showToast={showToast}
+                  showConfirm={showConfirm}
+                  dataRefreshToken={dataRefreshToken}
+                />
               </div>
             </main>
           </div>
@@ -155,10 +199,23 @@ function App() {
           onClose={() => setShowSettings(false)}
           remainingMs={remainingMs}
           showToast={showToast}
+          onRefreshData={handleDataRefresh}
+          onRefreshWeather={handleWeatherRefresh}
         />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} />}
+      {confirmState && (
+        <ConfirmDialog
+          title={confirmState.title}
+          message={confirmState.message}
+          confirmLabel={confirmState.confirmLabel}
+          cancelLabel={confirmState.cancelLabel}
+          tone={confirmState.tone}
+          onConfirm={handleConfirm}
+          onCancel={dismissConfirm}
+        />
+      )}
     </>
   );
 }

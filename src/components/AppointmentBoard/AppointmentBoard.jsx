@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { downloadCsv } from '../../utils/download';
 import {
   buildModuleKpis,
   exportAppointmentsCsv,
@@ -36,18 +37,6 @@ function formatStatus(status) {
   return STATUS_LABELS[status] || status;
 }
 
-function downloadCsv(filename, content) {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', filename);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
 const EMPTY_FORM = {
   customerName: '',
   phone: '',
@@ -59,7 +48,7 @@ const EMPTY_FORM = {
   status: 'scheduled',
 };
 
-export default function AppointmentBoard({ showToast }) {
+export default function AppointmentBoard({ showToast, showConfirm }) {
   const [appointments, setAppointments] = useState(() => listAppointments());
   const [filter, setFilter] = useState('all');
   const [viewMode, setViewMode] = useState('daily');
@@ -131,10 +120,22 @@ export default function AppointmentBoard({ showToast }) {
   };
 
   const onDelete = (id) => {
-    if (!window.confirm('Delete this appointment?')) return;
-    removeAppointment(id);
-    refresh();
-    showToast('Appointment removed', 'success');
+    const performDelete = () => {
+      removeAppointment(id);
+      refresh();
+      showToast('Appointment removed', 'success');
+    };
+    if (!showConfirm) {
+      performDelete();
+      return;
+    }
+    showConfirm({
+      title: 'Delete appointment?',
+      message: 'This appointment will be removed from the board and local history.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+      onConfirm: performDelete,
+    });
   };
 
   const moveStatus = (appt) => {

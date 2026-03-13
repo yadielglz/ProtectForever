@@ -8,27 +8,33 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo.svg'],
+      includeAssets: ['logo.svg', 'icon-192x192.png', 'icon-512x512.png', 'favicon.ico'],
       manifest: {
-        name: 'StoreView - Daily Outlook',
-        short_name: 'StoreView',
-        description: 'Device protection catalog with UPC and MDN lookup',
+        name: 'ProtectForever Workspace',
+        short_name: 'ProtectForever',
+        description: 'Mobile-ready retail workspace for protection lookup, appointments, CRM, sales, and portability.',
         start_url: '/',
         display: 'standalone',
-        background_color: '#000000',
-        theme_color: '#0f0f0f',
-        orientation: 'portrait-primary',
+        background_color: '#050816',
+        theme_color: '#111827',
+        orientation: 'any',
         icons: [
           {
-            src: '/logo.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
+            src: '/icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/logo.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
+            src: '/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
             purpose: 'maskable'
           }
         ]

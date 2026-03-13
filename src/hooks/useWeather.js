@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CONFIG } from '../config';
+import { readPreference } from '../utils/preferences';
 
 const WEATHER_LABELS = {
   0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
@@ -13,24 +14,25 @@ function getWeatherLabel(code) {
 }
 
 function getStoredZip() {
-  try {
-    const stored = localStorage.getItem('weatherZip');
-    if (stored?.trim()) return stored.trim();
-    return CONFIG.WEATHER_DEFAULT_ZIP || '';
-  } catch {
-    return CONFIG.WEATHER_DEFAULT_ZIP || '';
-  }
+  const stored = readPreference('weatherZip', CONFIG.WEATHER_DEFAULT_ZIP || '');
+  return stored?.trim() || CONFIG.WEATHER_DEFAULT_ZIP || '';
 }
 
 function getWeatherUnit() {
-  try {
-    return localStorage.getItem('weatherUnit') || 'fahrenheit';
-  } catch {
-    return 'fahrenheit';
-  }
+  return readPreference('weatherUnit', 'fahrenheit') || 'fahrenheit';
 }
 
-export function useWeather() {
+function getCurrentPosition(options) {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Location unavailable'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+}
+
+export function useWeather({ refreshToken = 0 } = {}) {
   const [temp, setTemp] = useState('--');
   const [desc, setDesc] = useState('--');
   const [location, setLocation] = useState('--');
@@ -84,70 +86,33 @@ export function useWeather() {
     setLoading(true);
     const zip = getStoredZip();
     try {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            const { latitude, longitude } = pos.coords;
-            await fetchByCoords(latitude, longitude);
-            await fetchReverseGeocode(latitude, longitude);
-            setLoading(false);
-          },
-          async () => {
-            if (zip) {
-              await fetchByZip(zip);
-            } else {
-              setDesc('Location denied');
-            }
-            setLoading(false);
-          },
-          { enableHighAccuracy: true, timeout: 8000 }
-        );
-        if (zip) {
-          await fetchByZip(zip);
-        }
-      } else if (zip) {
+      if (zip) {
         await fetchByZip(zip);
+      } else if (navigator.geolocation) {
+        const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 8000 });
+        const { latitude, longitude } = pos.coords;
+        await fetchByCoords(latitude, longitude);
+        await fetchReverseGeocode(latitude, longitude);
       } else {
         setDesc('Location unavailable');
+        setLocation('--');
+        setTemp('--');
       }
-    } catch (err) {
-      setDesc('Weather unavailable');
+    } catch {
+      if (!zip && navigator.geolocation) {
+        setDesc('Location denied');
+      } else {
+        setDesc('Weather unavailable');
+      }
+      setLocation(zip || '--');
       setTemp('--');
     }
     setLoading(false);
   }, [fetchByCoords, fetchByZip, fetchReverseGeocode]);
 
   useEffect(() => {
-    const load = async () => {
-      const zip = getStoredZip();
-      setLoading(true);
-      try {
-        if (zip) {
-          await fetchByZip(zip);
-        } else if (navigator.geolocation) {
-          await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-              async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                await fetchByCoords(latitude, longitude);
-                await fetchReverseGeocode(latitude, longitude);
-                resolve();
-              },
-              () => reject(new Error('Location denied')),
-              { enableHighAccuracy: true, timeout: 8000 }
-            );
-          });
-        } else {
-          setDesc('Location unavailable');
-        }
-      } catch {
-        if (zip) await fetchByZip(zip).catch(() => {});
-        else setDesc('Location denied');
-      }
-      setLoading(false);
-    };
-    load();
-  }, []);
+    refresh();
+  }, [refresh, refreshToken]);
 
   return { temp, desc, location, loading, refresh };
 }

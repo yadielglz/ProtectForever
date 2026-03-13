@@ -2,9 +2,9 @@ import { useTimeDate } from '../../hooks/useTimeDate';
 import { useWeather } from '../../hooks/useWeather';
 import styles from './Topbar.module.css';
 
-export default function Topbar({ remainingMs }) {
+export default function Topbar({ remainingMs, weatherRefreshToken }) {
   const { time, date } = useTimeDate();
-  const { temp, desc, location } = useWeather();
+  const { temp, desc, location } = useWeather({ refreshToken: weatherRefreshToken });
   const seconds = Math.floor(remainingMs / 1000);
   const isWarning = remainingMs <= 10000 && remainingMs > 5000;
   const isCritical = remainingMs <= 5000;

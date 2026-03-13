@@ -85,6 +85,7 @@ html {
 
 body {
   min-height: 100%;
+  min-height: 100svh;
   min-height: 100dvh;
   font-family: var(--font-family);
   font-size: var(--font-size-base);
@@ -96,12 +97,14 @@ body {
     linear-gradient(180deg, #081120 0%, #040814 100%);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 body,
 #root {
   height: 100%;
+  min-height: 100svh;
   min-height: 100dvh;
 }
 
@@ -122,6 +125,7 @@ a {
 
 .main-app {
   min-height: 100%;
+  min-height: 100svh;
   min-height: 100dvh;
   height: 100%;
   animation: appFadeIn 0.35s ease-out;
@@ -142,6 +146,7 @@ a {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 100svh;
   min-height: 100dvh;
   overflow: hidden;
   background: linear-gradient(180deg, rgba(5, 8, 22, 0.3) 0%, rgba(5, 8, 22, 0.72) 100%);
@@ -329,6 +334,10 @@ a {
 }
 
 @media (max-width: 640px) {
+  body {
+    overflow-y: auto;
+  }
+
   .workspace-bar {
     padding: var(--space-4);
   }
