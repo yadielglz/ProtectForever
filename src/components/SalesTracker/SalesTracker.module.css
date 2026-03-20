@@ -139,18 +139,6 @@
   color: var(--text-secondary);
 }
 
-.checkboxField {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding-top: 1.75rem;
-}
-
-.checkboxField input {
-  width: 16px;
-  height: 16px;
-}
-
 .fullWidth {
   grid-column: 1 / -1;
 }
@@ -167,41 +155,6 @@
   gap: var(--space-2);
 }
 
-.portToolbar {
-  display: flex;
-  gap: var(--space-2);
-  margin: var(--space-3) 0;
-}
-
-.portTableWrap {
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
-  overflow: auto;
-}
-
-.portTable {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 920px;
-}
-
-.portTable th,
-.portTable td {
-  text-align: left;
-  border-bottom: 1px solid var(--gray-200);
-  padding: 0.6rem 0.65rem;
-  vertical-align: top;
-  font-size: var(--font-size-sm);
-}
-
-.portTable th {
-  color: var(--text-secondary);
-  font-weight: 600;
-  background: var(--bg-tertiary);
-  position: sticky;
-  top: 0;
-}
-
 @media (max-width: 768px) {
   .section {
     padding: 0;
@@ -209,11 +162,6 @@
 
   .toolbar,
   .topRow,
-  .portToolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .input,
   .select {
     min-width: 0;

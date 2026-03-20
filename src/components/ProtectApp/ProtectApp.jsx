@@ -225,8 +225,10 @@ function OptionCard({ group, copyToClipboard }) {
   const allUpcs = [...verifiedUpcs, ...unverifiedUpcs];
   const verifiedMdns = Array.from(group.verifiedMdns);
 
+  const upcCopyLabel = `${group.brand} ${group.type} UPC`;
+
   const copyAllUpcs = () => {
-    copyToClipboard(allUpcs.join(', '), `${allUpcs.length} UPC${allUpcs.length !== 1 ? 's' : ''}`);
+    copyToClipboard(allUpcs.join(', '), `${allUpcs.length} ${group.brand} ${group.type} UPC${allUpcs.length !== 1 ? 's' : ''}`);
   };
 
   const copyAllMdns = () => {
@@ -251,18 +253,22 @@ function OptionCard({ group, copyToClipboard }) {
             <ValueRow
               key={upc}
               value={upc}
-              label="UPC"
+              label={upcCopyLabel}
               verified
               onCopy={copyToClipboard}
+              productBrand={group.brand}
+              productType={group.type}
             />
           ))}
           {unverifiedUpcs.map((upc) => (
             <ValueRow
               key={upc}
               value={upc}
-              label="UPC"
+              label={upcCopyLabel}
               verified={false}
               onCopy={copyToClipboard}
+              productBrand={group.brand}
+              productType={group.type}
             />
           ))}
         </div>
@@ -402,11 +408,19 @@ function MdnRevealModal({ mdns, productLabel, onClose, copyToClipboard, copyAllM
   );
 }
 
-function ValueRow({ value, rawValue, label, verified, onCopy }) {
+function ValueRow({ value, rawValue, label, verified, onCopy, productBrand, productType }) {
   const toCopy = rawValue ?? value;
   return (
     <div className={`${styles.valueRow} ${verified ? styles.verified : styles.unverified}`}>
-      <code>{value}</code>
+      <div className={styles.valueRowLeft}>
+        {(productBrand || productType) && (
+          <div className={styles.upcLabels}>
+            {productBrand && <span className={styles.brandPill}>{productBrand}</span>}
+            {productType && <span className={`${styles.typePill} ${styles[`type_${productType.toLowerCase()}`] || ''}`}>{productType}</span>}
+          </div>
+        )}
+        <code>{value}</code>
+      </div>
       <div className={styles.valueRowActions}>
         {verified ? (
           <span className={styles.verifiedBadge} title="Verified"><i className="fas fa-check-circle"></i></span>

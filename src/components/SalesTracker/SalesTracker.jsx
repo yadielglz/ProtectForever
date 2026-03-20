@@ -19,21 +19,21 @@ const FILTERS = [
   { label: 'Accessories > 0', value: 'accessories' },
 ];
 
-const EMPTY_SALE = {
+const emptySale = () => ({
   date: new Date().toISOString().slice(0, 10),
   rep: '',
   voiceLines: 0,
   btsSold: 0,
   accessoriesTotal: 0,
   notes: '',
-};
+});
 
 export default function SalesTracker({ showToast, showConfirm }) {
   const [rows, setRows] = useState(() => listSalesEntries());
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
-  const [form, setForm] = useState(EMPTY_SALE);
+  const [form, setForm] = useState(emptySale());
 
   const kpis = useMemo(() => buildModuleKpis(), [rows]);
 
@@ -61,7 +61,7 @@ export default function SalesTracker({ showToast, showConfirm }) {
     }
     saveSalesEntry(form);
     refresh();
-    setForm(EMPTY_SALE);
+    setForm(emptySale());
     setFormOpen(false);
     showToast('Sale saved', 'success');
   };
@@ -190,4 +190,3 @@ export default function SalesTracker({ showToast, showConfirm }) {
     </section>
   );
 }
-

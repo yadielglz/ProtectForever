@@ -7,8 +7,6 @@ export const CONFIG = {
     'https://corsproxy.io/?',
     'https://thingproxy.freeboard.io/fetch/',
   ],
-  USE_GOOGLE_API: false,
-  GOOGLE_API_KEY: 'YOUR_GOOGLE_API_KEY_HERE',
   CACHE_DURATION: 5 * 60 * 1000,
   CACHE_KEY: 'pf_protect_data_cache',
   APP_NAME: 'ProtectForever',
@@ -29,6 +27,4 @@ export const CONFIG = {
   WEATHER_DEFAULT_ZIP: '34759',
   PASSCODE: '6974',
   INACTIVITY_TIMEOUT: 20 * 1000,
-  AUTO_REFRESH_INTERVAL_MS: 150 * 1000,
-  DEBUG_MODE: true,
 };

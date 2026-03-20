@@ -99,8 +99,12 @@ export function getModelSortOrder(brand, model) {
 
 export function normalizeProtectRecord(row) {
   const by = (names) => getField(row, names);
+  const deviceBrand = by(['Device Brand', 'DeviceBrand', 'Manufacturer', 'OEM']) || '';
+  // Protection product brand (ZAGG, GoTo, etc.) — separate from the device brand
+  const upcBrand = by(['Brand', 'Screen Brand', 'Protector Brand', 'Protection Brand', 'Vendor', 'Product Brand', 'BRAND']) || '';
   return {
-    brand: by(['Device Brand', 'Brand', 'DeviceBrand', 'BRAND', 'Manufacturer']) || 'Unknown Brand',
+    brand: deviceBrand || upcBrand || 'Unknown Brand',
+    upcBrand: upcBrand || deviceBrand || '',
     model: by(['Device Model', 'Model', 'DeviceModel', 'MODEL', 'Device']) || 'Unknown Model',
     type: by(['Type', 'Protection Type', 'ProtectionType', 'TYPE', 'Protection']) || 'General',
     upc: by(['UPC', 'UPC Code', 'upc', 'UPCCode', 'UPC_CODE', 'BARCODE']),
@@ -128,11 +132,12 @@ export function buildProtectCatalog(deviceData, getModelSortOrderFn = getModelSo
 export function groupByProtectionType(options) {
   const groups = {};
   options.forEach((opt) => {
-    const brand = opt.brand || 'Unknown';
+    // Use the protection product brand (ZAGG, GoTo, etc.) for grouping, not the device brand
+    const upcBrand = opt.upcBrand || opt.brand || 'Unknown';
     const type = opt.type || 'General';
-    const key = `${brand}-${type}`;
+    const key = `${upcBrand}-${type}`;
     if (!groups[key]) {
-      groups[key] = { brand, type, entries: [], mdns: new Set(), verifiedMdns: new Set() };
+      groups[key] = { brand: upcBrand, type, entries: [], mdns: new Set(), verifiedMdns: new Set() };
     }
     groups[key].entries.push(opt);
     if (opt.mdn) groups[key].mdns.add(opt.mdn);

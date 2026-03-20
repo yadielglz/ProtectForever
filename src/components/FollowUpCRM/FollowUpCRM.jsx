@@ -239,15 +239,17 @@ export default function FollowUpCRM({ showToast, showConfirm }) {
               <label className={styles.field}>
                 <span>Stage</span>
                 <select className={styles.select} value={form.stage} onChange={(e) => setForm((f) => ({ ...f, stage: e.target.value }))}>
-                {STAGE_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {Object.entries(STAGE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
                 </select>
               </label>
               <label className={styles.field}>
                 <span>Priority</span>
                 <select className={styles.select} value={form.priority} onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}>
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="high">high</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
                 </select>
               </label>
               <label className={styles.field}>
@@ -273,4 +275,3 @@ export default function FollowUpCRM({ showToast, showConfirm }) {
     </section>
   );
 }
-

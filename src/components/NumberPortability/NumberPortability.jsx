@@ -54,7 +54,7 @@ export default function NumberPortability({ showToast, dataRefreshToken = 0 }) {
     <section className={styles.section}>
       <header className={styles.header}>
         <h2>Number Portability</h2>
-        <p>Live lookup from Google Sheets columns: carrier, network, account_number_type, pin_type, extra_requirements, port_center.</p>
+        <p>Look up portability requirements by carrier — account number type, PIN, extra requirements, and port center.</p>
       </header>
 
       <div className={styles.toolbar}>

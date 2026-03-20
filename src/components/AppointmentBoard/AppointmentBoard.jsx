@@ -253,12 +253,9 @@ export default function AppointmentBoard({ showToast, showConfirm }) {
               <label className={styles.field}>
                 <span>Status</span>
                 <select className={styles.select} value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
-                <option value="scheduled">scheduled</option>
-                <option value="arrived">arrived</option>
-                <option value="in_service">in_service</option>
-                <option value="completed">completed</option>
-                <option value="no_show">no_show</option>
-                <option value="cancelled">cancelled</option>
+                  {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
                 </select>
               </label>
               <label className={`${styles.field} ${styles.fullWidth}`}>

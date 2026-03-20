@@ -105,7 +105,7 @@ export default function Settings({ onClose, remainingMs, showToast, onRefreshDat
           <button type="button" className={styles.backBtn} onClick={onClose} aria-label="Close">
             <i className="fas fa-arrow-left"></i>
           </button>
-          <h3>More</h3>
+          <h3>Settings</h3>
         </header>
 
         <div className={styles.content}>
